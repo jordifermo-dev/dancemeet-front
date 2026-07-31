@@ -1,0 +1,453 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/tabs/explorer" text=""></ion-back-button>
+    </ion-buttons>
+    <ion-title>{{ isCreateMode() ? ('eventDetail.createTitle' | translate) : event()?.title }}</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="event-detail-content">
+  @if (loading()) {
+    <div class="state-row">
+      <ion-spinner name="crescent"></ion-spinner>
+    </div>
+  } @else if (!isCreateMode() && (notFound() || !event())) {
+    <div class="state-row">
+      <p>{{ 'eventDetail.notFound' | translate }}</p>
+    </div>
+  } @else if (isEditMode()) {
+    <form [formGroup]="editForm" class="event-detail-container">
+      <section class="section">
+        <h2>{{ 'eventDetail.detailsSection' | translate }}</h2>
+        <ion-input
+          labelPlacement="stacked"
+          [label]="'eventDetail.titleLabel' | translate"
+          [placeholder]="'eventDetail.titlePlaceholder' | translate"
+          formControlName="title"
+        ></ion-input>
+        <ion-textarea
+          labelPlacement="stacked"
+          [label]="'eventDetail.descriptionLabel' | translate"
+          [placeholder]="'eventDetail.descriptionPlaceholder' | translate"
+          [autoGrow]="true"
+          formControlName="description"
+        ></ion-textarea>
+        <ion-textarea
+          labelPlacement="stacked"
+          [label]="'eventDetail.additionalInfoLabel' | translate"
+          [placeholder]="'eventDetail.additionalInfoPlaceholder' | translate"
+          [autoGrow]="true"
+          formControlName="additionalInfo"
+        ></ion-textarea>
+        <div class="event-image-edit">
+          @if (editForm.controls.imageUrl.value) {
+            <img class="event-image-preview" [src]="editForm.controls.imageUrl.value" [alt]="editForm.controls.title.value" />
+          } @else {
+            <div class="event-image-preview event-image-preview-empty"></div>
+          }
+          <app-photo-editor
+            class="event-image-photo-editor"
+            kind="event"
+            aspect="portrait"
+            [nameForFile]="editForm.controls.title.value || 'evento'"
+            (uploaded)="onImageUploaded($event)"
+          ></app-photo-editor>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>{{ 'profile.socialLinksLabel' | translate }}</h2>
+        <ion-item>
+          <ion-icon
+            slot="start"
+            class="contact-icon"
+            [src]="socialIconUrl('instagram')"
+            [attr.aria-label]="'profile.instagramLabel' | translate"
+          ></ion-icon>
+          <ion-input formControlName="instagram"></ion-input>
+        </ion-item>
+        <ion-item>
+          <ion-icon
+            slot="start"
+            class="contact-icon"
+            [src]="socialIconUrl('facebook')"
+            [attr.aria-label]="'profile.facebookLabel' | translate"
+          ></ion-icon>
+          <ion-input formControlName="facebook"></ion-input>
+        </ion-item>
+        <ion-item>
+          <ion-icon
+            slot="start"
+            class="contact-icon"
+            [src]="socialIconUrl('tiktok')"
+            [attr.aria-label]="'profile.tiktokLabel' | translate"
+          ></ion-icon>
+          <ion-input formControlName="tiktok"></ion-input>
+        </ion-item>
+        <ion-item>
+          <ion-icon
+            slot="start"
+            class="contact-icon"
+            [src]="socialIconUrl('youtube')"
+            [attr.aria-label]="'profile.youtubeLabel' | translate"
+          ></ion-icon>
+          <ion-input formControlName="youtube"></ion-input>
+        </ion-item>
+        <ion-item>
+          <ion-icon
+            slot="start"
+            class="contact-icon"
+            [src]="socialIconUrl('website')"
+            [attr.aria-label]="'profile.websiteLabel' | translate"
+          ></ion-icon>
+          <ion-input formControlName="website"></ion-input>
+        </ion-item>
+      </section>
+
+      <section class="section">
+        <h2>{{ 'profile.preferencesSection' | translate }}</h2>
+        <p class="group-label">{{ 'eventDetail.eventTypeLabel' | translate }}</p>
+        <div class="chip-grid">
+          @for (eventType of eventTypes(); track eventType.id) {
+            <button
+              type="button"
+              class="chip chip-with-icon"
+              [class.selected]="editTypeIds().includes(eventType.id)"
+              (click)="toggleEditType(eventType.id)"
+            >
+              <img class="chip-icon" [src]="eventTypeIconUrl(eventType.name)" [alt]="eventType.name" />
+              {{ eventType.name }}
+            </button>
+          }
+        </div>
+        @if (minSelectionWarning.isActive('eventTypes')) {
+          <p class="min-selection-warning">{{ 'explorer.minSelectionWarning' | translate }}</p>
+        }
+
+        <p class="group-label">{{ 'eventDetail.disciplineLabel' | translate }}</p>
+        <div class="chip-grid">
+          @for (discipline of disciplines(); track discipline.id) {
+            <button
+              type="button"
+              class="chip chip-with-icon"
+              [class.selected]="editDisciplineIds().includes(discipline.id)"
+              (click)="toggleEditDiscipline(discipline.id)"
+            >
+              <img class="chip-icon" [src]="disciplineIconUrl(discipline)" [alt]="discipline.name" />
+              {{ discipline.name }}
+            </button>
+          }
+        </div>
+        @if (minSelectionWarning.isActive('disciplines')) {
+          <p class="min-selection-warning">{{ 'explorer.minSelectionWarning' | translate }}</p>
+        }
+
+        <p class="group-label">{{ 'eventDetail.statusLabel' | translate }}</p>
+        <div class="chip-grid">
+          @for (option of editableStatusOptions; track option.id) {
+            <button
+              type="button"
+              class="chip chip-with-icon"
+              [class.selected]="editStatus() === option.id"
+              (click)="selectEditStatus(option.id)"
+            >
+              <img class="chip-icon" [src]="statusIconUrl(option.id)" [alt]="option.labelKey | translate" />
+              {{ option.labelKey | translate }}
+            </button>
+          }
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>{{ 'explorer.dateFilterLabel' | translate }}</h2>
+        <div class="date-range-row">
+          <div class="date-field">
+            <span class="date-field-label">{{ 'eventDetail.dateFromLabel' | translate }}</span>
+            <div class="date-value-row">
+              <span class="date-value-group">
+                <ion-icon name="calendar-outline"></ion-icon>
+                <ion-datetime-button datetime="eventDetailDateFrom"></ion-datetime-button>
+              </span>
+              <span class="date-value-group">
+                <ion-icon name="time-outline"></ion-icon>
+                <input
+                  type="time"
+                  class="time-input"
+                  [value]="editTimeFromValue()"
+                  (change)="onTimeFromChange($event)"
+                />
+              </span>
+            </div>
+          </div>
+          <div class="date-field">
+            <span class="date-field-label">{{ 'eventDetail.dateToLabel' | translate }}</span>
+            <div class="date-value-row">
+              <span class="date-value-group">
+                <ion-icon name="calendar-outline"></ion-icon>
+                <ion-datetime-button datetime="eventDetailDateTo"></ion-datetime-button>
+              </span>
+              <span class="date-value-group">
+                <ion-icon name="time-outline"></ion-icon>
+                <input
+                  type="time"
+                  class="time-input"
+                  [value]="editTimeToValue()"
+                  (change)="onTimeToChange($event)"
+                />
+              </span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>{{ 'eventDetail.priceSection' | translate }}</h2>
+        <ion-item lines="none" class="toggle-row">
+          <ion-toggle formControlName="isFree">{{ 'eventDetail.isFreeLabel' | translate }}</ion-toggle>
+        </ion-item>
+        @if (!editForm.controls.isFree.value) {
+          <ion-input
+            type="number"
+            labelPlacement="stacked"
+            [label]="'eventDetail.priceLabel' | translate"
+            formControlName="price"
+          ></ion-input>
+        }
+      </section>
+
+      <section class="section">
+        <h2>{{ 'profile.locationSection' | translate }}</h2>
+        <ion-searchbar
+          class="tgtg-searchbar"
+          [placeholder]="'eventDetail.addressLabel' | translate"
+          [value]="editAddress()"
+          [debounce]="0"
+          (ionInput)="onLocationInput($event.detail.value)"
+        ></ion-searchbar>
+        @if (!editCity()) {
+          <p class="location-hint">{{ 'eventDetail.locationHint' | translate }}</p>
+        }
+        @if (editCitySuggestions().length) {
+          <div class="city-suggestions">
+            @for (suggestion of editCitySuggestions(); track suggestion.placeId) {
+              <button type="button" class="city-suggestion" (click)="selectLocationSuggestion(suggestion)">
+                <ion-icon name="location-outline"></ion-icon>
+                {{ suggestion.description }}
+              </button>
+            }
+          </div>
+        }
+        <ion-button fill="clear" (click)="useCurrentLocationForEdit()" [disabled]="editLocatingMe()">
+          <ion-icon slot="start" name="locate-outline"></ion-icon>
+          {{ 'register.useCurrentLocation' | translate }}
+        </ion-button>
+        @if (editCity()) {
+          <p class="event-detail-line">
+            <ion-icon name="location-outline"></ion-icon>
+            <span>{{ editAddress() }}, {{ editCity() }}</span>
+          </p>
+        }
+        @if (editMapEmbedUrl()) {
+          <div class="map-preview">
+            <iframe [src]="editMapEmbedUrl()" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+          </div>
+        }
+      </section>
+
+      <div class="filter-actions-row">
+        <ion-button expand="block" fill="outline" color="medium" (click)="cancelEdit()">
+          {{ 'eventDetail.cancelButton' | translate }}
+        </ion-button>
+        <ion-button expand="block" [disabled]="saving()" (click)="onSaveClick()">
+          {{ 'eventDetail.saveButton' | translate }}
+        </ion-button>
+      </div>
+    </form>
+  } @else {
+    <div class="event-detail-container">
+      <img class="event-image" [src]="event()!.imageUrl" [alt]="event()!.title" />
+      <h1 class="event-title">{{ event()!.title }}</h1>
+      <div class="creator-row">
+        <a class="event-creator" [routerLink]="creatorProfileLink()">{{ event()!.creatorName }}</a>
+        <div class="stat" (click)="goToAttendees()">
+          <span class="stat-count">{{ attendeesCount() }}</span>
+          <span class="stat-label">{{ 'eventDetail.attendeesLabel' | translate }}</span>
+        </div>
+      </div>
+
+      <div class="event-tags">
+        @for (eventType of eventTypeTags(); track eventType.name) {
+          <span class="tag">
+            <img class="tag-icon" [src]="eventType.iconUrl" [alt]="eventType.name" />
+            {{ eventType.name }}
+          </span>
+        }
+        @for (discipline of disciplineTags(); track discipline.name) {
+          <span class="tag">
+            <img class="tag-icon" [src]="discipline.iconUrl" [alt]="discipline.name" />
+            {{ discipline.name }}
+          </span>
+        }
+        <span class="tag">
+          <img class="tag-icon" [src]="statusIconSrc()" [alt]="statusLabelKey() | translate" />
+          {{ statusLabelKey() | translate }}
+        </span>
+        <span class="tag tag-price" [class.tag-free]="event()!.isFree" [class.tag-paid]="!event()!.isFree">
+          @if (event()!.isFree) {
+            {{ 'eventCard.free' | translate }}
+          } @else {
+            {{ event()!.price }} €
+          }
+        </span>
+      </div>
+
+      <p class="event-detail-line">
+        <ion-icon name="calendar-outline"></ion-icon>
+        <span>{{ dateLabel() }}</span>
+      </p>
+
+      <div class="actions-row">
+        <ion-button expand="block" fill="outline" (click)="addToCalendar()">
+          <ion-icon slot="start" name="download-outline"></ion-icon>
+          {{ 'eventDetail.calendarButton' | translate }}
+        </ion-button>
+        <ion-button expand="block" fill="outline" (click)="share()">
+          <ion-icon slot="start" name="share-social-outline"></ion-icon>
+          {{ 'eventDetail.shareButton' | translate }}
+        </ion-button>
+      </div>
+
+      @if (isOwnEvent()) {
+        <ion-button expand="block" (click)="enterEditMode()">
+          <ion-icon slot="start" name="create-outline"></ion-icon>
+          {{ 'eventDetail.editButton' | translate }}
+        </ion-button>
+      } @else {
+        <ion-button
+          expand="block"
+          [fill]="isAttending() ? 'outline' : 'solid'"
+          [disabled]="attendLoading()"
+          (click)="toggleAttend()"
+        >
+          <ion-icon slot="start" [name]="isAttending() ? 'checkmark-circle-outline' : 'add-circle-outline'"></ion-icon>
+          {{ (isAttending() ? 'eventDetail.unattendButton' : 'eventDetail.attendButton') | translate }}
+        </ion-button>
+      }
+
+      <section class="section">
+        <h2>{{ 'eventDetail.descriptionSection' | translate }}</h2>
+        <p class="description-text">{{ event()!.description }}</p>
+        @if (event()!.additionalInfo) {
+          <p class="description-text additional-info">{{ event()!.additionalInfo }}</p>
+        }
+      </section>
+
+      <section class="section">
+        <h2>{{ 'profile.socialLinksLabel' | translate }}</h2>
+        @if (socialLinks().length) {
+          <div class="social-links">
+            @for (link of socialLinks(); track link.key) {
+              <a class="info-row" [href]="link.url" target="_blank" rel="noopener">
+                <ion-icon [src]="socialIconUrl(link.key)"></ion-icon>
+                <span>{{ formatSocialUrl(link.url) }}</span>
+              </a>
+            }
+          </div>
+        } @else {
+          <p class="empty-message">{{ 'eventDetail.socialLinksEmpty' | translate }}</p>
+        }
+      </section>
+
+      <section class="section">
+        <h2>{{ 'profile.locationSection' | translate }}</h2>
+        <p class="event-detail-line">
+          <ion-icon name="location-outline"></ion-icon>
+          <span>{{ event()!.address }}, {{ event()!.city }}</span>
+        </p>
+        <div class="map-preview">
+          <iframe [src]="mapEmbedUrl()" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+        </div>
+        <div class="map-controls">
+          <div class="zoom-controls">
+            <button type="button" (click)="zoomOut()">
+              <ion-icon name="remove-outline"></ion-icon>
+            </button>
+            <span>{{ zoomLevel() }}</span>
+            <button type="button" (click)="zoomIn()">
+              <ion-icon name="add-outline"></ion-icon>
+            </button>
+          </div>
+          <button type="button" class="map-type-toggle" (click)="toggleMapType()">
+            <ion-icon name="layers-outline"></ion-icon>
+            {{ (mapType() === 'roadmap' ? 'userDetail.mapTypeSatellite' : 'userDetail.mapTypeRoadmap') | translate }}
+          </button>
+        </div>
+        <ion-button expand="block" fill="outline" (click)="openDirections()">
+          <ion-icon slot="start" name="navigate-outline"></ion-icon>
+          {{ 'userDetail.directionsButton' | translate }}
+        </ion-button>
+      </section>
+    </div>
+  }
+</ion-content>
+
+<ion-modal
+  [isOpen]="showValidationModal()"
+  [initialBreakpoint]="0.4"
+  [breakpoints]="[0, 0.4]"
+  (didDismiss)="closeValidationModal()"
+>
+  <ng-template>
+    <div class="validation-warning-sheet">
+      <p class="validation-warning-intro">{{ 'eventDetail.validationIntro' | translate }}</p>
+      <ul>
+        @for (message of editValidationMessages(); track message) {
+          <li>{{ message | translate }}</li>
+        }
+      </ul>
+      <ion-button expand="block" (click)="closeValidationModal()">
+        {{ 'eventDetail.validationOk' | translate }}
+      </ion-button>
+    </div>
+  </ng-template>
+</ion-modal>
+
+<ion-modal [keepContentsMounted]="true">
+  <ng-template>
+    <ion-datetime
+      #eventDetailDateFromPicker
+      id="eventDetailDateFrom"
+      presentation="date"
+      [value]="editDateFromIso()"
+      (ionChange)="onDateFromChange($event)"
+    ></ion-datetime>
+    <div class="filter-actions-row calendar-picker-actions">
+      <ion-button expand="block" fill="outline" color="primary" (click)="eventDetailDateFromPicker.cancel(true)">
+        {{ 'explorer.calendarExit' | translate }}
+      </ion-button>
+      <ion-button expand="block" color="primary" (click)="eventDetailDateFromPicker.confirm(true)">
+        {{ 'explorer.calendarApply' | translate }}
+      </ion-button>
+    </div>
+  </ng-template>
+</ion-modal>
+<ion-modal [keepContentsMounted]="true">
+  <ng-template>
+    <ion-datetime
+      #eventDetailDateToPicker
+      id="eventDetailDateTo"
+      presentation="date"
+      [value]="editDateToIso()"
+      (ionChange)="onDateToChange($event)"
+    ></ion-datetime>
+    <div class="filter-actions-row calendar-picker-actions">
+      <ion-button expand="block" fill="outline" color="primary" (click)="eventDetailDateToPicker.cancel(true)">
+        {{ 'explorer.calendarExit' | translate }}
+      </ion-button>
+      <ion-button expand="block" color="primary" (click)="eventDetailDateToPicker.confirm(true)">
+        {{ 'explorer.calendarApply' | translate }}
+      </ion-button>
+    </div>
+  </ng-template>
+</ion-modal>

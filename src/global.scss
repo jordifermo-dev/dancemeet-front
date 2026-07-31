@@ -35,3 +35,38 @@
 /* @import "@ionic/angular/css/palettes/dark.always.css"; */
 /* @import "@ionic/angular/css/palettes/dark.class.css"; */
 @import '@ionic/angular/css/palettes/dark.system.css';
+
+/* Ionic buttons default to uppercase text; we write real sentence case.
+   Too Good To Go's buttons are also full pills rather than Ionic's default
+   slightly-rounded rectangle - both applied globally so every screen matches. */
+ion-button {
+  text-transform: none;
+  --border-radius: 999px;
+}
+
+/* ion-alert renders its own plain buttons (not ion-button), so they need the
+   same sentence-case + weight treatment applied separately to stay consistent. */
+.alert-button {
+  text-transform: none;
+  font-weight: 600;
+}
+
+.alert-button.alert-button-role-apply {
+  color: var(--ion-color-primary);
+}
+
+.alert-button.alert-button-role-discard {
+  color: var(--ion-color-medium);
+}
+
+/* Ionic switches a floating/stacked label to --ion-color-success (its default
+   green) once the field is valid, instead of keeping the brand color - this
+   overrides that everywhere so labels stay on-theme instead of turning green
+   while typing a valid email/password/etc. */
+ion-input,
+ion-textarea,
+ion-item {
+  /* Ionic's own :host rule has higher specificity than a plain type selector,
+     so this needs !important to actually win. */
+  --highlight-color-valid: var(--ion-color-primary) !important;
+}

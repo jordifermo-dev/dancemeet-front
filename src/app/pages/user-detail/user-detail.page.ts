@@ -1,0 +1,390 @@
+import { Location } from '@angular/common';
+import { Component, computed, inject, signal } from '@angular/core';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
+import { ActivatedRoute, Router } from '@angular/router';
+import {
+  IonHeader,
+  IonToolbar,
+  IonTitle,
+  IonButtons,
+  IonBackButton,
+  IonContent,
+  IonIcon,
+  IonButton,
+  IonSpinner,
+  IonModal,
+} from '@ionic/angular/standalone';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { addIcons } from 'ionicons';
+import {
+  personOutline,
+  navigateOutline,
+  addOutline,
+  removeOutline,
+  layersOutline,
+  personAddOutline,
+  downloadOutline,
+  locationOutline,
+} from 'ionicons/icons';
+import { AuthService } from '../../services/auth.service';
+import { UserService } from '../../services/user.service';
+import { FollowService } from '../../services/follow.service';
+import { FavoriteService } from '../../services/favorite.service';
+import { DisciplineService } from '../../services/discipline.service';
+import { EventTypeService } from '../../services/event-type.service';
+import { Discipline, EventType, EVENT_STATUSES, SocialLinks, User } from '../../models';
+import {
+  disciplineIconUrl,
+  eventTypeIconUrl,
+  formatSocialUrl,
+  SocialIconKey,
+  socialIconUrl,
+  statusIconUrl,
+  STATUS_LABEL_KEYS,
+} from '../../shared/icon-catalog';
+import { MapType, mapEmbedUrl as buildMapEmbedUrl } from '../../shared/maps';
+import { buildVCard, downloadVCard } from '../../shared/vcard';
+
+const MIN_ZOOM = 3;
+const MAX_ZOOM = 20;
+
+const STATUS_OPTIONS = EVENT_STATUSES.map((id) => ({ id, labelKey: STATUS_LABEL_KEYS[id] }));
+
+interface SocialLinkRow {
+  key: keyof SocialLinks;
+  url: string;
+}
+
+const SOCIAL_LINK_ORDER: (keyof SocialLinks)[] = ['instagram', 'facebook', 'tiktok', 'youtube', 'website'];
+
+@Component({
+  selector: 'app-user-detail',
+  standalone: true,
+  templateUrl: 'user-detail.page.html',
+  styleUrls: ['user-detail.page.scss'],
+  imports: [
+    IonHeader,
+    IonToolbar,
+    IonTitle,
+    IonButtons,
+    IonBackButton,
+    IonContent,
+    IonIcon,
+    IonButton,
+    IonSpinner,
+    IonModal,
+    TranslatePipe,
+  ],
+})
+export class UserDetailPage {
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  private readonly location = inject(Location);
+  private readonly sanitizer = inject(DomSanitizer);
+  private readonly authService = inject(AuthService);
+  private readonly userService = inject(UserService);
+  private readonly followService = inject(FollowService);
+  private readonly favoriteService = inject(FavoriteService);
+  private readonly disciplineService = inject(DisciplineService);
+  private readonly eventTypeService = inject(EventTypeService);
+  private readonly translate = inject(TranslateService);
+
+  private readonly disciplinesById = signal<Map<string, Discipline>>(new Map());
+  private readonly eventTypesById = signal<Map<string, EventType>>(new Map());
+
+  readonly loading = signal(true);
+  readonly notFound = signal(false);
+  readonly user = signal<User | null>(null);
+  readonly attendedEventsCount = signal(0);
+
+  readonly followersCount = computed(() => this.user()?.followedId?.length ?? 0);
+  readonly followingCount = computed(() => this.user()?.followingId?.length ?? 0);
+
+  /** Viewing your own profile via /users/:id (e.g. tapping yourself in an
+   * attendee/follower list) - follow/unfollow/remove-follower/save-contact
+   * don't make sense against yourself, so the whole actions block is hidden. */
+  readonly isMe = computed(() => {
+    const user = this.user();
+    const me = this.authService.currentUser();
+    return !!user && !!me && user.id === me.id;
+  });
+
+  // Overrides the server-derived relationship right after following this
+  // person from this page, so the button updates immediately instead of
+  // waiting for `currentUser()` to be resynced from the backend.
+  private readonly amFollowingOverride = signal<boolean | null>(null);
+
+  /** True only if I actually follow this person right now (not just "which list I browsed here from"). */
+  readonly amFollowing = computed(() => {
+    const override = this.amFollowingOverride();
+    if (override !== null) {
+      return override;
+    }
+    const user = this.user();
+    const me = this.authService.currentUser();
+    return !!user && !!me && (me.followingId ?? []).includes(user.id);
+  });
+
+  /** True only if this person actually follows me right now. */
+  readonly isMyFollower = computed(() => {
+    const user = this.user();
+    const me = this.authService.currentUser();
+    return !!user && !!me && (me.followedId ?? []).includes(user.id);
+  });
+
+  readonly socialLinks = computed<SocialLinkRow[]>(() => {
+    const links = this.user()?.socialLinks;
+    if (!links) {
+      return [];
+    }
+    return SOCIAL_LINK_ORDER.filter((key) => !!links[key]).map((key) => ({ key, url: links[key]! }));
+  });
+
+  readonly selectedDisciplines = computed(() => {
+    const byId = this.disciplinesById();
+    return (this.user()?.disciplineIds ?? []).map((id) => byId.get(id)).filter((d): d is Discipline => !!d);
+  });
+
+  readonly selectedEventTypes = computed(() => {
+    const byId = this.eventTypesById();
+    return (this.user()?.eventTypeIds ?? []).map((id) => byId.get(id)).filter((e): e is EventType => !!e);
+  });
+
+  readonly selectedStatuses = computed(() => {
+    const ids = this.user()?.statusIds ?? [];
+    return STATUS_OPTIONS.filter((option) => ids.includes(option.id));
+  });
+
+  readonly hasContactInfo = computed(() => {
+    const user = this.user();
+    return !!user && (user.showEmail || (user.showPhone && !!user.phone));
+  });
+
+  /** Only offered when a phone number is actually visible - a name with no
+   * way to reach them isn't a useful contact card. */
+  readonly canSaveContact = computed(() => {
+    const user = this.user();
+    return !!user && user.showPhone && !!user.phone;
+  });
+
+  readonly showLocation = computed(() => {
+    const user = this.user();
+    return !!user && (user.showCity || user.showLocation);
+  });
+
+  readonly zoomLevel = signal(15);
+  readonly mapType = signal<MapType>('roadmap');
+
+  readonly mapEmbedUrl = computed<SafeResourceUrl | null>(() => {
+    const user = this.user();
+    if (!user) {
+      return null;
+    }
+    const url = buildMapEmbedUrl(user.latitude, user.longitude, this.zoomLevel(), this.mapType());
+    return this.sanitizer.bypassSecurityTrustResourceUrl(url);
+  });
+
+  readonly disciplineIconUrl = disciplineIconUrl;
+  readonly eventTypeIconUrl = eventTypeIconUrl;
+  readonly statusIconUrl = statusIconUrl;
+  readonly socialIconUrl = socialIconUrl;
+  readonly formatSocialUrl = formatSocialUrl;
+
+  readonly showConfirmModal = signal(false);
+  readonly confirmTitleKey = signal('');
+  readonly confirmMessage = signal('');
+  private pendingConfirmResolve: ((confirmed: boolean) => void) | null = null;
+  private pendingConfirmValue = false;
+
+  constructor() {
+    addIcons({
+      personOutline,
+      navigateOutline,
+      addOutline,
+      removeOutline,
+      layersOutline,
+      personAddOutline,
+      downloadOutline,
+      locationOutline,
+    });
+
+    this.disciplineService.getAll().subscribe({
+      next: (list) => this.disciplinesById.set(new Map(list.map((d) => [d.id, d]))),
+    });
+    this.eventTypeService.getAll().subscribe({
+      next: (list) => this.eventTypesById.set(new Map(list.map((e) => [e.id, e]))),
+    });
+
+    const userId = this.route.snapshot.paramMap.get('id');
+    if (!userId) {
+      this.loading.set(false);
+      this.notFound.set(true);
+      return;
+    }
+
+    this.userService.getById(userId).subscribe({
+      next: (user) => {
+        this.user.set(user);
+        this.notFound.set(!user);
+        this.loading.set(false);
+        if (user) {
+          this.favoriteService.countByUser(user.id).subscribe({
+            next: (count) => this.attendedEventsCount.set(count),
+          });
+        }
+      },
+      error: () => {
+        this.notFound.set(true);
+        this.loading.set(false);
+      },
+    });
+  }
+
+  goToEvents(): void {
+    const user = this.user();
+    if (!user) {
+      return;
+    }
+    this.router.navigate(['/user-events'], { queryParams: { userId: user.id } });
+  }
+
+  goToFollowers(): void {
+    const user = this.user();
+    if (!user) {
+      return;
+    }
+    this.router.navigate(['/followers'], { queryParams: { userId: user.id } });
+  }
+
+  goToFollowing(): void {
+    const user = this.user();
+    if (!user) {
+      return;
+    }
+    this.router.navigate(['/following'], { queryParams: { userId: user.id } });
+  }
+
+  zoomIn(): void {
+    this.zoomLevel.update((zoom) => Math.min(MAX_ZOOM, zoom + 1));
+  }
+
+  zoomOut(): void {
+    this.zoomLevel.update((zoom) => Math.max(MIN_ZOOM, zoom - 1));
+  }
+
+  toggleMapType(): void {
+    this.mapType.update((type) => (type === 'roadmap' ? 'satellite' : 'roadmap'));
+  }
+
+  openDirections(): void {
+    const user = this.user();
+    if (!user) {
+      return;
+    }
+    window.open(`https://www.google.com/maps/dir/?api=1&destination=${user.latitude},${user.longitude}`, '_blank');
+  }
+
+  saveContact(): void {
+    const user = this.user();
+    if (!user || !user.showPhone || !user.phone) {
+      return;
+    }
+    const email = user.showEmail ? user.email : undefined;
+    const vcard = buildVCard(user.name, user.phone, email);
+    downloadVCard(vcard);
+  }
+
+  follow(): void {
+    const user = this.user();
+    const me = this.authService.currentUser();
+    if (!user || !me) {
+      return;
+    }
+    this.followService.follow(user.id, me.id).subscribe({
+      next: () => {
+        this.amFollowingOverride.set(true);
+        // Keeps the shared currentUser in sync so other views reading it (e.g. the
+        // Profile tab's "Seguint" count) reflect this without needing a full reload.
+        this.authService.syncProfile({ ...me, followingId: [...(me.followingId ?? []), user.id] });
+      },
+    });
+  }
+
+  async confirmUnfollow(): Promise<void> {
+    const user = this.user();
+    const me = this.authService.currentUser();
+    if (!user || !me) {
+      return;
+    }
+    const confirmed = await this.confirm(
+      'userDetail.confirmUnfollowTitle',
+      this.translate.instant('userDetail.confirmUnfollowMessage', { name: user.name }),
+    );
+    if (!confirmed) {
+      return;
+    }
+    this.followService.unfollow(user.id, me.id).subscribe({
+      next: () => {
+        this.authService.syncProfile({
+          ...me,
+          followingId: (me.followingId ?? []).filter((id) => id !== user.id),
+        });
+        this.location.back();
+      },
+    });
+  }
+
+  async confirmRemoveFollower(): Promise<void> {
+    const user = this.user();
+    const me = this.authService.currentUser();
+    if (!user || !me) {
+      return;
+    }
+    const confirmed = await this.confirm(
+      'userDetail.confirmRemoveFollowerTitle',
+      this.translate.instant('userDetail.confirmRemoveFollowerMessage', { name: user.name }),
+    );
+    if (!confirmed) {
+      return;
+    }
+    this.followService.unfollow(me.id, user.id).subscribe({
+      next: () => {
+        this.authService.syncProfile({
+          ...me,
+          followedId: (me.followedId ?? []).filter((id) => id !== user.id),
+        });
+        this.location.back();
+      },
+    });
+  }
+
+  private async confirm(titleKey: string, message: string): Promise<boolean> {
+    this.confirmTitleKey.set(titleKey);
+    this.confirmMessage.set(message);
+    this.pendingConfirmValue = false;
+    this.showConfirmModal.set(true);
+    // Waits for (didDismiss), not the button click itself - the sheet must be fully
+    // closed before the caller acts (unfollow + location.back()), otherwise this page
+    // gets popped off the stack mid-animation and the overlay is left stuck on screen,
+    // swallowing every tap in the app from then on.
+    return new Promise<boolean>((resolve) => {
+      this.pendingConfirmResolve = resolve;
+    });
+  }
+
+  confirmModalCancel(): void {
+    this.pendingConfirmValue = false;
+    this.showConfirmModal.set(false);
+  }
+
+  confirmModalAccept(): void {
+    this.pendingConfirmValue = true;
+    this.showConfirmModal.set(false);
+  }
+
+  /** Fires once the sheet has fully closed (button tap, swipe-down or backdrop tap alike). */
+  onConfirmModalDismiss(): void {
+    this.pendingConfirmResolve?.(this.pendingConfirmValue);
+    this.pendingConfirmResolve = null;
+  }
+}

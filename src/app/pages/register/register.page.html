@@ -1,0 +1,222 @@
+<ion-content [fullscreen]="true" class="register-content">
+  <div class="register-container">
+    <div class="top-bar">
+      <ion-icon name="chevron-back" (click)="goBack()"></ion-icon>
+      <h1>{{ 'register.title' | translate }}</h1>
+    </div>
+
+    @switch (currentStep()) {
+      @case (0) {
+        <div class="step">
+          <form [formGroup]="accountForm">
+            <ion-item>
+              <ion-input
+                [label]="'register.nameLabel' | translate"
+                labelPlacement="floating"
+                [placeholder]="'register.namePlaceholder' | translate"
+                formControlName="name"
+              ></ion-input>
+            </ion-item>
+            <ion-item>
+              <ion-input
+                type="email"
+                [label]="'login.emailLabel' | translate"
+                labelPlacement="floating"
+                [placeholder]="'login.emailPlaceholder' | translate"
+                formControlName="email"
+              ></ion-input>
+            </ion-item>
+            <ion-item>
+              <ion-input
+                [type]="showPassword() ? 'text' : 'password'"
+                [label]="'login.passwordLabel' | translate"
+                labelPlacement="floating"
+                [placeholder]="'register.passwordPlaceholder' | translate"
+                formControlName="password"
+              ></ion-input>
+              <ion-icon
+                slot="end"
+                [name]="showPassword() ? 'eye-off-outline' : 'eye-outline'"
+                (click)="togglePasswordVisibility()"
+              ></ion-icon>
+            </ion-item>
+            <ion-item>
+              <ion-input
+                [type]="showConfirmPassword() ? 'text' : 'password'"
+                [label]="'register.confirmPasswordLabel' | translate"
+                labelPlacement="floating"
+                [placeholder]="'register.confirmPasswordPlaceholder' | translate"
+                formControlName="confirmPassword"
+              ></ion-input>
+              <ion-icon
+                slot="end"
+                [name]="showConfirmPassword() ? 'eye-off-outline' : 'eye-outline'"
+                (click)="toggleConfirmPasswordVisibility()"
+              ></ion-icon>
+            </ion-item>
+            @if (accountForm.errors?.['passwordsMismatch'] && accountForm.get('confirmPassword')?.dirty) {
+              <ion-text color="danger">
+                <p>{{ 'register.passwordsMismatch' | translate }}</p>
+              </ion-text>
+            }
+          </form>
+        </div>
+      }
+
+      @case (1) {
+        <div class="step">
+          <h2>{{ 'register.disciplinesTitle' | translate }}</h2>
+          <p class="step-subtitle">{{ 'register.selectAllSubtitle' | translate }}</p>
+          <div class="chip-grid">
+            @for (discipline of disciplines(); track discipline.id) {
+              <button
+                type="button"
+                class="chip chip-with-icon"
+                [class.selected]="selectedDisciplineIds().includes(discipline.id)"
+                (click)="toggleDiscipline(discipline.id)"
+              >
+                <img class="chip-icon" [src]="disciplineIconUrl(discipline)" [alt]="discipline.name" />
+                {{ discipline.name }}
+              </button>
+            }
+          </div>
+        </div>
+      }
+
+      @case (2) {
+        <div class="step">
+          <h2>{{ 'register.eventTypesTitle' | translate }}</h2>
+          <p class="step-subtitle">{{ 'register.selectAllSubtitle' | translate }}</p>
+          <div class="chip-grid">
+            @for (eventType of eventTypes(); track eventType.id) {
+              <button
+                type="button"
+                class="chip chip-with-icon"
+                [class.selected]="selectedEventTypeIds().includes(eventType.id)"
+                (click)="toggleEventType(eventType.id)"
+              >
+                <img class="chip-icon" [src]="eventTypeIconUrl(eventType.name)" [alt]="eventType.name" />
+                {{ eventType.name }}
+              </button>
+            }
+          </div>
+        </div>
+      }
+
+      @case (3) {
+        <div class="step">
+          <h2>{{ 'register.locationTitle' | translate }}</h2>
+
+          @if (mapEmbedUrl(); as embedUrl) {
+            <div class="map-preview">
+              <iframe [src]="embedUrl" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+            </div>
+            <div class="map-controls">
+              <div class="zoom-controls">
+                <button type="button" (click)="zoomOut()">
+                  <ion-icon name="remove-outline"></ion-icon>
+                </button>
+                <span>{{ zoomLevel() }}</span>
+                <button type="button" (click)="zoomIn()">
+                  <ion-icon name="add-outline"></ion-icon>
+                </button>
+              </div>
+              <button type="button" class="map-type-toggle" (click)="toggleMapType()">
+                <ion-icon name="layers-outline"></ion-icon>
+                {{ (mapType() === 'roadmap' ? 'userDetail.mapTypeSatellite' : 'userDetail.mapTypeRoadmap') | translate }}
+              </button>
+            </div>
+          } @else {
+            <div class="map-preview map-preview-empty">
+              <p>{{ 'register.mapEmptyState' | translate }}</p>
+            </div>
+          }
+
+          <ion-searchbar
+            class="tgtg-searchbar"
+            [placeholder]="'eventDetail.addressLabel' | translate"
+            [value]="editAddress()"
+            [debounce]="0"
+            (ionInput)="onLocationInput($event.detail.value)"
+          ></ion-searchbar>
+          @if (!editCity()) {
+            <p class="location-hint">{{ 'eventDetail.locationHint' | translate }}</p>
+          }
+          @if (citySuggestions().length) {
+            <div class="city-suggestions">
+              @for (suggestion of citySuggestions(); track suggestion.placeId) {
+                <button type="button" class="city-suggestion" (click)="selectLocationSuggestion(suggestion)">
+                  <ion-icon name="location-outline"></ion-icon>
+                  {{ suggestion.description }}
+                </button>
+              }
+            </div>
+          }
+
+          <ion-button fill="clear" (click)="useCurrentLocation()" [disabled]="locatingMe()">
+            <ion-icon slot="start" name="locate-outline"></ion-icon>
+            {{ 'register.useCurrentLocation' | translate }}
+          </ion-button>
+          @if (editCity()) {
+            <p class="event-detail-line">
+              <ion-icon name="location-outline"></ion-icon>
+              <span>{{ editAddress() }}, {{ editCity() }}</span>
+            </p>
+          }
+
+          <p class="range-label">{{ 'register.distanceLabel' | translate: { km: distanceRange() } }}</p>
+          <ion-range
+            [min]="1"
+            [max]="100"
+            [value]="distanceRange()"
+            (ionChange)="onDistanceChange($event)"
+          ></ion-range>
+        </div>
+      }
+
+      @case (4) {
+        <div class="step">
+          <h2>{{ 'register.almostDoneTitle' | translate }}</h2>
+          <p class="profile-editable-hint">{{ 'register.profileEditableHint' | translate }}</p>
+          <ion-item lines="none" class="ion-text-wrap terms-item">
+            <ion-checkbox
+              [checked]="acceptedTerms()"
+              (ionChange)="acceptedTerms.set($event.detail.checked)"
+              justify="start"
+              labelPlacement="end"
+            >
+              {{ 'register.termsText' | translate }}
+            </ion-checkbox>
+          </ion-item>
+
+          @if (errorMessage()) {
+            <ion-text color="danger">
+              <p>{{ errorMessage() }}</p>
+            </ion-text>
+          }
+
+          <ion-button
+            expand="block"
+            [disabled]="!acceptedTerms() || isSubmitting()"
+            (click)="submit()"
+          >
+            {{ 'register.submitButton' | translate }}
+          </ion-button>
+        </div>
+      }
+    }
+
+    <div class="step-indicators">
+      @for (step of stepIndicators; track $index) {
+        <span class="dot" [class.active]="$index === currentStep()"></span>
+      }
+    </div>
+
+    @if (currentStep() < totalSteps - 1) {
+      <div class="footer-nav">
+        <ion-button fill="outline" (click)="goBack()">{{ 'common.back' | translate }}</ion-button>
+        <ion-button [disabled]="!canGoNext" (click)="goNext()">{{ 'common.next' | translate }}</ion-button>
+      </div>
+    }
+  </div>
+</ion-content>

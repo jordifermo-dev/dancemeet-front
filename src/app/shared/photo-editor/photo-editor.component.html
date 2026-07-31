@@ -1,0 +1,39 @@
+<button type="button" class="photo-editor-trigger" (click)="openChooser()">
+  <ion-icon name="camera-outline"></ion-icon>
+</button>
+
+<ion-modal
+  [isOpen]="isChooserOpen()"
+  [initialBreakpoint]="0.35"
+  [breakpoints]="[0, 0.35]"
+  (didDismiss)="isChooserOpen.set(false)"
+>
+  <ng-template>
+    <div class="chooser-sheet">
+      <h2>{{ 'photoEditor.chooserTitle' | translate }}</h2>
+      <ion-button expand="block" fill="outline" (click)="chooseCamera()">
+        <ion-icon slot="start" name="camera-outline"></ion-icon>
+        {{ 'photoEditor.cameraOption' | translate }}
+      </ion-button>
+      <ion-button expand="block" fill="outline" (click)="chooseGallery()">
+        <ion-icon slot="start" name="images-outline"></ion-icon>
+        {{ 'photoEditor.galleryOption' | translate }}
+      </ion-button>
+    </div>
+  </ng-template>
+</ion-modal>
+
+@if (pendingImage(); as image) {
+  <app-image-cropper
+    [imageDataUrl]="image"
+    [aspect]="aspect"
+    (cropped)="onCropped($event)"
+    (cancelled)="onCropCancelled()"
+  ></app-image-cropper>
+}
+
+@if (uploading()) {
+  <div class="upload-overlay">
+    <ion-spinner name="crescent" color="light"></ion-spinner>
+  </div>
+}

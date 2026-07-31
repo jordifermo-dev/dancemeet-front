@@ -1,0 +1,349 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-title>{{ 'tabs.profile' | translate }}</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="profile-content">
+  <div class="profile-container">
+    @if (currentUser(); as user) {
+      <!-- Cabecera: avatar + nombre + estadísticas -->
+      <section class="section">
+        <div [formGroup]="accountForm">
+          <div class="profile-header-row">
+            <div class="avatar-wrapper">
+              @if (user.photoUrl) {
+                <img class="avatar" [src]="user.photoUrl" [alt]="user.name" />
+              } @else {
+                <div class="avatar avatar-placeholder">
+                  <ion-icon name="person-outline"></ion-icon>
+                </div>
+              }
+              <app-photo-editor
+                class="avatar-photo-editor"
+                kind="profile"
+                aspect="square"
+                [nameForFile]="user.name"
+                (uploaded)="onPhotoUploaded($event)"
+              ></app-photo-editor>
+            </div>
+            <ion-item lines="none" class="name-item">
+              <ion-input class="name-input" formControlName="name"></ion-input>
+            </ion-item>
+          </div>
+
+          <div class="stats-row">
+            <div class="stat" (click)="goToEvents()">
+              <span class="stat-count">{{ attendedEventsCount() }}</span>
+              <span class="stat-label">{{ 'profile.eventsAttended' | translate }}</span>
+            </div>
+            <div class="stat" (click)="goToFollowers()">
+              <span class="stat-count">{{ followersCount() }}</span>
+              <span class="stat-label">{{ 'profile.followers' | translate }}</span>
+            </div>
+            <div class="stat" (click)="goToFollowing()">
+              <span class="stat-count">{{ followingCount() }}</span>
+              <span class="stat-label">{{ 'profile.following' | translate }}</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Datos de contacto -->
+      <section class="section">
+        <h2>{{ 'profile.contactSection' | translate }}</h2>
+        <div [formGroup]="accountForm">
+          <div class="field-with-toggle">
+            <ion-item class="field-with-toggle-item">
+              <ion-icon
+                slot="start"
+                class="contact-icon"
+                [src]="contactIconUrl('email')"
+                [attr.aria-label]="'profile.emailLabel' | translate"
+              ></ion-icon>
+              <ion-input [value]="user.email" [readonly]="true"></ion-input>
+            </ion-item>
+            <ion-toggle
+              [checked]="showEmail()"
+              (ionChange)="showEmail.set($event.detail.checked)"
+            ></ion-toggle>
+          </div>
+
+          <div class="field-with-toggle">
+            <ion-item class="field-with-toggle-item">
+              <ion-icon
+                slot="start"
+                class="contact-icon"
+                [src]="contactIconUrl('phone')"
+                [attr.aria-label]="'profile.phoneLabel' | translate"
+              ></ion-icon>
+              <ion-input formControlName="phone"></ion-input>
+            </ion-item>
+            <ion-toggle
+              [checked]="showPhone()"
+              (ionChange)="showPhone.set($event.detail.checked)"
+            ></ion-toggle>
+          </div>
+        </div>
+      </section>
+
+      <!-- Redes sociales -->
+      <section class="section">
+        <h2>{{ 'profile.socialLinksLabel' | translate }}</h2>
+        <div [formGroup]="accountForm">
+          <div formGroupName="socialLinks">
+            <ion-item>
+              <ion-icon
+                slot="start"
+                class="contact-icon"
+                [src]="contactIconUrl('instagram')"
+                [attr.aria-label]="'profile.instagramLabel' | translate"
+              ></ion-icon>
+              <ion-input formControlName="instagram"></ion-input>
+            </ion-item>
+            @if (accountForm.controls.socialLinks.controls.instagram.invalid) {
+              <p class="social-link-error">{{ 'profile.socialUrlInstagramError' | translate }}</p>
+            }
+            <ion-item>
+              <ion-icon
+                slot="start"
+                class="contact-icon"
+                [src]="contactIconUrl('facebook')"
+                [attr.aria-label]="'profile.facebookLabel' | translate"
+              ></ion-icon>
+              <ion-input formControlName="facebook"></ion-input>
+            </ion-item>
+            @if (accountForm.controls.socialLinks.controls.facebook.invalid) {
+              <p class="social-link-error">{{ 'profile.socialUrlFacebookError' | translate }}</p>
+            }
+            <ion-item>
+              <ion-icon
+                slot="start"
+                class="contact-icon"
+                [src]="contactIconUrl('tiktok')"
+                [attr.aria-label]="'profile.tiktokLabel' | translate"
+              ></ion-icon>
+              <ion-input formControlName="tiktok"></ion-input>
+            </ion-item>
+            @if (accountForm.controls.socialLinks.controls.tiktok.invalid) {
+              <p class="social-link-error">{{ 'profile.socialUrlTiktokError' | translate }}</p>
+            }
+            <ion-item>
+              <ion-icon
+                slot="start"
+                class="contact-icon"
+                [src]="contactIconUrl('youtube')"
+                [attr.aria-label]="'profile.youtubeLabel' | translate"
+              ></ion-icon>
+              <ion-input formControlName="youtube"></ion-input>
+            </ion-item>
+            @if (accountForm.controls.socialLinks.controls.youtube.invalid) {
+              <p class="social-link-error">{{ 'profile.socialUrlYoutubeError' | translate }}</p>
+            }
+            <ion-item>
+              <ion-icon
+                slot="start"
+                class="contact-icon"
+                [src]="contactIconUrl('website')"
+                [attr.aria-label]="'profile.websiteLabel' | translate"
+              ></ion-icon>
+              <ion-input formControlName="website"></ion-input>
+            </ion-item>
+          </div>
+        </div>
+      </section>
+
+      <!-- Preferencias -->
+      <section class="section">
+        <h2>{{ 'profile.preferencesSection' | translate }}</h2>
+
+        <p class="group-label">{{ 'register.eventTypesTitle' | translate }}</p>
+        <div class="chip-grid">
+          @for (eventType of eventTypes(); track eventType.id) {
+            <button
+              type="button"
+              class="chip chip-with-icon"
+              [class.selected]="selectedEventTypeIds().includes(eventType.id)"
+              (click)="toggleEventType(eventType.id)"
+            >
+              <img class="chip-icon" [src]="eventTypeIconUrl(eventType.name)" [alt]="eventType.name" />
+              {{ eventType.name }}
+            </button>
+          }
+        </div>
+        @if (minSelectionWarning.isActive('eventTypes')) {
+          <p class="min-selection-warning">{{ 'explorer.minSelectionWarning' | translate }}</p>
+        }
+
+        <p class="group-label">{{ 'register.disciplinesTitle' | translate }}</p>
+        <div class="chip-grid">
+          @for (discipline of disciplines(); track discipline.id) {
+            <button
+              type="button"
+              class="chip chip-with-icon"
+              [class.selected]="selectedDisciplineIds().includes(discipline.id)"
+              (click)="toggleDiscipline(discipline.id)"
+            >
+              <img class="chip-icon" [src]="'/' + discipline.iconUrl" [alt]="discipline.name" />
+              {{ discipline.name }}
+            </button>
+          }
+        </div>
+        @if (minSelectionWarning.isActive('disciplines')) {
+          <p class="min-selection-warning">{{ 'explorer.minSelectionWarning' | translate }}</p>
+        }
+
+        <p class="group-label">{{ 'register.statusesTitle' | translate }}</p>
+        <div class="chip-grid">
+          @for (option of statusOptions; track option.id) {
+            <button
+              type="button"
+              class="chip chip-with-icon"
+              [class.selected]="selectedStatusIds().includes(option.id)"
+              (click)="toggleStatus(option.id)"
+            >
+              <img class="chip-icon" [src]="statusIconUrl(option.id)" [alt]="option.labelKey | translate" />
+              {{ option.labelKey | translate }}
+            </button>
+          }
+        </div>
+        @if (minSelectionWarning.isActive('statuses')) {
+          <p class="min-selection-warning">{{ 'explorer.minSelectionWarning' | translate }}</p>
+        }
+
+        <p class="group-label">{{ 'profile.language' | translate }}</p>
+        <div class="chip-grid">
+          @for (lang of languageOptions; track lang.code) {
+            <button
+              type="button"
+              class="chip"
+              [class.selected]="draftLanguage() === lang.code"
+              (click)="setLanguage(lang.code)"
+            >
+              {{ lang.label }}
+            </button>
+          }
+        </div>
+      </section>
+
+      <!-- Ubicación -->
+      <section class="section">
+        <div class="section-header-row">
+          <h2>{{ 'profile.locationSection' | translate }}</h2>
+          <ion-toggle
+            [checked]="showLocation()"
+            (ionChange)="showLocation.set($event.detail.checked)"
+          ></ion-toggle>
+        </div>
+
+        @if (mapEmbedUrl(); as embedUrl) {
+          <div class="map-preview">
+            <iframe [src]="embedUrl" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+          </div>
+          <div class="map-controls">
+            <div class="zoom-controls">
+              <button type="button" (click)="zoomOut()">
+                <ion-icon name="remove-outline"></ion-icon>
+              </button>
+              <span>{{ zoomLevel() }}</span>
+              <button type="button" (click)="zoomIn()">
+                <ion-icon name="add-outline"></ion-icon>
+              </button>
+            </div>
+            <button type="button" class="map-type-toggle" (click)="toggleMapType()">
+              <ion-icon name="layers-outline"></ion-icon>
+              {{ (mapType() === 'roadmap' ? 'userDetail.mapTypeSatellite' : 'userDetail.mapTypeRoadmap') | translate }}
+            </button>
+          </div>
+        }
+
+        <ion-searchbar
+          class="tgtg-searchbar"
+          [placeholder]="'eventDetail.addressLabel' | translate"
+          [value]="editAddress()"
+          [debounce]="0"
+          (ionInput)="onLocationInput($event.detail.value)"
+        ></ion-searchbar>
+        @if (!editCity()) {
+          <p class="location-hint">{{ 'eventDetail.locationHint' | translate }}</p>
+        }
+        @if (citySuggestions().length) {
+          <div class="city-suggestions">
+            @for (suggestion of citySuggestions(); track suggestion.placeId) {
+              <button type="button" class="city-suggestion" (click)="selectLocationSuggestion(suggestion)">
+                <ion-icon name="location-outline"></ion-icon>
+                {{ suggestion.description }}
+              </button>
+            }
+          </div>
+        }
+
+        <ion-button fill="clear" (click)="useCurrentLocation()" [disabled]="locatingMe()">
+          <ion-icon slot="start" name="locate-outline"></ion-icon>
+          {{ 'register.useCurrentLocation' | translate }}
+        </ion-button>
+        @if (editCity()) {
+          <p class="event-detail-line">
+            <ion-icon name="location-outline"></ion-icon>
+            <span>{{ editAddress() }}, {{ editCity() }}</span>
+          </p>
+        }
+
+        <p class="range-label">{{ 'register.distanceLabel' | translate: { km: distanceRange() } }}</p>
+        <ion-range
+          [min]="1"
+          [max]="100"
+          [value]="distanceRange()"
+          (ionChange)="onDistanceChange($event)"
+        ></ion-range>
+      </section>
+
+      <!-- Acciones -->
+      <section class="section actions-section">
+        @if (accountForm.controls.socialLinks.invalid) {
+          <p class="social-link-error social-link-error-summary">{{ 'profile.socialLinksErrorSummary' | translate }}</p>
+        }
+        <div class="filter-actions-row">
+          <ion-button expand="block" fill="outline" color="primary" (click)="clearAllSelections()">
+            {{ 'profile.clearFilters' | translate }}
+          </ion-button>
+          <ion-button expand="block" [disabled]="accountForm.invalid" (click)="save()">
+            {{ (justSaved() ? 'profile.applied' : 'profile.apply') | translate }}
+          </ion-button>
+        </div>
+        <ion-button expand="block" fill="outline" (click)="goToCreateEvent()">
+          <ion-icon slot="start" name="add-circle-outline"></ion-icon>
+          {{ 'profile.createEventButton' | translate }}
+        </ion-button>
+        <ion-button expand="block" color="primary" fill="outline" (click)="logout()">
+          <ion-icon slot="start" name="log-out-outline"></ion-icon>
+          {{ 'profile.logout' | translate }}
+        </ion-button>
+      </section>
+    }
+  </div>
+</ion-content>
+
+<ion-modal
+  [isOpen]="showUnsavedChangesModal()"
+  [initialBreakpoint]="0.35"
+  [breakpoints]="[0, 0.35]"
+  (didDismiss)="onUnsavedChangesModalDismiss()"
+>
+  <ng-template>
+    <div class="filter-sheet">
+      <div class="filter-sheet-header">
+        <h2>{{ 'profile.unsavedChangesTitle' | translate }}</h2>
+      </div>
+      <p>{{ 'profile.unsavedChangesMessage' | translate }}</p>
+      <div class="filter-actions-row">
+        <ion-button expand="block" fill="outline" color="primary" (click)="confirmDiscardChanges()">
+          {{ 'profile.discard' | translate }}
+        </ion-button>
+        <ion-button expand="block" (click)="confirmApplyChanges()">
+          {{ 'profile.apply' | translate }}
+        </ion-button>
+      </div>
+    </div>
+  </ng-template>
+</ion-modal>

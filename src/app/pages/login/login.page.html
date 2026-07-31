@@ -1,0 +1,79 @@
+<ion-content [fullscreen]="true" class="login-content">
+  <div class="login-container">
+    <div class="hero-text">
+      <p class="brand">{{ 'login.brand' | translate }}</p>
+      <h1>{{ 'login.heroTitle' | translate }}</h1>
+      <p class="subtitle">{{ 'login.heroSubtitle' | translate }}</p>
+    </div>
+
+    <div class="providers">
+      <ion-button expand="block" class="google-button" (click)="continueWithProvider('google')">
+        <ion-icon slot="start" name="logo-google"></ion-icon>
+        {{ 'login.continueWithGoogle' | translate }}
+      </ion-button>
+
+      <ion-button expand="block" color="dark" (click)="continueWithProvider('apple')">
+        <ion-icon slot="start" name="logo-apple"></ion-icon>
+        {{ 'login.continueWithApple' | translate }}
+      </ion-button>
+
+      <ion-button expand="block" color="tertiary" (click)="continueWithProvider('microsoft')">
+        <ion-icon slot="start" name="logo-microsoft"></ion-icon>
+        {{ 'login.continueWithMicrosoft' | translate }}
+      </ion-button>
+
+      <ion-button expand="block" color="primary" (click)="toggleEmailForm()">
+        <ion-icon slot="start" name="mail-outline"></ion-icon>
+        {{ 'login.continueWithEmail' | translate }}
+      </ion-button>
+    </div>
+
+    @if (showEmailForm()) {
+      <form class="email-form" [formGroup]="emailForm" (ngSubmit)="submitEmail()">
+        <ion-item>
+          <ion-input
+            type="email"
+            autocomplete="off"
+            [label]="'login.emailLabel' | translate"
+            labelPlacement="floating"
+            [placeholder]="'login.emailPlaceholder' | translate"
+            formControlName="email"
+          ></ion-input>
+        </ion-item>
+        <ion-item>
+          <ion-input
+            [type]="showPassword() ? 'text' : 'password'"
+            autocomplete="off"
+            [label]="'login.passwordLabel' | translate"
+            labelPlacement="floating"
+            [placeholder]="'login.passwordPlaceholder' | translate"
+            formControlName="password"
+          ></ion-input>
+          <ion-icon
+            slot="end"
+            [name]="showPassword() ? 'eye-off-outline' : 'eye-outline'"
+            (click)="togglePasswordVisibility()"
+          ></ion-icon>
+        </ion-item>
+
+        @if (errorMessage()) {
+          <ion-text color="danger">
+            <p>{{ errorMessage() }}</p>
+          </ion-text>
+        }
+
+        <ion-button
+          expand="block"
+          type="submit"
+          [disabled]="emailForm.invalid || isSubmitting()"
+        >
+          {{ 'login.submit' | translate }}
+        </ion-button>
+      </form>
+    }
+
+    <p class="register-link">
+      {{ 'login.noAccount' | translate }} <a routerLink="/register">{{ 'login.registerLink' | translate }}</a>
+    </p>
+  </div>
+</ion-content>

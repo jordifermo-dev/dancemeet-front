@@ -1,0 +1,172 @@
+.explorer-filters-content {
+  --padding-start: 24px;
+  --padding-end: 24px;
+  --padding-top: 24px;
+  --padding-bottom: 24px;
+}
+
+.explorer-filters-container {
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.top-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+
+  h1 {
+    font-size: 1.4rem;
+    font-weight: 800;
+    margin: 0;
+  }
+}
+
+.close-button {
+  appearance: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: var(--ion-color-light-shade);
+  color: #1a1a1a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex: 0 0 auto;
+
+  ion-icon {
+    font-size: 1.2rem;
+  }
+}
+
+.section {
+  margin-bottom: 28px;
+
+  h2 {
+    font-size: 1.1rem;
+    font-weight: 800;
+    margin-bottom: 12px;
+  }
+}
+
+.chip-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.min-selection-warning {
+  margin: 8px 0 0;
+  font-size: 0.8rem;
+  color: var(--ion-color-danger);
+}
+
+.date-range-row {
+  display: flex;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.date-field {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: 0;
+}
+
+.date-field-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ion-color-medium);
+}
+
+.date-value-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  ion-icon {
+    flex: 0 0 auto;
+    font-size: 1.1rem;
+    color: var(--ion-color-medium);
+  }
+}
+
+.date-clear-link {
+  appearance: none;
+  border: none;
+  background: transparent;
+  padding: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ion-color-primary);
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.chip {
+  appearance: none;
+  border: 1.5px solid var(--ion-color-light-shade);
+  border-radius: 999px;
+  padding: 10px 18px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  background: #fff;
+  color: #1a1a1a;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+
+  &.selected {
+    border-color: var(--ion-color-primary);
+    background: rgba(var(--ion-color-primary-rgb), 0.08);
+    color: var(--ion-color-primary);
+  }
+}
+
+.chip-with-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding-left: 8px;
+}
+
+.chip-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex: 0 0 auto;
+  background: #fff;
+}
+
+.filter-actions-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 8px;
+
+  ion-button {
+    flex: 1;
+    --box-shadow: none;
+  }
+
+  &.secondary-row {
+    margin-top: 8px;
+    padding-top: 12px;
+    border-top: 1px solid var(--ion-color-light-shade);
+  }
+}
+
+// The Salir/Aplica row below the calendar - rendered as a normal sibling of
+// <ion-datetime> (not inside its slot="buttons"), because that slot is
+// hard-coded by Ionic to shrink-wrap and right-align its content with no way
+// to override that from outside. This reuses .filter-actions-row as-is so it
+// looks identical to every other action row in the app.
+.calendar-picker-actions {
+  padding-left: 16px;
+  padding-right: 16px;
+}

@@ -1,0 +1,221 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/tabs/profile" text=""></ion-back-button>
+    </ion-buttons>
+    <ion-title>{{ user()?.name }}</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="user-detail-content">
+  @if (loading()) {
+    <div class="state-row">
+      <ion-spinner name="crescent"></ion-spinner>
+    </div>
+  } @else if (notFound() || !user()) {
+    <div class="state-row">
+      <p>{{ 'userDetail.notFound' | translate }}</p>
+    </div>
+  } @else {
+    <div class="user-detail-container">
+      <div class="avatar-row">
+        @if (user()!.photoUrl) {
+          <img class="avatar" [src]="user()!.photoUrl" [alt]="user()!.name" />
+        } @else {
+          <div class="avatar avatar-placeholder">
+            <ion-icon name="person-outline"></ion-icon>
+          </div>
+        }
+        <h1 class="user-name">{{ user()!.name }}</h1>
+      </div>
+
+      <div class="stats-row">
+        <div class="stat" (click)="goToEvents()">
+          <span class="stat-count">{{ attendedEventsCount() }}</span>
+          <span class="stat-label">{{ 'profile.eventsAttended' | translate }}</span>
+        </div>
+        <div class="stat" (click)="goToFollowers()">
+          <span class="stat-count">{{ followersCount() }}</span>
+          <span class="stat-label">{{ 'profile.followers' | translate }}</span>
+        </div>
+        <div class="stat" (click)="goToFollowing()">
+          <span class="stat-count">{{ followingCount() }}</span>
+          <span class="stat-label">{{ 'profile.following' | translate }}</span>
+        </div>
+      </div>
+
+      <!-- Todas las acciones sobre este perfil, juntas justo debajo de las estadísticas -
+           ocultas por completo si el perfil visitado es el tuyo propio. -->
+      @if (!isMe()) {
+        <div class="actions-section">
+          @if (amFollowing()) {
+            <ion-button expand="block" fill="outline" color="primary" (click)="confirmUnfollow()">
+              {{ 'userDetail.unfollowButton' | translate }}
+            </ion-button>
+          }
+          @if (isMyFollower()) {
+            <ion-button expand="block" fill="outline" color="primary" (click)="confirmRemoveFollower()">
+              {{ 'userDetail.removeFollowerButton' | translate }}
+            </ion-button>
+          }
+          @if (!amFollowing() && !isMyFollower()) {
+            <ion-button expand="block" (click)="follow()">
+              <ion-icon slot="start" name="person-add-outline"></ion-icon>
+              {{ 'userDetail.followButton' | translate }}
+            </ion-button>
+          }
+          @if (canSaveContact()) {
+            <ion-button expand="block" fill="outline" (click)="saveContact()">
+              <ion-icon slot="start" name="download-outline"></ion-icon>
+              {{ 'userDetail.saveContactButton' | translate }}
+            </ion-button>
+          }
+        </div>
+      }
+
+      <!-- Datos de contacto -->
+      <section class="section">
+        <h2>{{ 'profile.contactSection' | translate }}</h2>
+        @if (hasContactInfo()) {
+          @if (user()!.showEmail) {
+            <div class="info-row">
+              <ion-icon [src]="socialIconUrl('email')"></ion-icon>
+              <span>{{ user()!.email }}</span>
+            </div>
+          }
+          @if (user()!.showPhone && user()!.phone) {
+            <div class="info-row">
+              <ion-icon [src]="socialIconUrl('phone')"></ion-icon>
+              <span>{{ user()!.phone }}</span>
+            </div>
+          }
+        } @else {
+          <p class="empty-message">{{ 'userDetail.contactEmpty' | translate }}</p>
+        }
+      </section>
+
+      <!-- Redes sociales -->
+      <section class="section">
+        <h2>{{ 'profile.socialLinksLabel' | translate }}</h2>
+        @if (socialLinks().length) {
+          <div class="social-links">
+            @for (link of socialLinks(); track link.key) {
+              <a class="info-row" [href]="link.url" target="_blank" rel="noopener">
+                <ion-icon [src]="socialIconUrl(link.key)"></ion-icon>
+                <span>{{ formatSocialUrl(link.url) }}</span>
+              </a>
+            }
+          </div>
+        } @else {
+          <p class="empty-message">{{ 'userDetail.socialLinksEmpty' | translate }}</p>
+        }
+      </section>
+
+      <!-- Preferencias -->
+      <section class="section">
+        <h2>{{ 'profile.preferencesSection' | translate }}</h2>
+
+        <p class="group-label first">{{ 'userDetail.eventTypesLabel' | translate }}</p>
+        @if (selectedEventTypes().length) {
+          <div class="chip-grid">
+            @for (eventType of selectedEventTypes(); track eventType.id) {
+              <div class="chip chip-with-icon">
+                <img class="chip-icon" [src]="eventTypeIconUrl(eventType.name)" [alt]="eventType.name" />
+                {{ eventType.name }}
+              </div>
+            }
+          </div>
+        } @else {
+          <p class="empty-message">{{ 'userDetail.eventTypesEmpty' | translate }}</p>
+        }
+
+        <p class="group-label">{{ 'userDetail.disciplinesLabel' | translate }}</p>
+        @if (selectedDisciplines().length) {
+          <div class="chip-grid">
+            @for (discipline of selectedDisciplines(); track discipline.id) {
+              <div class="chip chip-with-icon">
+                <img class="chip-icon" [src]="disciplineIconUrl(discipline)" [alt]="discipline.name" />
+                {{ discipline.name }}
+              </div>
+            }
+          </div>
+        } @else {
+          <p class="empty-message">{{ 'userDetail.disciplinesEmpty' | translate }}</p>
+        }
+
+        <p class="group-label">{{ 'userDetail.statusLabel' | translate }}</p>
+        @if (selectedStatuses().length) {
+          <div class="chip-grid">
+            @for (option of selectedStatuses(); track option.id) {
+              <div class="chip chip-with-icon">
+                <img class="chip-icon" [src]="statusIconUrl(option.id)" [alt]="option.labelKey | translate" />
+                {{ option.labelKey | translate }}
+              </div>
+            }
+          </div>
+        } @else {
+          <p class="empty-message">{{ 'userDetail.statusEmpty' | translate }}</p>
+        }
+      </section>
+
+      <!-- Ubicación -->
+      <section class="section">
+        <h2>{{ 'profile.locationSection' | translate }}</h2>
+        @if (showLocation()) {
+          <p class="event-detail-line">
+            <ion-icon name="location-outline"></ion-icon>
+            <span>{{ user()!.address }}, {{ user()!.city }}</span>
+          </p>
+          <div class="map-preview">
+            <iframe [src]="mapEmbedUrl()" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+          </div>
+          <div class="map-controls">
+            <div class="zoom-controls">
+              <button type="button" (click)="zoomOut()">
+                <ion-icon name="remove-outline"></ion-icon>
+              </button>
+              <span>{{ zoomLevel() }}</span>
+              <button type="button" (click)="zoomIn()">
+                <ion-icon name="add-outline"></ion-icon>
+              </button>
+            </div>
+            <button type="button" class="map-type-toggle" (click)="toggleMapType()">
+              <ion-icon name="layers-outline"></ion-icon>
+              {{ (mapType() === 'roadmap' ? 'userDetail.mapTypeSatellite' : 'userDetail.mapTypeRoadmap') | translate }}
+            </button>
+          </div>
+          <ion-button expand="block" fill="outline" (click)="openDirections()">
+            <ion-icon slot="start" name="navigate-outline"></ion-icon>
+            {{ 'userDetail.directionsButton' | translate }}
+          </ion-button>
+        } @else {
+          <p class="city-only">{{ user()!.city }}</p>
+        }
+      </section>
+    </div>
+  }
+</ion-content>
+
+<ion-modal
+  [isOpen]="showConfirmModal()"
+  [initialBreakpoint]="0.35"
+  [breakpoints]="[0, 0.35]"
+  (didDismiss)="onConfirmModalDismiss()"
+>
+  <ng-template>
+    <div class="filter-sheet">
+      <div class="filter-sheet-header">
+        <h2>{{ confirmTitleKey() | translate }}</h2>
+      </div>
+      <p>{{ confirmMessage() }}</p>
+      <div class="filter-actions-row">
+        <ion-button expand="block" fill="outline" color="primary" (click)="confirmModalCancel()">
+          {{ 'profile.discard' | translate }}
+        </ion-button>
+        <ion-button expand="block" (click)="confirmModalAccept()">
+          {{ 'profile.apply' | translate }}
+        </ion-button>
+      </div>
+    </div>
+  </ng-template>
+</ion-modal>

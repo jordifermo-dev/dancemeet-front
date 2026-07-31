@@ -1,0 +1,48 @@
+<div class="cropper-backdrop">
+  <button type="button" class="close-button" (click)="cancel()">
+    <ion-icon name="close-outline"></ion-icon>
+  </button>
+
+  <div
+    class="cropper-viewport"
+    [class.portrait]="aspect === 'portrait'"
+    [style.width.px]="viewportSize.width"
+    [style.height.px]="viewportSize.height"
+    (pointerdown)="onPointerDown($event)"
+    (pointermove)="onPointerMove($event)"
+    (pointerup)="onPointerUp()"
+    (pointercancel)="onPointerUp()"
+  >
+    <img
+      #sourceImage
+      class="cropper-image"
+      [style.transform]="imageTransform"
+      [src]="imageDataUrl"
+      [alt]="''"
+      (load)="onImageLoad($event)"
+      draggable="false"
+    />
+  </div>
+
+  <p class="cropper-hint">{{ 'imageCropper.dragHint' | translate }}</p>
+
+  @if (imageLoaded()) {
+    <ion-range
+      class="cropper-zoom"
+      [min]="minScale()"
+      [max]="maxScale()"
+      [step]="0.01"
+      [value]="scale()"
+      (ionInput)="onZoomChange($event)"
+    ></ion-range>
+  }
+
+  <div class="cropper-actions">
+    <ion-button expand="block" fill="outline" color="light" (click)="cancel()">
+      {{ 'imageCropper.cancel' | translate }}
+    </ion-button>
+    <ion-button expand="block" [disabled]="!imageLoaded()" (click)="confirm()">
+      {{ 'imageCropper.confirm' | translate }}
+    </ion-button>
+  </div>
+</div>

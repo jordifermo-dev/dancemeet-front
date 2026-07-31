@@ -1,0 +1,51 @@
+<div class="event-card" [class.faded]="view.isFaded" [routerLink]="['/events', view.id]">
+  <img class="event-card-image" [src]="view.imageUrl" [alt]="view.title" />
+  <div class="event-card-body">
+    <h3 class="event-card-title">{{ view.title }}</h3>
+    <a
+      class="event-card-creator"
+      [routerLink]="view.creatorProfileLink"
+      (click)="$event.stopPropagation()"
+    >{{ view.creatorName }}</a>
+
+    <div class="event-card-tags">
+      @for (eventType of view.eventTypeTags; track eventType.name) {
+        <span class="tag">
+          <img class="tag-icon" [src]="eventType.iconUrl" [alt]="eventType.name" />
+          {{ eventType.name }}
+        </span>
+      }
+      @for (discipline of view.disciplineTags; track discipline.name) {
+        <span class="tag">
+          <img class="tag-icon" [src]="discipline.iconUrl" [alt]="discipline.name" />
+          {{ discipline.name }}
+        </span>
+      }
+      <span class="tag">
+        <img class="tag-icon" [src]="view.statusIconUrl" [alt]="view.statusLabelKey | translate" />
+        {{ view.statusLabelKey | translate }}
+      </span>
+    </div>
+    <div class="event-card-tags">
+      @if (view.relationLabelKey) {
+        <span class="tag tag-relation">{{ view.relationLabelKey | translate }}</span>
+      }
+      <span class="tag tag-price" [class.tag-free]="view.isFree" [class.tag-paid]="!view.isFree">
+        @if (view.isFree) {
+          {{ 'eventCard.free' | translate }}
+        } @else {
+          {{ view.price }} €
+        }
+      </span>
+    </div>
+
+    <p class="event-card-line">
+      <ion-icon name="calendar-outline"></ion-icon>
+      <span>{{ view.dateLabel }}</span>
+    </p>
+    <p class="event-card-line">
+      <ion-icon name="location-outline"></ion-icon>
+      <span>{{ view.address }}, {{ view.city }}</span>
+    </p>
+  </div>
+</div>

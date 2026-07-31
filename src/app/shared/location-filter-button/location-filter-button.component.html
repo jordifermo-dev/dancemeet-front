@@ -1,0 +1,70 @@
+<button type="button" class="icon-btn" (click)="open()">
+  <ion-icon name="location-outline"></ion-icon>
+</button>
+
+<ion-modal
+  [isOpen]="isOpen()"
+  [initialBreakpoint]="0.75"
+  [breakpoints]="[0, 0.75, 0.95]"
+  (didDismiss)="isOpen.set(false)"
+>
+  <ng-template>
+    <div class="filter-sheet">
+      <div class="filter-sheet-header">
+        <h2>{{ 'explorer.locationModalTitle' | translate }}</h2>
+        <button type="button" class="close-button" (click)="isOpen.set(false)">
+          <ion-icon name="close"></ion-icon>
+        </button>
+      </div>
+
+      <ion-searchbar
+        class="tgtg-searchbar"
+        [placeholder]="'register.cityPlaceholder' | translate"
+        [value]="filters.draftCity()"
+        [debounce]="0"
+        (ionInput)="onCityInput($event.detail.value)"
+      ></ion-searchbar>
+
+      @if (citySuggestions().length) {
+        <div class="city-suggestions">
+          @for (suggestion of citySuggestions(); track suggestion.placeId) {
+            <button type="button" class="city-suggestion" (click)="selectCitySuggestion(suggestion)">
+              <ion-icon name="location-outline"></ion-icon>
+              {{ suggestion.description }}
+            </button>
+          }
+        </div>
+      }
+
+      <ion-button fill="clear" (click)="useCurrentLocation()" [disabled]="locatingMe()">
+        <ion-icon slot="start" name="locate-outline"></ion-icon>
+        {{ 'register.useCurrentLocation' | translate }}
+      </ion-button>
+
+      <p class="range-label">{{ 'register.distanceLabel' | translate: { km: filters.draftDistanceRange() } }}</p>
+      <ion-range
+        [min]="1"
+        [max]="100"
+        [value]="filters.draftDistanceRange()"
+        (ionChange)="onDistanceChange($event)"
+      ></ion-range>
+
+      <div class="filter-actions-row">
+        <ion-button expand="block" fill="outline" color="medium" (click)="resetLocationFilter()">
+          {{ 'explorer.resetFilters' | translate }}
+        </ion-button>
+        <ion-button expand="block" (click)="saveLocationFilter()">
+          {{ 'explorer.saveFilters' | translate }}
+        </ion-button>
+      </div>
+      <div class="filter-actions-row secondary-row">
+        <ion-button expand="block" fill="outline" color="primary" (click)="clearLocationFilter()">
+          {{ 'explorer.clearFilter' | translate }}
+        </ion-button>
+        <ion-button expand="block" (click)="applyLocationFilter()">
+          {{ 'profile.apply' | translate }}
+        </ion-button>
+      </div>
+    </div>
+  </ng-template>
+</ion-modal>

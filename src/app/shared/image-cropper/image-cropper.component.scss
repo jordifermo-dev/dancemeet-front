@@ -1,0 +1,100 @@
+:host {
+  display: block;
+  position: fixed;
+  inset: 0;
+  z-index: 20000;
+}
+
+.cropper-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.92);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 20px;
+}
+
+.close-button {
+  position: absolute;
+  top: max(16px, env(safe-area-inset-top));
+  right: 16px;
+  appearance: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+
+  ion-icon {
+    font-size: 1.3rem;
+  }
+}
+
+.cropper-viewport {
+  position: relative;
+  overflow: hidden;
+  border-radius: 50%;
+  background: #000;
+  touch-action: none;
+  cursor: grab;
+  // Centers the image at its natural (unscaled) size before any pan/zoom
+  // transform is applied - confirm()'s crop math assumes offsetX/Y = 0 means
+  // "centered, no extra pan", so this has to match exactly or the exported
+  // crop drifts from what's shown on screen.
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &.portrait {
+    border-radius: 16px;
+  }
+
+  &:active {
+    cursor: grabbing;
+  }
+}
+
+.cropper-image {
+  max-width: none;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.cropper-hint {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+.cropper-zoom {
+  width: 100%;
+  max-width: 320px;
+  // ion-range ships its own vertical host padding we can't reach through CSS
+  // custom properties - pulled up to sit closer to the hint/image above it.
+  margin-top: -12px;
+  --bar-background: rgba(255, 255, 255, 0.25);
+  --bar-background-active: var(--ion-color-primary);
+  --knob-background: var(--ion-color-primary);
+}
+
+.cropper-actions {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+  max-width: 320px;
+
+  ion-button {
+    flex: 1;
+    --box-shadow: none;
+  }
+}
