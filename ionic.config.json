@@ -1,0 +1,7 @@
+{
+  "name": "dancehub-front",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular-standalone"
+}
