@@ -327,7 +327,7 @@
         <ion-button
           expand="block"
           [fill]="isAttending() ? 'outline' : 'solid'"
-          [disabled]="attendLoading()"
+          [disabled]="attendLoading() || isEventOver()"
           (click)="toggleAttend()"
         >
           <ion-icon slot="start" [name]="isAttending() ? 'checkmark-circle-outline' : 'add-circle-outline'"></ion-icon>

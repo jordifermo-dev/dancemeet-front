@@ -229,6 +229,10 @@ export class EventDetailPage {
   });
   readonly statusLabelKey = computed(() => STATUS_LABEL_KEYS[this.event()?.status ?? 'published']);
   readonly statusIconSrc = computed(() => statusIconUrl(this.event()?.status ?? 'published'));
+  readonly isEventOver = computed(() => {
+    const status = this.event()?.status;
+    return status === 'finished' || status === 'cancelled';
+  });
 
   readonly dateLabel = computed(() => {
     const event = this.event();
@@ -543,7 +547,7 @@ export class EventDetailPage {
   toggleAttend(): void {
     const event = this.event();
     const me = this.authService.currentUser();
-    if (!event || !me || this.attendLoading()) {
+    if (!event || !me || this.attendLoading() || this.isEventOver()) {
       return;
     }
     this.attendLoading.set(true);

@@ -183,7 +183,11 @@
               <span class="date-field-label">{{ 'explorer.dateTo' | translate }}</span>
               <div class="date-value-row">
                 <ion-icon name="calendar-outline"></ion-icon>
-                <ion-datetime-button datetime="userEventsDateTo"></ion-datetime-button>
+                <ion-datetime-button datetime="userEventsDateTo">
+                  @if (draftDateTo() === undefined) {
+                    <span slot="date-target">{{ 'explorer.noEndDate' | translate }}</span>
+                  }
+                </ion-datetime-button>
               </div>
               @if (draftDateTo() !== undefined) {
                 <button type="button" class="date-clear-link" (click)="clearDraftDateTo()">
@@ -475,7 +479,11 @@
           <span class="date-field-label">{{ 'explorer.dateTo' | translate }}</span>
           <div class="date-value-row">
             <ion-icon name="calendar-outline"></ion-icon>
-            <ion-datetime-button datetime="userEventsDateTo"></ion-datetime-button>
+            <ion-datetime-button datetime="userEventsDateTo">
+              @if (draftDateTo() === undefined) {
+                <span slot="date-target">{{ 'explorer.noEndDate' | translate }}</span>
+              }
+            </ion-datetime-button>
           </div>
           @if (draftDateTo() !== undefined) {
             <button type="button" class="date-clear-link" (click)="clearDraftDateTo()">
