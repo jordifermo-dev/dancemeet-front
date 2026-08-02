@@ -11,6 +11,25 @@
     "favorites": "Preferits",
     "profile": "Perfil"
   },
+  "welcome": {
+    "exploreTitle": "Explorar",
+    "exploreBody": "Descobreix esdeveniments de ball a prop teu al mapa, amb filtres per estil, tipus, data i preu.",
+    "eventsTitle": "Esdeveniments",
+    "eventsBody": "Consulta tots els esdeveniments en format llista i ordena'ls com prefereixis.",
+    "favoritesTitle": "Preferits",
+    "favoritesBody": "Aquí veuràs els esdeveniments que organitzes i als quals assisteixes.",
+    "profileTitle": "Perfil",
+    "profileBody": "Edita les teves dades, les teves preferències i consulta les teves estadístiques.",
+    "tipsTitle": "Trucs ràpids",
+    "tipsSubtitle": "Alguns consells més que et vindran bé.",
+    "tipFollow": "Segueix altres usuaris per assabentar-te dels seus nous esdeveniments.",
+    "tipAttend": "Prem \"Assistir\" en un esdeveniment per apuntar-t'hi i que aparegui al teu perfil.",
+    "tipNotifications": "La campana t'avisa de nous seguidors, canvis en esdeveniments i més.",
+    "tipPreferences": "Si veus pocs esdeveniments, revisa les teves preferències de cerca (estil, tipus, ubicació, distància, estat...): com més obertes, més esdeveniments t'apareixeran.",
+    "dontShowAgain": "No tornar a mostrar",
+    "gotIt": "Entesos, som-hi!",
+    "reopenLink": "Torna a veure la benvinguda"
+  },
   "notifications": {
     "title": "Notificacions",
     "markAllRead": "Marca-ho tot com a llegit",

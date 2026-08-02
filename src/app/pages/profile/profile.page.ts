@@ -30,8 +30,10 @@ import {
   removeOutline,
   layersOutline,
   addCircleOutline,
+  helpCircleOutline,
 } from 'ionicons/icons';
 import { AuthService } from '../../services/auth.service';
+import { OnboardingService } from '../../services/onboarding.service';
 import { UserService } from '../../services/user.service';
 import { DisciplineService } from '../../services/discipline.service';
 import { EventTypeService } from '../../services/event-type.service';
@@ -123,6 +125,7 @@ const LANGUAGE_OPTIONS = SUPPORTED_LANGUAGES.map((code) => ({
 export class ProfilePage implements OnInit, ViewWillEnter, ComponentWithUnsavedChanges {
   private readonly fb = inject(FormBuilder);
   private readonly authService = inject(AuthService);
+  private readonly onboarding = inject(OnboardingService);
   private readonly userService = inject(UserService);
   private readonly disciplineService = inject(DisciplineService);
   private readonly eventTypeService = inject(EventTypeService);
@@ -210,6 +213,7 @@ export class ProfilePage implements OnInit, ViewWillEnter, ComponentWithUnsavedC
       removeOutline,
       layersOutline,
       addCircleOutline,
+      helpCircleOutline,
     });
 
     // The draft must always track *whoever is currently authenticated*, not
@@ -588,6 +592,10 @@ export class ProfilePage implements OnInit, ViewWillEnter, ComponentWithUnsavedC
 
   goToCreateEvent(): void {
     this.router.navigateByUrl('/events/new');
+  }
+
+  openWelcomeGuide(): void {
+    this.onboarding.openWelcome();
   }
 
   goToFollowers(): void {

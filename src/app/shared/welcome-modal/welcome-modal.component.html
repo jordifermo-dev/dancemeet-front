@@ -1,0 +1,157 @@
+<ion-modal
+  [isOpen]="isOpen()"
+  [initialBreakpoint]="0.75"
+  [breakpoints]="[0, 0.75, 0.95]"
+  (didDismiss)="close()"
+>
+  <ng-template>
+    <div class="welcome-sheet">
+      <button type="button" class="welcome-close-button" (click)="close()">
+        <ion-icon name="close"></ion-icon>
+      </button>
+
+      <div class="welcome-scroll">
+        @for (slide of slides; track slide.kind) {
+          @if ($index === currentSlide()) {
+            <div class="welcome-slide">
+              @if (slide.icon) {
+                <img class="welcome-slide-icon" [src]="slide.icon" alt="" aria-hidden="true" />
+              } @else {
+                <ion-icon class="welcome-slide-icon welcome-slide-icon-font" name="bulb-outline"></ion-icon>
+              }
+              <h2>{{ slide.titleKey | translate }}</h2>
+              <p class="welcome-slide-body">{{ slide.descriptionKey | translate }}</p>
+
+              <div class="welcome-mockup" [class]="'welcome-mockup-' + slide.kind">
+                @switch (slide.kind) {
+                  @case ('explorer') {
+                    <div class="mockup-map mockup-map-tall">
+                      <iframe class="mockup-map-iframe" [src]="explorerMapUrl" loading="lazy" title="Map preview"></iframe>
+                      @for (pin of explorerMapPins; track pin.iconUrl) {
+                        <span class="mockup-map-pin" [style.left.%]="pin.left" [style.top.%]="pin.top">
+                          <img [src]="pin.iconUrl" alt="" aria-hidden="true" />
+                        </span>
+                      }
+                    </div>
+                  }
+                  @case ('events') {
+                    <div class="mockup-card-demo">
+                      <app-event-card [view]="demoCards.eventsRockRoll"></app-event-card>
+                    </div>
+                    <div class="mockup-card-demo">
+                      <app-event-card [view]="demoCards.eventsHipHop"></app-event-card>
+                    </div>
+                  }
+                  @case ('favorites') {
+                    <div class="mockup-card-demo">
+                      <app-event-card [view]="demoCards.favoriteOrganizer"></app-event-card>
+                    </div>
+                    <div class="mockup-card-demo">
+                      <app-event-card [view]="demoCards.favoriteAttendee"></app-event-card>
+                    </div>
+                  }
+                  @case ('profile') {
+                    <div class="mockup-profile-header">
+                      <div class="mockup-avatar-wrapper">
+                        <img class="mockup-avatar" src="https://i.pravatar.cc/120?u=user017" alt="" aria-hidden="true" />
+                        <span class="mockup-avatar-camera">
+                          <ion-icon name="camera-outline"></ion-icon>
+                        </span>
+                      </div>
+                      <span class="mockup-profile-name">Jordina</span>
+                    </div>
+                    <div class="mockup-stats">
+                      <span class="mockup-stat"><b>12</b>{{ 'profile.eventsAttended' | translate }}</span>
+                      <span class="mockup-stat"><b>34</b>{{ 'profile.followers' | translate }}</span>
+                      <span class="mockup-stat"><b>20</b>{{ 'profile.following' | translate }}</span>
+                    </div>
+
+                    <h3 class="mockup-preferences-title">{{ 'profile.preferencesSection' | translate }}</h3>
+
+                    <p class="mockup-group-label">{{ 'register.eventTypesTitle' | translate }}</p>
+                    <div class="mockup-chip-grid">
+                      @for (eventType of profileEventTypes; track eventType.name) {
+                        <span class="mockup-chip" [class.selected]="eventType.selected">
+                          <img class="mockup-chip-icon" [src]="eventType.iconUrl" alt="" aria-hidden="true" />
+                          {{ eventType.name }}
+                        </span>
+                      }
+                    </div>
+
+                    <p class="mockup-group-label">{{ 'register.disciplinesTitle' | translate }}</p>
+                    <div class="mockup-chip-grid">
+                      @for (discipline of profileDisciplines; track discipline.name) {
+                        <span class="mockup-chip" [class.selected]="discipline.selected">
+                          <img class="mockup-chip-icon" [src]="discipline.iconUrl" alt="" aria-hidden="true" />
+                          {{ discipline.name }}
+                        </span>
+                      }
+                    </div>
+
+                    <p class="mockup-group-label">{{ 'register.statusesTitle' | translate }}</p>
+                    <div class="mockup-chip-grid">
+                      @for (status of profileStatuses; track status.id) {
+                        <span class="mockup-chip" [class.selected]="status.selected">
+                          <img class="mockup-chip-icon" [src]="status.iconUrl" alt="" aria-hidden="true" />
+                          {{ status.labelKey | translate }}
+                        </span>
+                      }
+                    </div>
+
+                    <p class="mockup-group-label">{{ 'profile.language' | translate }}</p>
+                    <div class="mockup-chip-grid">
+                      @for (lang of profileLanguages(); track lang.code) {
+                        <span class="mockup-chip" [class.selected]="lang.selected">{{ lang.label }}</span>
+                      }
+                    </div>
+                  }
+                  @case ('tips') {
+                    <ul class="welcome-tips-list">
+                      <li>{{ 'welcome.tipFollow' | translate }}</li>
+                      <li>{{ 'welcome.tipAttend' | translate }}</li>
+                      <li>{{ 'welcome.tipNotifications' | translate }}</li>
+                      <li>{{ 'welcome.tipPreferences' | translate }}</li>
+                    </ul>
+                  }
+                }
+              </div>
+            </div>
+          }
+        }
+      </div>
+
+      <div class="welcome-dots">
+        @for (slide of slides; track slide.kind; let i = $index) {
+          <span class="dot" [class.active]="i === currentSlide()" (click)="goToSlide(i)"></span>
+        }
+      </div>
+
+      <div class="welcome-footer-nav">
+        @if (currentSlide() > 0) {
+          <ion-button expand="block" fill="outline" (click)="goBack()">
+            {{ 'common.back' | translate }}
+          </ion-button>
+        }
+        @if (currentSlide() < totalSlides - 1) {
+          <ion-button expand="block" (click)="goNext()">
+            {{ 'common.next' | translate }}
+          </ion-button>
+        } @else {
+          <ion-button expand="block" (click)="close()">
+            {{ 'welcome.gotIt' | translate }}
+          </ion-button>
+        }
+      </div>
+
+      <ion-button
+        expand="block"
+        color="primary"
+        [fill]="dontShowAgain() ? 'solid' : 'outline'"
+        (click)="toggleDontShowAgain()"
+      >
+        <ion-icon slot="start" [name]="dontShowAgain() ? 'checkmark-circle' : 'ellipse-outline'"></ion-icon>
+        {{ 'welcome.dontShowAgain' | translate }}
+      </ion-button>
+    </div>
+  </ng-template>
+</ion-modal>

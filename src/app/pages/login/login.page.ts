@@ -20,6 +20,7 @@ import {
   eyeOffOutline,
 } from 'ionicons/icons';
 import { AuthService, AuthProvider } from '../../services/auth.service';
+import { OnboardingService } from '../../services/onboarding.service';
 import { firebaseErrorMessage } from '../../shared/firebase-error-message';
 
 @Component({
@@ -42,6 +43,7 @@ import { firebaseErrorMessage } from '../../shared/firebase-error-message';
 export class LoginPage implements OnInit, AfterViewInit {
   private readonly fb = inject(FormBuilder);
   private readonly authService = inject(AuthService);
+  private readonly onboarding = inject(OnboardingService);
   private readonly translate = inject(TranslateService);
   private readonly router = inject(Router);
 
@@ -78,6 +80,7 @@ export class LoginPage implements OnInit, AfterViewInit {
     this.errorMessage.set(null);
     try {
       await this.authService.loginWithProvider(provider);
+      this.onboarding.maybeShowWelcome();
       this.router.navigateByUrl('/tabs/explorer');
     } catch (err) {
       this.errorMessage.set(firebaseErrorMessage(err, this.translate));
@@ -105,6 +108,7 @@ export class LoginPage implements OnInit, AfterViewInit {
 
     try {
       await this.authService.loginWithEmail(email.trim(), password);
+      this.onboarding.maybeShowWelcome();
       this.router.navigateByUrl('/tabs/explorer');
     } catch (err) {
       this.errorMessage.set(firebaseErrorMessage(err, this.translate));

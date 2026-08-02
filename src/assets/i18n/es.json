@@ -11,6 +11,25 @@
     "favorites": "Favoritos",
     "profile": "Perfil"
   },
+  "welcome": {
+    "exploreTitle": "Explorar",
+    "exploreBody": "Descubre eventos de baile cerca de ti en el mapa, con filtros por estilo, tipo, fecha y precio.",
+    "eventsTitle": "Eventos",
+    "eventsBody": "Consulta todos los eventos en formato lista y ordénalos como prefieras.",
+    "favoritesTitle": "Favoritos",
+    "favoritesBody": "Aquí verás los eventos que organizas y a los que asistes.",
+    "profileTitle": "Perfil",
+    "profileBody": "Edita tus datos, tus preferencias y consulta tus estadísticas.",
+    "tipsTitle": "Trucos rápidos",
+    "tipsSubtitle": "Algunos consejos más que te vendrán bien.",
+    "tipFollow": "Sigue a otros usuarios para enterarte de sus nuevos eventos.",
+    "tipAttend": "Pulsa \"Asistir\" en un evento para apuntarte y que aparezca en tu perfil.",
+    "tipNotifications": "La campana te avisa de nuevos seguidores, cambios en eventos y más.",
+    "tipPreferences": "Si ves pocos eventos, revisa tus preferencias de búsqueda (estilo, tipo, ubicación, distancia, estado...): cuanto más abiertas, más eventos te aparecerán.",
+    "dontShowAgain": "No volver a mostrar",
+    "gotIt": "Entendido, ¡vamos!",
+    "reopenLink": "Ver de nuevo la bienvenida"
+  },
   "notifications": {
     "title": "Notificaciones",
     "markAllRead": "Marcar todo leído",

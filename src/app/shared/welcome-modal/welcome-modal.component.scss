@@ -1,0 +1,288 @@
+.welcome-sheet {
+  position: relative;
+  padding: 16px 20px 20px;
+}
+
+.welcome-close-button {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  z-index: 2;
+  appearance: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: var(--ion-color-light-shade);
+  color: #1a1a1a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.welcome-scroll {
+  padding-top: 34px;
+}
+
+.welcome-slide {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+
+  h2 {
+    font-size: 1.15rem;
+    font-weight: 800;
+    margin: 8px 0 2px;
+  }
+}
+
+.welcome-slide-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+}
+
+.welcome-slide-icon-font {
+  width: auto;
+  height: auto;
+  font-size: 40px;
+  color: var(--ion-color-primary);
+}
+
+.welcome-slide-body {
+  margin: 0 0 12px;
+  color: var(--ion-color-medium);
+  font-size: 0.85rem;
+  max-width: 320px;
+}
+
+// --- Mockup previews - lightweight illustrative stand-ins for each real
+// screen, not live components (no data to render inside an onboarding tour). ---
+
+// Fixed, equal height across every slide - Profile's Preferences chips are
+// by far the tallest content, so rather than stretch every other slide's
+// box to match it (leaving a lot of empty space) or let each box size
+// itself to its own content (the mismatched heights this replaces), this
+// box scrolls its own content internally when it doesn't fit.
+.welcome-mockup {
+  width: 100%;
+  max-width: 320px;
+  height: 300px;
+  overflow-y: auto;
+  background: var(--ion-color-light);
+  border-radius: 16px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+// Real Google Maps tiles via an iframe (see explorerMapUrl) - the container
+// just needs to clip corners and host the absolutely-positioned pin badges.
+.mockup-map {
+  position: relative;
+  height: 90px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--ion-color-light-shade);
+}
+
+.mockup-map-tall {
+  height: 260px;
+}
+
+.mockup-map-iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+  // Purely illustrative - dragging/scrolling the embedded map would fight
+  // with swiping between the tour's own slides.
+  pointer-events: none;
+}
+
+// Mimics Explorer's real markers (see buildDisciplineMarkerIcon in
+// explorer.page.ts) - just the discipline icon itself, no extra wrapper:
+// each discipline SVG already bakes in its own colored circular badge.
+.mockup-map-pin {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 38px;
+  height: 38px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+
+  img {
+    width: 100%;
+    height: 100%;
+  }
+}
+
+// The real <app-event-card> is clickable (routerLink) - it's purely
+// illustrative here, so clicks/taps on it are disabled. text-align:left
+// resets the centered heading above it, which would otherwise cascade down
+// and center the card's own title/text (it has no such reset of its own,
+// same as when it renders inside the real, already left-aligned tab pages).
+.mockup-card-demo {
+  pointer-events: none;
+  text-align: left;
+}
+
+.mockup-profile-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.mockup-avatar-wrapper {
+  position: relative;
+}
+
+.mockup-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--ion-color-light-shade);
+  flex: 0 0 auto;
+}
+
+.mockup-avatar-camera {
+  position: absolute;
+  bottom: -2px;
+  right: -2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--ion-color-primary);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  ion-icon {
+    font-size: 0.6rem;
+  }
+}
+
+.mockup-profile-name {
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.mockup-stats {
+  display: flex;
+  justify-content: space-around;
+  background: var(--ion-background-color);
+  border-radius: 10px;
+  padding: 8px 4px;
+}
+
+.mockup-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 0.68rem;
+  color: var(--ion-color-medium);
+
+  b {
+    font-size: 0.9rem;
+    color: var(--ion-text-color);
+  }
+}
+
+// --- Profile's "Preferences" chips - same visual language as the real
+// chip/chip-with-icon/selected classes in profile.page.scss. ---
+
+.mockup-preferences-title {
+  text-align: left;
+  margin: 6px 0 0;
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
+.mockup-group-label {
+  text-align: left;
+  margin: 6px 0 0;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--ion-color-medium);
+}
+
+.mockup-chip-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.mockup-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1.5px solid var(--ion-color-light-shade);
+  border-radius: 999px;
+  padding: 4px 10px 4px 4px;
+  font-size: 0.66rem;
+  font-weight: 600;
+  background: var(--ion-background-color);
+  color: #1a1a1a;
+
+  &.selected {
+    border-color: var(--ion-color-primary);
+    background: rgba(var(--ion-color-primary-rgb), 0.08);
+    color: var(--ion-color-primary);
+  }
+}
+
+.mockup-chip-icon {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex: 0 0 auto;
+}
+
+.welcome-tips-list {
+  text-align: left;
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  li {
+    font-size: 0.9rem;
+    color: var(--ion-color-medium-shade);
+  }
+}
+
+.welcome-dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin: 14px 0;
+
+  .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--ion-color-light-shade);
+    cursor: pointer;
+
+    &.active {
+      background: var(--ion-color-primary);
+    }
+  }
+}
+
+.welcome-footer-nav {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 10px;
+
+  ion-button {
+    flex: 1;
+  }
+}

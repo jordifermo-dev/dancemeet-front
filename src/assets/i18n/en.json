@@ -11,6 +11,25 @@
     "favorites": "Favourites",
     "profile": "Profile"
   },
+  "welcome": {
+    "exploreTitle": "Explore",
+    "exploreBody": "Discover dance events near you on the map, with filters by style, type, date and price.",
+    "eventsTitle": "Events",
+    "eventsBody": "Browse every event as a list and sort it however you like.",
+    "favoritesTitle": "Favourites",
+    "favoritesBody": "See the events you organise and the ones you're attending.",
+    "profileTitle": "Profile",
+    "profileBody": "Edit your details and preferences, and check your stats.",
+    "tipsTitle": "Quick tips",
+    "tipsSubtitle": "A few more tips worth knowing.",
+    "tipFollow": "Follow other users to hear about their new events.",
+    "tipAttend": "Tap \"Attend\" on an event to join it and have it show up on your profile.",
+    "tipNotifications": "The bell tells you about new followers, event changes and more.",
+    "tipPreferences": "Seeing few events? Check your search preferences (style, type, location, distance, status...) - the more open they are, the more events show up.",
+    "dontShowAgain": "Don't show this again",
+    "gotIt": "Got it, let's go!",
+    "reopenLink": "See the welcome guide again"
+  },
   "notifications": {
     "title": "Notifications",
     "markAllRead": "Mark all read",

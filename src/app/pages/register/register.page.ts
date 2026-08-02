@@ -33,6 +33,7 @@ import {
   layersOutline,
 } from 'ionicons/icons';
 import { AuthService } from '../../services/auth.service';
+import { OnboardingService } from '../../services/onboarding.service';
 import { UserService } from '../../services/user.service';
 import { DisciplineService } from '../../services/discipline.service';
 import { EventTypeService } from '../../services/event-type.service';
@@ -90,6 +91,7 @@ function passwordsMatchValidator(control: AbstractControl): ValidationErrors | n
 export class RegisterPage implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly authService = inject(AuthService);
+  private readonly onboarding = inject(OnboardingService);
   private readonly userService = inject(UserService);
   private readonly disciplineService = inject(DisciplineService);
   private readonly eventTypeService = inject(EventTypeService);
@@ -358,6 +360,7 @@ export class RegisterPage implements OnInit {
     try {
       const user = await firstValueFrom(this.userService.createUser(payload));
       this.authService.syncProfile(user);
+      this.onboarding.maybeShowWelcome();
       this.router.navigateByUrl('/tabs/explorer');
     } catch (err: any) {
       this.errorMessage.set(
