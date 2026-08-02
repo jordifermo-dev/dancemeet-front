@@ -1,6 +1,6 @@
 export const environment = {
   production: true,
-  apiUrl: 'http://localhost:3000',
+  apiUrl: 'https://dancemeet-back.onrender.com',
   googleMapsApiKey: 'AIzaSyClI0mLNW9oKEK-JSlH7jAurHTjPJ3qpCU',
   googleMapsJsApiKey: 'AIzaSyANsIqi_q9JWvnlRlI_YxJA_WKwiuUnj0E',
   firebaseConfig: {
