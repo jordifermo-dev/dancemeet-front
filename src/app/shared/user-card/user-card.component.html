@@ -1,0 +1,34 @@
+<div class="user-card-row" (click)="open()">
+  @if (user.photoUrl) {
+    <img class="avatar" [src]="user.photoUrl" [alt]="user.name" />
+  } @else {
+    <div class="avatar avatar-placeholder">
+      <ion-icon name="person-outline"></ion-icon>
+    </div>
+  }
+  <div class="user-info">
+    <span class="user-name">{{ user.name }}</span>
+    @if (disciplines().length) {
+      <div class="user-disciplines">
+        @for (discipline of disciplines(); track discipline.id) {
+          <span class="discipline-mini-chip">
+            <img class="discipline-mini-icon" [src]="'/' + discipline.iconUrl" [alt]="discipline.name" />
+            {{ discipline.name }}
+          </span>
+        }
+      </div>
+    }
+  </div>
+  @if (!isMe()) {
+    @if (isFollowedByMe()) {
+      <button type="button" class="follow-btn follow-btn-following" (click)="toggleFollow($event)">
+        {{ 'profile.following' | translate }}
+      </button>
+    } @else {
+      <button type="button" class="follow-btn follow-btn-follow" (click)="toggleFollow($event)">
+        <ion-icon name="person-add-outline"></ion-icon>
+        {{ 'userDetail.followButton' | translate }}
+      </button>
+    }
+  }
+</div>

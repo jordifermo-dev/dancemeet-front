@@ -4,6 +4,7 @@ import {
   IonHeader,
   IonToolbar,
   IonTitle,
+  IonButtons,
   IonContent,
   IonSearchbar,
   IonIcon,
@@ -32,6 +33,7 @@ import { GoogleMapsLoaderService } from '../../shared/google-maps-loader.service
 import { Discipline, DISCIPLINE_NAMES, EventType, EVENT_TYPE_NAMES, EventStatus, EVENT_STATUSES, PriceOption, Event as DanceEvent } from '../../models';
 import { disciplineIconUrl, eventTypeIconUrl, statusIconUrl, sortByNameOrder, STATUS_LABEL_KEYS } from '../../shared/icon-catalog';
 import { LocationFilterButtonComponent } from '../../shared/location-filter-button/location-filter-button.component';
+import { NotificationBellComponent } from '../../shared/notification-bell/notification-bell.component';
 import { DateQuickOption, ExplorerFiltersService } from './explorer-filters.service';
 
 const STATUS_OPTIONS = EVENT_STATUSES.map((id) => ({ id, labelKey: STATUS_LABEL_KEYS[id] }));
@@ -84,6 +86,7 @@ function buildDisciplineMarkerIcon(disciplines: Discipline[]): { url: string; si
     IonHeader,
     IonToolbar,
     IonTitle,
+    IonButtons,
     IonContent,
     IonSearchbar,
     IonIcon,
@@ -97,6 +100,7 @@ function buildDisciplineMarkerIcon(disciplines: Discipline[]): { url: string; si
     MapCircle,
     TranslatePipe,
     LocationFilterButtonComponent,
+    NotificationBellComponent,
   ],
 })
 export class ExplorerPage implements OnInit, ViewWillEnter {

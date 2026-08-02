@@ -21,11 +21,12 @@ import { AuthService } from '../../services/auth.service';
 import { FollowService } from '../../services/follow.service';
 import { FavoriteService } from '../../services/favorite.service';
 import { DisciplineService } from '../../services/discipline.service';
+import { FollowSortMode, SortPreferenceService } from '../../services/sort-preference.service';
 import { Discipline, DISCIPLINE_NAMES, FollowUser } from '../../models';
 import { sortByNameOrder } from '../../shared/icon-catalog';
 
 type FollowListMode = 'followers' | 'following' | 'attendees';
-type SortMode = 'nameAsc' | 'nameDesc' | 'dateNewest' | 'dateOldest';
+type SortMode = FollowSortMode;
 
 const SORT_OPTIONS: { id: SortMode; labelKey: string }[] = [
   { id: 'nameAsc', labelKey: 'followList.sortNameAsc' },
@@ -62,6 +63,7 @@ export class FollowListPage implements ViewWillEnter {
   private readonly favoriteService = inject(FavoriteService);
   private readonly disciplineService = inject(DisciplineService);
   private readonly translate = inject(TranslateService);
+  private readonly sortPreference = inject(SortPreferenceService);
 
   private readonly disciplinesById = signal<Map<string, Discipline>>(new Map());
 
@@ -76,7 +78,9 @@ export class FollowListPage implements ViewWillEnter {
   readonly loading = signal(true);
   readonly items = signal<FollowUser[]>([]);
   readonly searchTerm = signal('');
-  readonly sortMode = signal<SortMode>('dateNewest');
+  // Shared with Followers/Following/Attendees (this same page, re-navigated
+  // per mode) so the chosen order survives switching between them.
+  readonly sortMode = this.sortPreference.followSortMode;
   readonly sortOptions = SORT_OPTIONS;
   readonly isSortModalOpen = signal(false);
   readonly currentSortLabelKey = computed(

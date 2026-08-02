@@ -1,3 +1,5 @@
+import { NotificationType } from './notification.model';
+
 export interface SocialLinks {
   instagram?: string;
   facebook?: string;
@@ -29,7 +31,9 @@ export interface User {
   distanceRange: number;
   eventDateFrom?: number;
   eventDateTo?: number | null;
-  notificationsEnabled: boolean;
+  /** Notification types the user has turned off - empty means every type is
+   * enabled (the default), all six means "no notifications at all". */
+  disabledNotificationTypes: NotificationType[];
   disciplineIds: string[];
   eventTypeIds: string[];
   statusIds: string[];
@@ -40,7 +44,6 @@ export interface User {
   showLocation: boolean;
   createdAt: number;
   updatedAt?: number;
-  lastLoginAt?: number;
   followedId?: string[];
   followingId?: string[];
   blockedIds?: string[];
@@ -54,7 +57,7 @@ export interface CreateUserPayload {
   latitude: number;
   longitude: number;
   distanceRange: number;
-  notificationsEnabled: boolean;
+  disabledNotificationTypes: NotificationType[];
   disciplineIds: string[];
   eventTypeIds: string[];
   statusIds: string[];
@@ -63,8 +66,5 @@ export interface CreateUserPayload {
 
 /** Partial update sent to PUT /api/users/:id - any subset of editable profile fields. */
 export type UpdateUserPayload = Partial<
-  Omit<
-    User,
-    'id' | 'email' | 'createdAt' | 'updatedAt' | 'lastLoginAt' | 'followedId' | 'followingId' | 'blockedIds'
-  >
+  Omit<User, 'id' | 'email' | 'createdAt' | 'updatedAt' | 'followedId' | 'followingId' | 'blockedIds'>
 >;

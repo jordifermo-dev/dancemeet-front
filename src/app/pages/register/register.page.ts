@@ -346,7 +346,7 @@ export class RegisterPage implements OnInit {
       latitude: this.latitude() ?? 0,
       longitude: this.longitude() ?? 0,
       distanceRange: this.distanceRange(),
-      notificationsEnabled: true,
+      disabledNotificationTypes: [],
       disciplineIds: this.selectedDisciplineIds(),
       eventTypeIds: this.selectedEventTypeIds(),
       // The status step was removed from registration - every new account starts

@@ -1,0 +1,6 @@
+<button type="button" class="bell-btn" (click)="open()">
+  <ion-icon name="notifications-outline"></ion-icon>
+  @if (unreadCount() > 0) {
+    <span class="bell-badge">{{ unreadCount() > 9 ? '9+' : unreadCount() }}</span>
+  }
+</button>

@@ -1,0 +1,35 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/tabs/profile" text=""></ion-back-button>
+    </ion-buttons>
+    <ion-title>{{ 'notifications.settingsTitle' | translate }}</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="notification-settings-content">
+  <div class="settings-container">
+    <p class="subtitle">{{ 'notifications.settingsSubtitle' | translate }}</p>
+
+    <div class="quick-actions-row">
+      <button type="button" class="quick-action" [class.active]="allEnabled()" (click)="enableAll()">
+        {{ 'notifications.enableAll' | translate }}
+      </button>
+      <button type="button" class="quick-action" [class.active]="allDisabled()" (click)="disableAll()">
+        {{ 'notifications.disableAll' | translate }}
+      </button>
+    </div>
+
+    <div class="type-list">
+      @for (type of allTypes; track type) {
+        <div class="type-row">
+          <div class="type-icon">
+            <ion-icon [name]="typeIcons[type]"></ion-icon>
+          </div>
+          <span class="type-label">{{ typeLabelKeys[type] | translate }}</span>
+          <ion-toggle [checked]="isEnabled(type)" (ionChange)="toggle(type, $event.detail.checked)"></ion-toggle>
+        </div>
+      }
+    </div>
+  </div>
+</ion-content>

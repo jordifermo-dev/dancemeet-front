@@ -7,6 +7,7 @@ import {
   IonHeader,
   IonToolbar,
   IonTitle,
+  IonButtons,
   IonContent,
   IonButton,
   IonIcon,
@@ -61,6 +62,7 @@ import {
 } from '../../shared/icon-catalog';
 import { MapType, mapEmbedUrl as buildMapEmbedUrl } from '../../shared/maps';
 import { PhotoEditorComponent } from '../../shared/photo-editor/photo-editor.component';
+import { NotificationBellComponent } from '../../shared/notification-bell/notification-bell.component';
 import { SOCIAL_URL_PATTERNS } from '../../shared/social-link-patterns';
 
 const MIN_ZOOM = 3;
@@ -103,6 +105,7 @@ const LANGUAGE_OPTIONS = SUPPORTED_LANGUAGES.map((code) => ({
     IonHeader,
     IonToolbar,
     IonTitle,
+    IonButtons,
     IonContent,
     IonButton,
     IonIcon,
@@ -114,6 +117,7 @@ const LANGUAGE_OPTIONS = SUPPORTED_LANGUAGES.map((code) => ({
     IonModal,
     TranslatePipe,
     PhotoEditorComponent,
+    NotificationBellComponent,
   ],
 })
 export class ProfilePage implements OnInit, ViewWillEnter, ComponentWithUnsavedChanges {

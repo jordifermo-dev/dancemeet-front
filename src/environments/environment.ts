@@ -13,15 +13,18 @@ export const environment = {
   googleMapsJsApiKey: 'AIzaSyANsIqi_q9JWvnlRlI_YxJA_WKwiuUnj0E',
   // From Firebase Console > Project settings > General > Your apps > Web app.
   firebaseConfig: {
-    apiKey: 'AIzaSyCenByLDKEOul_3dHvW2ArCRvnkFYXTMbs',
+    apiKey: 'AIzaSyAV3oFnlZLgaJgi465MVe355ARcvfFpOkU',
     authDomain: 'dancemeet-f46f2.firebaseapp.com',
     projectId: 'dancemeet-f46f2',
     storageBucket: 'dancemeet-f46f2.firebasestorage.app',
     messagingSenderId: '92761252465',
-    // TODO: replace with the Web app's own appId - see chat for why the
-    // Android one from google-services.json can't be reused here.
-    appId: 'your-web-app-id',
+    appId: '1:92761252465:web:28c9c53ef15d95288171d0',
   },
+  // Firebase Console > Project settings > Cloud Messaging > Web configuration
+  // > Web Push certificates > generate a key pair. Required for FCM to issue
+  // a device token for web push - notify() still works without it (the
+  // in-app inbox), only the OS-level push send is skipped until this is set.
+  firebaseVapidKey: 'BFWqvZl3BJGryJZBPUTUbZEDSkxVmiiOVG0SDP1oE7Qg_Yfnd4m1T_FwbmBZQ3PjgMlReUIP_5KmHgsGrq3H_gY',
 };
 
 /*

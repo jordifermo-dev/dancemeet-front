@@ -48,10 +48,12 @@ import {
 } from '../../models';
 import { disciplineIconUrl, eventTypeIconUrl, statusIconUrl, sortByNameOrder, STATUS_LABEL_KEYS } from '../../shared/icon-catalog';
 import { LocationFilterButtonComponent } from '../../shared/location-filter-button/location-filter-button.component';
+import { NotificationBellComponent } from '../../shared/notification-bell/notification-bell.component';
 import { EventCardComponent } from '../../shared/event-card/event-card.component';
 import { EventCardView } from '../../shared/event-card/event-card.model';
 import { buildEventCardView } from '../../shared/event-card/build-event-card-view';
 import { EVENT_SORT_OPTIONS, EventSortMode, sortEvents } from '../../shared/event-sort';
+import { SortPreferenceService } from '../../services/sort-preference.service';
 import { DateQuickOption, ExplorerFiltersService } from '../explorer/explorer-filters.service';
 
 const STATUS_OPTIONS = EVENT_STATUSES.map((id) => ({ id, labelKey: STATUS_LABEL_KEYS[id] }));
@@ -84,6 +86,7 @@ const PRICE_OPTIONS: { id: PriceOption; labelKey: string }[] = [
     TranslatePipe,
     LocationFilterButtonComponent,
     EventCardComponent,
+    NotificationBellComponent,
   ],
 })
 export class EventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWillEnter {
@@ -94,6 +97,7 @@ export class EventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWillEnt
   private readonly languageService = inject(LanguageService);
   private readonly router = inject(Router);
   private readonly ngZone = inject(NgZone);
+  private readonly sortPreference = inject(SortPreferenceService);
   readonly filters = inject(ExplorerFiltersService);
 
   @ViewChild('topOverlay') private topOverlayRef?: ElementRef<HTMLDivElement>;
@@ -116,7 +120,8 @@ export class EventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWillEnt
   readonly statusOptions = STATUS_OPTIONS;
   readonly priceOptions = PRICE_OPTIONS;
   readonly sortOptions = EVENT_SORT_OPTIONS;
-  readonly sortMode = signal<EventSortMode>('dateSoonest');
+  // Shared with Favorites so the chosen order survives switching tabs.
+  readonly sortMode = this.sortPreference.eventSortMode;
   readonly isSortModalOpen = signal(false);
   readonly currentSortLabelKey = computed(
     () => this.sortOptions.find((option) => option.id === this.sortMode())?.labelKey ?? this.sortOptions[0].labelKey,

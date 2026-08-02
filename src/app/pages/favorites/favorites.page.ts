@@ -48,9 +48,11 @@ import { haversineDistanceMeters } from '../../shared/maps';
 import { toggleWithMinimum } from '../../shared/min-selection';
 import { MinSelectionWarningService } from '../../shared/min-selection-warning.service';
 import { EventCardComponent } from '../../shared/event-card/event-card.component';
+import { NotificationBellComponent } from '../../shared/notification-bell/notification-bell.component';
 import { EventCardView } from '../../shared/event-card/event-card.model';
 import { buildEventCardView } from '../../shared/event-card/build-event-card-view';
 import { EVENT_SORT_OPTIONS, EventSortMode, sortEvents } from '../../shared/event-sort';
+import { SortPreferenceService } from '../../services/sort-preference.service';
 import { DateQuickOption, ExplorerFiltersService } from '../explorer/explorer-filters.service';
 
 type RelationFilter = 'organizer' | 'attendee';
@@ -84,6 +86,7 @@ const PRICE_OPTIONS: { id: PriceOption; labelKey: string }[] = [
     IonDatetimeButton,
     TranslatePipe,
     EventCardComponent,
+    NotificationBellComponent,
   ],
 })
 export class FavoritesPage implements OnInit, AfterViewInit, OnDestroy, ViewWillEnter {
@@ -100,6 +103,7 @@ export class FavoritesPage implements OnInit, AfterViewInit, OnDestroy, ViewWill
    * from Explorer's shared filter state. */
   private readonly dateUtils = inject(ExplorerFiltersService);
   private readonly ngZone = inject(NgZone);
+  private readonly sortPreference = inject(SortPreferenceService);
 
   @ViewChild('topOverlay') private topOverlayRef?: ElementRef<HTMLDivElement>;
   private overlayResizeObserver?: ResizeObserver;
@@ -120,7 +124,8 @@ export class FavoritesPage implements OnInit, AfterViewInit, OnDestroy, ViewWill
   readonly relationOptions = RELATION_OPTIONS;
   readonly priceOptions = PRICE_OPTIONS;
   readonly sortOptions = EVENT_SORT_OPTIONS;
-  readonly sortMode = signal<EventSortMode>('dateSoonest');
+  // Shared with Events so the chosen order survives switching tabs.
+  readonly sortMode = this.sortPreference.eventSortMode;
   readonly isSortModalOpen = signal(false);
   readonly currentSortLabelKey = computed(
     () => this.sortOptions.find((option) => option.id === this.sortMode())?.labelKey ?? this.sortOptions[0].labelKey,
