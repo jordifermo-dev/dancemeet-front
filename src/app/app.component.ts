@@ -2,12 +2,13 @@ import { Component, effect, inject } from '@angular/core';
 import { IonApp, IonRouterOutlet } from '@ionic/angular/standalone';
 import { AuthService } from './services/auth.service';
 import { NotificationService } from './services/notification.service';
+import { WelcomeModalComponent } from './shared/welcome-modal/welcome-modal.component';
 
 @Component({
   selector: 'app-root',
   standalone: true,
   templateUrl: 'app.component.html',
-  imports: [IonApp, IonRouterOutlet],
+  imports: [IonApp, IonRouterOutlet, WelcomeModalComponent],
 })
 export class AppComponent {
   private readonly authService = inject(AuthService);

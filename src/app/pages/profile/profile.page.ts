@@ -1,7 +1,7 @@
 import { Component, OnInit, computed, effect, inject, signal, untracked } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import {
   IonHeader,
@@ -22,7 +22,6 @@ import {
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { addIcons } from 'ionicons';
 import {
-  logOutOutline,
   locateOutline,
   locationOutline,
   personOutline,
@@ -30,10 +29,9 @@ import {
   removeOutline,
   layersOutline,
   addCircleOutline,
-  helpCircleOutline,
+  settingsOutline,
 } from 'ionicons/icons';
 import { AuthService } from '../../services/auth.service';
-import { OnboardingService } from '../../services/onboarding.service';
 import { UserService } from '../../services/user.service';
 import { DisciplineService } from '../../services/discipline.service';
 import { EventTypeService } from '../../services/event-type.service';
@@ -104,6 +102,7 @@ const LANGUAGE_OPTIONS = SUPPORTED_LANGUAGES.map((code) => ({
   styleUrls: ['profile.page.scss'],
   imports: [
     ReactiveFormsModule,
+    RouterLink,
     IonHeader,
     IonToolbar,
     IonTitle,
@@ -125,7 +124,6 @@ const LANGUAGE_OPTIONS = SUPPORTED_LANGUAGES.map((code) => ({
 export class ProfilePage implements OnInit, ViewWillEnter, ComponentWithUnsavedChanges {
   private readonly fb = inject(FormBuilder);
   private readonly authService = inject(AuthService);
-  private readonly onboarding = inject(OnboardingService);
   private readonly userService = inject(UserService);
   private readonly disciplineService = inject(DisciplineService);
   private readonly eventTypeService = inject(EventTypeService);
@@ -205,7 +203,6 @@ export class ProfilePage implements OnInit, ViewWillEnter, ComponentWithUnsavedC
 
   constructor() {
     addIcons({
-      logOutOutline,
       locateOutline,
       locationOutline,
       personOutline,
@@ -213,7 +210,7 @@ export class ProfilePage implements OnInit, ViewWillEnter, ComponentWithUnsavedC
       removeOutline,
       layersOutline,
       addCircleOutline,
-      helpCircleOutline,
+      settingsOutline,
     });
 
     // The draft must always track *whoever is currently authenticated*, not
@@ -594,24 +591,11 @@ export class ProfilePage implements OnInit, ViewWillEnter, ComponentWithUnsavedC
     this.router.navigateByUrl('/events/new');
   }
 
-  openWelcomeGuide(): void {
-    this.onboarding.openWelcome();
-  }
-
   goToFollowers(): void {
     this.router.navigateByUrl('/followers');
   }
 
   goToFollowing(): void {
     this.router.navigateByUrl('/following');
-  }
-
-  async logout(): Promise<void> {
-    // Otherwise authService.logout() wipes currentUser (and with it the
-    // draft/baseline) before the unsavedChangesGuard ever gets a chance to
-    // compare them, silently discarding any pending edits.
-    await this.canLeave();
-    await this.authService.logout();
-    this.router.navigateByUrl('/login');
   }
 }

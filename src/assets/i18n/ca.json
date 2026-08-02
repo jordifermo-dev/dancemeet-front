@@ -11,6 +11,12 @@
     "favorites": "Preferits",
     "profile": "Perfil"
   },
+  "settings": {
+    "title": "Ajustos",
+    "legalSection": "Legal",
+    "privacyPolicyLink": "Política de privadesa",
+    "termsOfUseLink": "Termes d'ús"
+  },
   "welcome": {
     "exploreTitle": "Explorar",
     "exploreBody": "Descobreix esdeveniments de ball a prop teu al mapa, amb filtres per estil, tipus, data i preu.",
@@ -306,5 +312,44 @@
   "errors": {
     "noEmail": "Aquest compte no té cap email associat.",
     "noProfile": "No hem trobat el teu perfil. Prova de registrar-te de nou."
+  },
+  "privacyPolicy": {
+    "title": "Política de privadesa",
+    "lastUpdated": "Última actualització: agost de 2026",
+    "section1Title": "Qui som",
+    "section1Body": "DanceMeet és una aplicació per descobrir, organitzar i assistir a esdeveniments de ball, i per connectar amb altres persones que comparteixen aquesta afició. Aquesta política explica quines dades recollim, per a què les fem servir i quin control tens sobre elles.",
+    "section2Title": "Quines dades recollim",
+    "section2Body": "Quan et registres guardem el teu nom, email i contrasenya. De manera opcional pots afegir el teu telèfon, una foto de perfil, enllaços a les teves xarxes socials (Instagram, Facebook, TikTok, YouTube, lloc web), la teva adreça i ubicació, i les teves preferències d'estils de ball i tipus d'esdeveniment.",
+    "section3Title": "Per a què les fem servir",
+    "section3Body": "Fem servir aquestes dades per mostrar-te esdeveniments i persones rellevants segons les teves preferències i ubicació, perquè altres usuaris et puguin trobar i seguir, i per enviar-te notificacions sobre l'activitat que t'interessa. Mai venem les teves dades a tercers.",
+    "section4Title": "Ubicació",
+    "section4Body": "Per cercar esdeveniments a prop teu i calcular distàncies, fem servir la teva ciutat i coordenades, obtingudes mitjançant la geolocalització del teu navegador o l'adreça que introdueixis manualment. Aquesta cerca passa pel nostre servidor, que consulta el servei de mapes de Google per traduir adreces en coordenades.",
+    "section5Title": "Notificacions push",
+    "section5Body": "Si ho permets, t'enviem notificacions push (nous seguidors, canvis en esdeveniments, recordatoris del mateix dia...) mitjançant Firebase Cloud Messaging. Pots triar quins tipus de notificació rebre, o desactivar-les totes, des d'Ajustos.",
+    "section6Title": "Què veuen altres usuaris",
+    "section6Body": "El teu nom, foto i estils de ball són visibles per a altres usuaris. El teu email, telèfon, ciutat i ubicació només es mostren si tu actives aquesta opció concreta al teu Perfil; per defecte estan ocults.",
+    "section7Title": "Els teus drets",
+    "section7Body": "Pots revisar i actualitzar les teves dades en qualsevol moment des de la pestanya Perfil. Si vols eliminar el teu compte i les teves dades, escriu-nos i ho gestionarem.",
+    "section8Title": "Canvis en aquesta política",
+    "section8Body": "Si actualitzem aquesta política de manera rellevant, t'avisarem dins de l'aplicació."
+  },
+  "termsOfUse": {
+    "title": "Termes d'ús",
+    "section1Title": "Acceptació dels termes",
+    "section1Body": "En crear un compte a DanceMeet acceptes aquests termes d'ús. Si no hi estàs d'acord, no has d'utilitzar l'aplicació.",
+    "section2Title": "Qui pot fer servir l'app",
+    "section2Body": "Has de tenir almenys 16 anys per registrar-te. En crear un compte confirmes que la informació que facilites és veraç i que la mantindràs actualitzada.",
+    "section3Title": "El teu compte",
+    "section3Body": "Ets responsable de l'activitat realitzada des del teu compte i de mantenir la teva contrasenya en un lloc segur. Avisa'ns si creus que algú hi ha accedit sense el teu permís.",
+    "section4Title": "Què ofereix DanceMeet",
+    "section4Body": "DanceMeet et permet descobrir esdeveniments de ball, crear els teus propis, seguir altres usuaris i rebre notificacions sobre l'activitat que t'interessa. No organitzem ni supervisem els esdeveniments publicats per altres usuaris.",
+    "section5Title": "Normes de convivència",
+    "section5Body": "Tracta la resta d'usuaris amb respecte. No està permès l'assetjament, la suplantació d'identitat, ni publicar contingut fals, ofensiu o il·legal. Podem retirar contingut o comptes que incompleixin aquestes normes.",
+    "section6Title": "Esdeveniments creats per usuaris",
+    "section6Body": "Cada esdeveniment és responsabilitat de qui l'organitza: la seva descripció, condicions, seguretat i si finalment se celebra. DanceMeet no garanteix la veracitat de la informació publicada ni participa en l'organització dels esdeveniments.",
+    "section7Title": "Suspensió de comptes",
+    "section7Body": "Podem suspendre o eliminar comptes que incompleixin aquests termes, sense avís previ en casos greus.",
+    "section8Title": "Canvis en aquests termes",
+    "section8Body": "Podem actualitzar aquests termes amb el temps. Si el canvi és rellevant, t'avisarem dins de l'aplicació."
   }
 }

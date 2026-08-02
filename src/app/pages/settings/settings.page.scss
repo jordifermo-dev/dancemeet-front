@@ -1,4 +1,4 @@
-.notification-settings-content {
+.settings-content {
   --background: var(--ion-color-light);
 }
 
@@ -6,6 +6,16 @@
   max-width: 480px;
   margin: 0 auto;
   padding: 16px 20px 32px;
+}
+
+.settings-section-title {
+  margin: 24px 0 4px;
+  font-size: 1rem;
+  font-weight: 800;
+
+  &:first-of-type {
+    margin-top: 0;
+  }
 }
 
 .subtitle {
@@ -77,4 +87,8 @@
   font-size: 0.88rem;
   font-weight: 600;
   color: #1a1a1a;
+}
+
+.welcome-guide-button {
+  margin-top: 28px;
 }

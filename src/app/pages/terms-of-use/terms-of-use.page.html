@@ -1,0 +1,19 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/settings" text=""></ion-back-button>
+    </ion-buttons>
+    <ion-title>{{ 'termsOfUse.title' | translate }}</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="legal-content">
+  <div class="legal-container">
+    @for (section of sections; track section.titleKey) {
+      <section class="legal-section">
+        <h2>{{ section.titleKey | translate }}</h2>
+        <p>{{ section.bodyKey | translate }}</p>
+      </section>
+    }
+  </div>
+</ion-content>

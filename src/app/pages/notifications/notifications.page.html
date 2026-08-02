@@ -19,9 +19,6 @@
       <button type="button" class="icon-btn" (click)="openFilterModal()">
         <ion-icon name="options-outline"></ion-icon>
       </button>
-      <button type="button" class="icon-btn" routerLink="/notification-settings">
-        <ion-icon name="settings-outline"></ion-icon>
-      </button>
     </div>
 
     <div class="top-row">
@@ -158,7 +155,7 @@
       @if (disabledTypes().size > 0) {
         <p class="disabled-types-hint">
           {{ 'notifications.disabledTypesHint' | translate }}
-          <a routerLink="/notification-settings">{{ 'notifications.manageLink' | translate }}</a>
+          <a routerLink="/settings">{{ 'notifications.manageLink' | translate }}</a>
         </p>
       }
 

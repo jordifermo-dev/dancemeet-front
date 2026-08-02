@@ -11,6 +11,12 @@
     "favorites": "Favoritos",
     "profile": "Perfil"
   },
+  "settings": {
+    "title": "Ajustes",
+    "legalSection": "Legal",
+    "privacyPolicyLink": "Política de privacidad",
+    "termsOfUseLink": "Términos de uso"
+  },
   "welcome": {
     "exploreTitle": "Explorar",
     "exploreBody": "Descubre eventos de baile cerca de ti en el mapa, con filtros por estilo, tipo, fecha y precio.",
@@ -306,5 +312,44 @@
   "errors": {
     "noEmail": "Esta cuenta no tiene un email asociado.",
     "noProfile": "No encontramos tu perfil. Prueba a registrarte de nuevo."
+  },
+  "privacyPolicy": {
+    "title": "Política de privacidad",
+    "lastUpdated": "Última actualización: agosto de 2026",
+    "section1Title": "Quiénes somos",
+    "section1Body": "DanceMeet es una aplicación para descubrir, organizar y asistir a eventos de baile, y para conectar con otras personas que comparten esta afición. Esta política explica qué datos recogemos, para qué los usamos y qué control tienes sobre ellos.",
+    "section2Title": "Qué datos recogemos",
+    "section2Body": "Al registrarte guardamos tu nombre, email y contraseña. De forma opcional puedes añadir tu teléfono, una foto de perfil, enlaces a tus redes sociales (Instagram, Facebook, TikTok, YouTube, sitio web), tu dirección y ubicación, y tus preferencias de estilos de baile y tipos de evento.",
+    "section3Title": "Para qué los usamos",
+    "section3Body": "Usamos estos datos para mostrarte eventos y personas relevantes según tus preferencias y tu ubicación, para que otros usuarios puedan encontrarte y seguirte, y para enviarte notificaciones sobre la actividad que te interesa. Nunca vendemos tus datos a terceros.",
+    "section4Title": "Ubicación",
+    "section4Body": "Para buscar eventos cerca de ti y calcular distancias, usamos tu ciudad y coordenadas, que obtenemos mediante la geolocalización de tu navegador o la dirección que introduzcas manualmente. Esta búsqueda pasa por nuestro servidor, que consulta el servicio de mapas de Google para traducir direcciones en coordenadas.",
+    "section5Title": "Notificaciones push",
+    "section5Body": "Si lo permites, te enviamos notificaciones push (nuevos seguidores, cambios en eventos, recordatorios del mismo día...) mediante Firebase Cloud Messaging. Puedes elegir qué tipos de notificación recibir, o desactivarlas todas, desde Ajustes.",
+    "section6Title": "Qué ven otros usuarios",
+    "section6Body": "Tu nombre, foto y estilos de baile son visibles para otros usuarios. Tu email, teléfono, ciudad y ubicación solo se muestran si tú activas esa opción concreta en tu Perfil; por defecto están ocultos.",
+    "section7Title": "Tus derechos",
+    "section7Body": "Puedes revisar y actualizar tus datos en cualquier momento desde la pestaña Perfil. Si quieres eliminar tu cuenta y tus datos, escríbenos y lo gestionaremos.",
+    "section8Title": "Cambios en esta política",
+    "section8Body": "Si actualizamos esta política de forma relevante, te avisaremos dentro de la aplicación."
+  },
+  "termsOfUse": {
+    "title": "Términos de uso",
+    "section1Title": "Aceptación de los términos",
+    "section1Body": "Al crear una cuenta en DanceMeet aceptas estos términos de uso. Si no estás de acuerdo, no debes utilizar la aplicación.",
+    "section2Title": "Quién puede usar la app",
+    "section2Body": "Debes tener al menos 16 años para registrarte. Al crear una cuenta confirmas que la información que facilitas es veraz y que mantienes actualizados tus datos.",
+    "section3Title": "Tu cuenta",
+    "section3Body": "Eres responsable de la actividad realizada desde tu cuenta y de mantener tu contraseña en un lugar seguro. Avísanos si crees que alguien ha accedido a ella sin tu permiso.",
+    "section4Title": "Qué ofrece DanceMeet",
+    "section4Body": "DanceMeet te permite descubrir eventos de baile, crear los tuyos propios, seguir a otros usuarios y recibir notificaciones sobre la actividad que te interesa. No organizamos ni supervisamos los eventos publicados por otros usuarios.",
+    "section5Title": "Normas de convivencia",
+    "section5Body": "Trata al resto de usuarios con respeto. No está permitido el acoso, la suplantación de identidad, ni publicar contenido falso, ofensivo o ilegal. Podemos retirar contenido o cuentas que incumplan estas normas.",
+    "section6Title": "Eventos creados por usuarios",
+    "section6Body": "Cada evento es responsabilidad de quien lo organiza: su descripción, condiciones, seguridad y si finalmente se celebra. DanceMeet no garantiza la veracidad de la información publicada ni participa en la organización de los eventos.",
+    "section7Title": "Suspensión de cuentas",
+    "section7Body": "Podemos suspender o eliminar cuentas que incumplan estos términos, sin previo aviso en casos graves.",
+    "section8Title": "Cambios en estos términos",
+    "section8Body": "Podemos actualizar estos términos con el tiempo. Si el cambio es relevante, te avisaremos dentro de la aplicación."
   }
 }

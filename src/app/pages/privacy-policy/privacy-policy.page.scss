@@ -1,0 +1,35 @@
+.legal-content {
+  --background: var(--ion-color-light);
+}
+
+.legal-container {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 16px 20px 40px;
+}
+
+.legal-updated {
+  margin: 0 0 20px;
+  font-size: 0.78rem;
+  color: var(--ion-color-medium);
+}
+
+.legal-section {
+  background: #fff;
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 12px;
+
+  h2 {
+    margin: 0 0 8px;
+    font-size: 0.95rem;
+    font-weight: 800;
+  }
+
+  p {
+    margin: 0;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    color: var(--ion-color-medium-shade);
+  }
+}
