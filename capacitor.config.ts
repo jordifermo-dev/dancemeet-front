@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'io.ionic.starter',
-  appName: 'dancemeet-front',
+  appId: 'com.dancemeet.app',
+  appName: 'DanceMeet',
   webDir: 'www'
 };
 

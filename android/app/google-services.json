@@ -1,0 +1,74 @@
+{
+  "project_info": {
+    "project_number": "92761252465",
+    "project_id": "dancemeet-f46f2",
+    "storage_bucket": "dancemeet-f46f2.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:92761252465:android:27904f894571e9a98171d0",
+        "android_client_info": {
+          "package_name": "com.dancemeet.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "92761252465-2gg7q163qjg8t7njcsgi3imt08ggihem.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDGQUZISLklDORhYZ_NdsAoHrv09SZXOfA"
+        },
+        {
+          "current_key": "AIzaSyCenByLDKEOul_3dHvW2ArCRvnkFYXTMbs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "92761252465-2gg7q163qjg8t7njcsgi3imt08ggihem.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:92761252465:android:d3267c8a8b4a35aa8171d0",
+        "android_client_info": {
+          "package_name": "com.jordifermo.dancemeet"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "92761252465-2gg7q163qjg8t7njcsgi3imt08ggihem.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDGQUZISLklDORhYZ_NdsAoHrv09SZXOfA"
+        },
+        {
+          "current_key": "AIzaSyCenByLDKEOul_3dHvW2ArCRvnkFYXTMbs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "92761252465-2gg7q163qjg8t7njcsgi3imt08ggihem.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
