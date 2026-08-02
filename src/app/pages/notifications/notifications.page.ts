@@ -375,7 +375,13 @@ export class NotificationsPage implements ViewWillEnter, AfterViewInit, OnDestro
       return;
     }
     this.notificationService.markAllRead(userId).subscribe({
-      next: () => this.items.update((list) => list.map((item) => ({ ...item, read: true }))),
+      next: () => {
+        this.items.update((list) => list.map((item) => ({ ...item, read: true })));
+        // Every app-notification-bell instance reads this same signal, so the
+        // badge on the other tabs updates immediately instead of waiting for
+        // their own next 30s poll.
+        this.notificationService.unreadCount.set(0);
+      },
     });
   }
 
@@ -388,7 +394,10 @@ export class NotificationsPage implements ViewWillEnter, AfterViewInit, OnDestro
       return;
     }
     this.notificationService.markRead(item.id).subscribe({
-      next: () => this.items.update((list) => list.map((i) => (i.id === item.id ? { ...i, read: true } : i))),
+      next: () => {
+        this.items.update((list) => list.map((i) => (i.id === item.id ? { ...i, read: true } : i)));
+        this.notificationService.unreadCount.update((count) => Math.max(0, count - 1));
+      },
     });
   }
 
@@ -399,7 +408,10 @@ export class NotificationsPage implements ViewWillEnter, AfterViewInit, OnDestro
     event.stopPropagation();
     const request$ = item.read ? this.notificationService.markUnread(item.id) : this.notificationService.markRead(item.id);
     request$.subscribe({
-      next: () => this.items.update((list) => list.map((i) => (i.id === item.id ? { ...i, read: !item.read } : i))),
+      next: () => {
+        this.items.update((list) => list.map((i) => (i.id === item.id ? { ...i, read: !item.read } : i)));
+        this.notificationService.unreadCount.update((count) => (item.read ? count + 1 : Math.max(0, count - 1)));
+      },
     });
   }
 

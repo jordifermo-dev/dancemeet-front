@@ -1,5 +1,5 @@
 import { HttpClient } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import { Observable } from 'rxjs';
 import { getMessaging, getToken, isSupported, onMessage } from 'firebase/messaging';
 import { ToastController } from '@ionic/angular/standalone';
@@ -19,12 +19,21 @@ export class NotificationService {
   private readonly baseUrl = `${environment.apiUrl}/api/notifications`;
   private readonly usersBaseUrl = `${environment.apiUrl}/api/users`;
 
+  /** Shared across every `app-notification-bell` instance (one per tab
+   * header, each kept alive by Ionic's tab stacks) so marking notifications
+   * read/unread from one tab is reflected on the others immediately, instead
+   * of each bell only finding out on its own next 30s poll. */
+  readonly unreadCount = signal(0);
+
   list(userId: string): Observable<AppNotification[]> {
     return this.http.get<AppNotification[]>(`${this.baseUrl}/user/${userId}`);
   }
 
-  unreadCount(userId: string): Observable<{ count: number }> {
-    return this.http.get<{ count: number }>(`${this.baseUrl}/user/${userId}/unread-count`);
+  refreshUnreadCount(userId: string): void {
+    this.http.get<{ count: number }>(`${this.baseUrl}/user/${userId}/unread-count`).subscribe({
+      next: ({ count }) => this.unreadCount.set(count),
+      error: () => this.unreadCount.set(0),
+    });
   }
 
   markRead(id: string): Observable<{ success: boolean }> {

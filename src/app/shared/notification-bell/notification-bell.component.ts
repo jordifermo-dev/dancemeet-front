@@ -1,4 +1,4 @@
-import { Component, DestroyRef, inject, OnInit, signal } from '@angular/core';
+import { Component, DestroyRef, inject, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { IonIcon } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
@@ -25,7 +25,10 @@ export class NotificationBellComponent implements OnInit {
   private readonly notificationService = inject(NotificationService);
   private readonly destroyRef = inject(DestroyRef);
 
-  readonly unreadCount = signal(0);
+  /** Shared signal (see NotificationService) - every bell instance renders
+   * the same count, so marking notifications read from one tab updates the
+   * badge on the others as soon as that action's response lands. */
+  readonly unreadCount = this.notificationService.unreadCount;
 
   constructor() {
     addIcons({ notificationsOutline });
@@ -40,13 +43,10 @@ export class NotificationBellComponent implements OnInit {
   private refresh(): void {
     const userId = this.authService.currentUser()?.id;
     if (!userId) {
-      this.unreadCount.set(0);
+      this.notificationService.unreadCount.set(0);
       return;
     }
-    this.notificationService.unreadCount(userId).subscribe({
-      next: ({ count }) => this.unreadCount.set(count),
-      error: () => this.unreadCount.set(0),
-    });
+    this.notificationService.refreshUnreadCount(userId);
   }
 
   open(): void {
