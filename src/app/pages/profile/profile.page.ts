@@ -28,7 +28,6 @@ import {
   addOutline,
   removeOutline,
   layersOutline,
-  addCircleOutline,
   settingsOutline,
 } from 'ionicons/icons';
 import { AuthService } from '../../services/auth.service';
@@ -209,7 +208,6 @@ export class ProfilePage implements OnInit, ViewWillEnter, ComponentWithUnsavedC
       addOutline,
       removeOutline,
       layersOutline,
-      addCircleOutline,
       settingsOutline,
     });
 
@@ -585,10 +583,6 @@ export class ProfilePage implements OnInit, ViewWillEnter, ComponentWithUnsavedC
 
   goToEvents(): void {
     this.router.navigateByUrl('/user-events');
-  }
-
-  goToCreateEvent(): void {
-    this.router.navigateByUrl('/events/new');
   }
 
   goToFollowers(): void {

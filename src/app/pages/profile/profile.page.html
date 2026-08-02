@@ -311,16 +311,12 @@
         }
         <div class="filter-actions-row">
           <ion-button expand="block" fill="outline" color="primary" (click)="clearAllSelections()">
-            {{ 'profile.clearFilters' | translate }}
+            {{ 'explorer.resetFilters' | translate }}
           </ion-button>
           <ion-button expand="block" [disabled]="accountForm.invalid" (click)="save()">
             {{ (justSaved() ? 'profile.applied' : 'profile.apply') | translate }}
           </ion-button>
         </div>
-        <ion-button expand="block" fill="outline" (click)="goToCreateEvent()">
-          <ion-icon slot="start" name="add-circle-outline"></ion-icon>
-          {{ 'profile.createEventButton' | translate }}
-        </ion-button>
       </section>
     }
   </div>

@@ -55,7 +55,7 @@ export class LocationFilterButtonComponent {
       return;
     }
     this.cityInputTimer = setTimeout(() => {
-      this.geocodingService.search(query).subscribe({
+      this.geocodingService.search(query, 'address').subscribe({
         next: (suggestions) => this.citySuggestions.set(suggestions),
         error: () => this.citySuggestions.set([]),
       });
