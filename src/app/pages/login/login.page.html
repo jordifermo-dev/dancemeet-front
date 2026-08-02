@@ -7,17 +7,17 @@
     </div>
 
     <div class="providers">
-      <ion-button expand="block" class="google-button" (click)="continueWithProvider('google')">
+      <ion-button expand="block" class="google-button" [disabled]="isSubmitting()" (click)="continueWithProvider('google')">
         <ion-icon slot="start" name="logo-google"></ion-icon>
         {{ 'login.continueWithGoogle' | translate }}
       </ion-button>
 
-      <ion-button expand="block" color="dark" (click)="continueWithProvider('apple')">
+      <ion-button expand="block" color="dark" [disabled]="isSubmitting()" (click)="continueWithProvider('apple')">
         <ion-icon slot="start" name="logo-apple"></ion-icon>
         {{ 'login.continueWithApple' | translate }}
       </ion-button>
 
-      <ion-button expand="block" color="tertiary" (click)="continueWithProvider('microsoft')">
+      <ion-button expand="block" color="tertiary" [disabled]="isSubmitting()" (click)="continueWithProvider('microsoft')">
         <ion-icon slot="start" name="logo-microsoft"></ion-icon>
         {{ 'login.continueWithMicrosoft' | translate }}
       </ion-button>

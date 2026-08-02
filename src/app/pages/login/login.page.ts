@@ -71,12 +71,18 @@ export class LoginPage implements OnInit, AfterViewInit {
   }
 
   async continueWithProvider(provider: AuthProvider): Promise<void> {
+    if (this.isSubmitting()) {
+      return;
+    }
+    this.isSubmitting.set(true);
     this.errorMessage.set(null);
     try {
       await this.authService.loginWithProvider(provider);
       this.router.navigateByUrl('/tabs/explorer');
     } catch (err) {
       this.errorMessage.set(firebaseErrorMessage(err, this.translate));
+    } finally {
+      this.isSubmitting.set(false);
     }
   }
 
