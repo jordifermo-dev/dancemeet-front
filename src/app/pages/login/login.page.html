@@ -12,15 +12,7 @@
         {{ 'login.continueWithGoogle' | translate }}
       </ion-button>
 
-      <ion-button expand="block" color="dark" [disabled]="isSubmitting()" (click)="continueWithProvider('apple')">
-        <ion-icon slot="start" name="logo-apple"></ion-icon>
-        {{ 'login.continueWithApple' | translate }}
-      </ion-button>
-
-      <ion-button expand="block" color="tertiary" [disabled]="isSubmitting()" (click)="continueWithProvider('microsoft')">
-        <ion-icon slot="start" name="logo-microsoft"></ion-icon>
-        {{ 'login.continueWithMicrosoft' | translate }}
-      </ion-button>
+      <!-- Apple/Microsoft sign-in not implemented yet - re-enable once they are. -->
 
       <ion-button expand="block" color="primary" (click)="toggleEmailForm()">
         <ion-icon slot="start" name="mail-outline"></ion-icon>
