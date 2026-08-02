@@ -96,6 +96,7 @@ export class FollowListPage implements ViewWillEnter {
   // relationship right after tapping the button, so it updates immediately
   // instead of waiting for `currentUser()` to be resynced from the backend.
   private readonly amFollowingOverrides = signal<Map<string, boolean>>(new Map());
+  private readonly followBusy = signal<Set<string>>(new Set());
 
   readonly showConfirmModal = signal(false);
   readonly confirmTitleKey = signal('');
@@ -220,12 +221,33 @@ export class FollowListPage implements ViewWillEnter {
     return this.authService.currentUser()?.id === item.id;
   }
 
+  /** Guards follow/unfollow requests in flight per user id - a doubled tap on a
+   * touch device otherwise fires the handler twice before the first request's
+   * response updates amFollowingOverrides, sending a duplicate follow/unfollow
+   * call that the backend rejects with a "already follows" business error. */
+  isFollowBusy(item: FollowUser): boolean {
+    return this.followBusy().has(item.id);
+  }
+
+  private setFollowBusy(itemId: string, busy: boolean): void {
+    this.followBusy.update((set) => {
+      const next = new Set(set);
+      if (busy) {
+        next.add(itemId);
+      } else {
+        next.delete(itemId);
+      }
+      return next;
+    });
+  }
+
   follow(item: FollowUser, event: Event): void {
     event.stopPropagation();
     const me = this.authService.currentUser();
-    if (!me) {
+    if (!me || this.isFollowBusy(item)) {
       return;
     }
+    this.setFollowBusy(item.id, true);
     this.followService.follow(item.id, me.id).subscribe({
       next: () => {
         this.amFollowingOverrides.update((map) => new Map(map).set(item.id, true));
@@ -233,13 +255,15 @@ export class FollowListPage implements ViewWillEnter {
         // Profile tab's "Seguint" count) reflect this without needing a full reload.
         this.authService.syncProfile({ ...me, followingId: [...(me.followingId ?? []), item.id] });
       },
+      complete: () => this.setFollowBusy(item.id, false),
+      error: () => this.setFollowBusy(item.id, false),
     });
   }
 
   async confirmUnfollow(item: FollowUser, event: Event): Promise<void> {
     event.stopPropagation();
     const me = this.authService.currentUser();
-    if (!me) {
+    if (!me || this.isFollowBusy(item)) {
       return;
     }
     const confirmed = await this.confirm(
@@ -249,6 +273,7 @@ export class FollowListPage implements ViewWillEnter {
     if (!confirmed) {
       return;
     }
+    this.setFollowBusy(item.id, true);
     this.followService.unfollow(item.id, me.id).subscribe({
       next: () => {
         this.amFollowingOverrides.update((map) => new Map(map).set(item.id, false));
@@ -257,6 +282,8 @@ export class FollowListPage implements ViewWillEnter {
           followingId: (me.followingId ?? []).filter((id) => id !== item.id),
         });
       },
+      complete: () => this.setFollowBusy(item.id, false),
+      error: () => this.setFollowBusy(item.id, false),
     });
   }
 

@@ -29,6 +29,10 @@ export class UserCardComponent {
   @Input() disciplinesById: Map<string, Discipline> = new Map();
 
   private readonly followOverride = signal<boolean | undefined>(undefined);
+  /** Guards against a doubled tap firing this twice before the first request's
+   * response lands - the second call would hit the backend's "already
+   * follows"/"not following" business-rule error. */
+  readonly followBusy = signal(false);
 
   readonly disciplines = computed(() =>
     (this.user.disciplineIds ?? [])
@@ -58,9 +62,10 @@ export class UserCardComponent {
   toggleFollow(event: Event): void {
     event.stopPropagation();
     const me = this.authService.currentUser();
-    if (!me) {
+    if (!me || this.followBusy()) {
       return;
     }
+    this.followBusy.set(true);
     if (this.isFollowedByMe()) {
       this.followService.unfollow(this.user.id, me.id).subscribe({
         next: () => {
@@ -70,6 +75,8 @@ export class UserCardComponent {
             followingId: (me.followingId ?? []).filter((id) => id !== this.user.id),
           });
         },
+        complete: () => this.followBusy.set(false),
+        error: () => this.followBusy.set(false),
       });
     } else {
       this.followService.follow(this.user.id, me.id).subscribe({
@@ -77,6 +84,8 @@ export class UserCardComponent {
           this.followOverride.set(true);
           this.authService.syncProfile({ ...me, followingId: [...(me.followingId ?? []), this.user.id] });
         },
+        complete: () => this.followBusy.set(false),
+        error: () => this.followBusy.set(false),
       });
     }
   }

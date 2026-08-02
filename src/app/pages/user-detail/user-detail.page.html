@@ -49,17 +49,17 @@
       @if (!isMe()) {
         <div class="actions-section">
           @if (amFollowing()) {
-            <ion-button expand="block" fill="outline" color="primary" (click)="confirmUnfollow()">
+            <ion-button expand="block" fill="outline" color="primary" [disabled]="followActionBusy()" (click)="confirmUnfollow()">
               {{ 'userDetail.unfollowButton' | translate }}
             </ion-button>
           }
           @if (isMyFollower()) {
-            <ion-button expand="block" fill="outline" color="primary" (click)="confirmRemoveFollower()">
+            <ion-button expand="block" fill="outline" color="primary" [disabled]="followActionBusy()" (click)="confirmRemoveFollower()">
               {{ 'userDetail.removeFollowerButton' | translate }}
             </ion-button>
           }
           @if (!amFollowing() && !isMyFollower()) {
-            <ion-button expand="block" (click)="follow()">
+            <ion-button expand="block" [disabled]="followActionBusy()" (click)="follow()">
               <ion-icon slot="start" name="person-add-outline"></ion-icon>
               {{ 'userDetail.followButton' | translate }}
             </ion-button>

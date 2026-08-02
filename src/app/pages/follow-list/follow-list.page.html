@@ -72,11 +72,21 @@
             </div>
             @if (!isMe(item)) {
               @if (isFollowedByMe(item)) {
-                <button type="button" class="follow-btn follow-btn-following" (click)="confirmUnfollow(item, $event)">
+                <button
+                  type="button"
+                  class="follow-btn follow-btn-following"
+                  [disabled]="isFollowBusy(item)"
+                  (click)="confirmUnfollow(item, $event)"
+                >
                   {{ 'profile.following' | translate }}
                 </button>
               } @else {
-                <button type="button" class="follow-btn follow-btn-follow" (click)="follow(item, $event)">
+                <button
+                  type="button"
+                  class="follow-btn follow-btn-follow"
+                  [disabled]="isFollowBusy(item)"
+                  (click)="follow(item, $event)"
+                >
                   <ion-icon name="person-add-outline"></ion-icon>
                   {{ 'userDetail.followButton' | translate }}
                 </button>

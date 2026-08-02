@@ -9,12 +9,6 @@ export class FavoriteService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = `${environment.apiUrl}/api/favorites`;
 
-  countByUser(userId: string): Observable<number> {
-    return this.http
-      .get<{ count: number }>(`${this.baseUrl}/count/user/${userId}`)
-      .pipe(map((res) => res.count));
-  }
-
   getFavoritedEvents(userId: string): Observable<FavoritedEvent[]> {
     return this.http.get<FavoritedEvent[]>(`${this.baseUrl}/user/${userId}/events`);
   }

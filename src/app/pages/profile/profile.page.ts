@@ -293,8 +293,12 @@ export class ProfilePage implements OnInit, ViewWillEnter, ComponentWithUnsavedC
     this.draftLanguage.set((user.language as AppLanguage) ?? this.languageService.currentLang() ?? 'es');
 
     this.attendedEventsCount.set(0);
-    this.favoriteService.countByUser(user.id).subscribe({
-      next: (count) => this.attendedEventsCount.set(count),
+    // Count organizer + attendee events, matching exactly what user-events
+    // (the list this stat links to) shows - counting only attendee records
+    // here made the number smaller than the list underneath it for anyone
+    // who also organizes events.
+    this.favoriteService.getFavoritedEvents(user.id).subscribe({
+      next: (events) => this.attendedEventsCount.set(events.length),
     });
 
     this.baseline = this.buildSnapshot();

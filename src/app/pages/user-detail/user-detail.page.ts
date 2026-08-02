@@ -113,6 +113,11 @@ export class UserDetailPage {
   // person from this page, so the button updates immediately instead of
   // waiting for `currentUser()` to be resynced from the backend.
   private readonly amFollowingOverride = signal<boolean | null>(null);
+  /** Guards follow/unfollow/remove-follower requests in flight - a doubled tap
+   * otherwise fires the handler twice before the first request's response
+   * updates amFollowingOverride, sending a duplicate call the backend rejects
+   * with an "already follows"/"not following" business error. */
+  readonly followActionBusy = signal(false);
 
   /** True only if I actually follow this person right now (not just "which list I browsed here from"). */
   readonly amFollowing = computed(() => {
@@ -228,8 +233,9 @@ export class UserDetailPage {
         this.notFound.set(!user);
         this.loading.set(false);
         if (user) {
-          this.favoriteService.countByUser(user.id).subscribe({
-            next: (count) => this.attendedEventsCount.set(count),
+          // Organizer + attendee, matching what goToEvents()/user-events shows for this person.
+          this.favoriteService.getFavoritedEvents(user.id).subscribe({
+            next: (events) => this.attendedEventsCount.set(events.length),
           });
         }
       },
@@ -297,9 +303,10 @@ export class UserDetailPage {
   follow(): void {
     const user = this.user();
     const me = this.authService.currentUser();
-    if (!user || !me) {
+    if (!user || !me || this.followActionBusy()) {
       return;
     }
+    this.followActionBusy.set(true);
     this.followService.follow(user.id, me.id).subscribe({
       next: () => {
         this.amFollowingOverride.set(true);
@@ -307,13 +314,15 @@ export class UserDetailPage {
         // Profile tab's "Seguint" count) reflect this without needing a full reload.
         this.authService.syncProfile({ ...me, followingId: [...(me.followingId ?? []), user.id] });
       },
+      complete: () => this.followActionBusy.set(false),
+      error: () => this.followActionBusy.set(false),
     });
   }
 
   async confirmUnfollow(): Promise<void> {
     const user = this.user();
     const me = this.authService.currentUser();
-    if (!user || !me) {
+    if (!user || !me || this.followActionBusy()) {
       return;
     }
     const confirmed = await this.confirm(
@@ -323,6 +332,7 @@ export class UserDetailPage {
     if (!confirmed) {
       return;
     }
+    this.followActionBusy.set(true);
     this.followService.unfollow(user.id, me.id).subscribe({
       next: () => {
         this.authService.syncProfile({
@@ -331,13 +341,15 @@ export class UserDetailPage {
         });
         this.location.back();
       },
+      complete: () => this.followActionBusy.set(false),
+      error: () => this.followActionBusy.set(false),
     });
   }
 
   async confirmRemoveFollower(): Promise<void> {
     const user = this.user();
     const me = this.authService.currentUser();
-    if (!user || !me) {
+    if (!user || !me || this.followActionBusy()) {
       return;
     }
     const confirmed = await this.confirm(
@@ -347,6 +359,7 @@ export class UserDetailPage {
     if (!confirmed) {
       return;
     }
+    this.followActionBusy.set(true);
     this.followService.unfollow(me.id, user.id).subscribe({
       next: () => {
         this.authService.syncProfile({
@@ -355,6 +368,8 @@ export class UserDetailPage {
         });
         this.location.back();
       },
+      complete: () => this.followActionBusy.set(false),
+      error: () => this.followActionBusy.set(false),
     });
   }
 
