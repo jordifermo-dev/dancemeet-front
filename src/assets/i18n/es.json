@@ -92,6 +92,7 @@
     "confirmPasswordLabel": "Repite la contraseña",
     "confirmPasswordPlaceholder": "Confirma tu contraseña",
     "passwordsMismatch": "Las contraseñas no coinciden.",
+    "continuingWithProvider": "Continuando como {{email}}",
     "disciplinesTitle": "¿Qué bailes te gustan?",
     "selectAllSubtitle": "Selecciona todos los que quieras.",
     "eventTypesTitle": "¿Qué tipo de eventos buscas?",

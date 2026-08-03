@@ -1,14 +1,17 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { TranslateService } from '@ngx-translate/core';
+import { Capacitor } from '@capacitor/core';
 import {
   GoogleAuthProvider,
   OAuthProvider,
   User as FirebaseUser,
   createUserWithEmailAndPassword,
+  getRedirectResult,
   onAuthStateChanged,
   signInWithEmailAndPassword,
   signInWithPopup,
+  signInWithRedirect,
   signOut,
 } from 'firebase/auth';
 import { firebaseAuth } from './firebase';
@@ -17,6 +20,14 @@ import { LanguageService, SUPPORTED_LANGUAGES } from './language.service';
 import { User } from '../models';
 
 export type AuthProvider = 'google' | 'apple' | 'microsoft';
+
+/** What register.page.ts needs to pre-fill/skip its account step once a
+ * social sign-in authenticates someone with no matching app profile yet. */
+export interface PendingSocialSignup {
+  name: string;
+  email: string;
+  photoUrl: string | null;
+}
 
 function buildProvider(provider: AuthProvider): GoogleAuthProvider | OAuthProvider {
   switch (provider) {
@@ -27,6 +38,17 @@ function buildProvider(provider: AuthProvider): GoogleAuthProvider | OAuthProvid
     case 'microsoft':
       return new OAuthProvider('microsoft.com');
   }
+}
+
+/** signInWithPopup relies on the popup window sharing sessionStorage/opener
+ * with the tab that opened it to hand the credential back - on mobile
+ * browsers that popup very often opens as a disconnected tab/task instead
+ * (losing that link), which is what was actually behind the "missing initial
+ * state" error users hit trying to sign in with Google on a phone. A
+ * full-page redirect is Firebase's own recommended approach for mobile web -
+ * desktop keeps the popup, which is a nicer UX there and unaffected by this. */
+function isMobileWebBrowser(): boolean {
+  return !Capacitor.isNativePlatform() && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
 }
 
 @Injectable({ providedIn: 'root' })
@@ -40,6 +62,20 @@ export class AuthService {
 
   /** Resolves once Firebase's initial (async) session check has run, so guards don't race it. */
   readonly authReady: Promise<void>;
+
+  /** Set only when a signInWithRedirect (mobile Google/Apple/Microsoft login)
+   * came back with an error, or signed in a Firebase user with no matching
+   * app profile - onAuthStateChanged's own handling of that same case
+   * (tryLoadProfile) swallows it silently, so without this the mobile user
+   * would land back on /login with literally no explanation. Read once and
+   * cleared by login.page.ts. */
+  readonly redirectError = signal<unknown>(null);
+
+  /** Set when a Google/Apple/Microsoft sign-in succeeds but no app profile
+   * exists for that email yet - login.page.ts routes to /register instead of
+   * showing an error, and register.page.ts reads (and clears) this to
+   * pre-fill its account step and skip asking for a password. */
+  readonly pendingSocialSignup = signal<PendingSocialSignup | null>(null);
 
   constructor() {
     let resolveReady!: () => void;
@@ -59,6 +95,19 @@ export class AuthService {
         resolveReady();
       }
     });
+
+    void this.consumeRedirectResult();
+  }
+
+  private async consumeRedirectResult(): Promise<void> {
+    try {
+      const credential = await getRedirectResult(firebaseAuth);
+      if (credential) {
+        await this.loadProfileOrSignalSignup(credential.user);
+      }
+    } catch (err) {
+      this.redirectError.set(err);
+    }
   }
 
   /** Switches the active UI language to the profile's saved preference, if it's one we support. */
@@ -101,6 +150,30 @@ export class AuthService {
     this.applyProfileLanguage(profile);
   }
 
+  /**
+   * Used after a social (Google/Apple/Microsoft) sign-in: unlike
+   * loadProfileOrThrow, a missing app profile isn't an error here - it means
+   * this is someone's first time, so the details Firebase gave us are handed
+   * off via pendingSocialSignup for register.page.ts to finish the account
+   * with (disciplines/event types/location still need to come from them).
+   */
+  private async loadProfileOrSignalSignup(firebaseUser: FirebaseUser): Promise<void> {
+    if (!firebaseUser.email) {
+      throw new Error(this.translate.instant('errors.noEmail'));
+    }
+    const profile = await firstValueFrom(this.userService.getByEmail(firebaseUser.email));
+    if (!profile) {
+      this.pendingSocialSignup.set({
+        name: firebaseUser.displayName ?? '',
+        email: firebaseUser.email,
+        photoUrl: firebaseUser.photoURL,
+      });
+      return;
+    }
+    this.currentUser.set(profile);
+    this.applyProfileLanguage(profile);
+  }
+
   /** Sets the active profile immediately (used right after register, without waiting on a lookup). */
   syncProfile(user: User): void {
     this.currentUser.set(user);
@@ -117,8 +190,16 @@ export class AuthService {
   }
 
   async loginWithProvider(provider: AuthProvider): Promise<void> {
-    const credential = await signInWithPopup(firebaseAuth, buildProvider(provider));
-    await this.loadProfileOrThrow(credential.user);
+    const authProvider = buildProvider(provider);
+    if (isMobileWebBrowser()) {
+      // Navigates away - the result is picked up by consumeRedirectResult()
+      // once Google redirects back and the app reloads, not by this call
+      // returning.
+      await signInWithRedirect(firebaseAuth, authProvider);
+      return;
+    }
+    const credential = await signInWithPopup(firebaseAuth, authProvider);
+    await this.loadProfileOrSignalSignup(credential.user);
   }
 
   async getIdToken(): Promise<string | null> {

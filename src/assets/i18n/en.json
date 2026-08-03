@@ -92,6 +92,7 @@
     "confirmPasswordLabel": "Repeat password",
     "confirmPasswordPlaceholder": "Confirm your password",
     "passwordsMismatch": "Passwords don't match.",
+    "continuingWithProvider": "Continuing as {{email}}",
     "disciplinesTitle": "Which dance styles do you like?",
     "selectAllSubtitle": "Select as many as you like.",
     "eventTypesTitle": "What type of events are you looking for?",

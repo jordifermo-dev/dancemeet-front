@@ -92,6 +92,7 @@
     "confirmPasswordLabel": "Repeteix la contrasenya",
     "confirmPasswordPlaceholder": "Confirma la teva contrasenya",
     "passwordsMismatch": "Les contrasenyes no coincideixen.",
+    "continuingWithProvider": "Continuant com a {{email}}",
     "disciplinesTitle": "Quins balls t'agraden?",
     "selectAllSubtitle": "Selecciona tots els que vulguis.",
     "eventTypesTitle": "Quin tipus d'esdeveniments busques?",

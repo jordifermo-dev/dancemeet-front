@@ -61,8 +61,23 @@ export class LoginPage implements OnInit, AfterViewInit {
     addIcons({ logoGoogle, logoApple, logoMicrosoft, mailOutline, eyeOutline, eyeOffOutline });
   }
 
-  ngOnInit(): void {
+  async ngOnInit(): Promise<void> {
     this.emailForm.reset({ email: '', password: '' });
+
+    // Only reachable after a mobile signInWithRedirect came back - a
+    // successful one with an existing profile is already routed away from
+    // /login by publicGuard before this component even mounts, so anything
+    // left to handle here is either an error or a first-time social sign-in.
+    await this.authService.authReady;
+    if (this.authService.pendingSocialSignup()) {
+      this.router.navigateByUrl('/register');
+      return;
+    }
+    const redirectError = this.authService.redirectError();
+    if (redirectError) {
+      this.errorMessage.set(firebaseErrorMessage(redirectError, this.translate));
+      this.authService.redirectError.set(null);
+    }
   }
 
   ngAfterViewInit(): void {
@@ -80,6 +95,10 @@ export class LoginPage implements OnInit, AfterViewInit {
     this.errorMessage.set(null);
     try {
       await this.authService.loginWithProvider(provider);
+      if (this.authService.pendingSocialSignup()) {
+        this.router.navigateByUrl('/register');
+        return;
+      }
       this.onboarding.maybeShowWelcome();
       this.router.navigateByUrl('/tabs/explorer');
     } catch (err) {

@@ -116,6 +116,12 @@ export class RegisterPage implements OnInit {
     { validators: [passwordsMatchValidator] },
   );
 
+  /** Set when arriving here via AuthService.pendingSocialSignup (a Google/
+   * Apple/Microsoft sign-in with no app profile yet) - the account step
+   * becomes just a name confirmation instead of asking for a password, since
+   * Firebase already authenticated them. */
+  readonly isSocialSignup = signal(false);
+
   readonly editAddress = signal('');
   readonly editCity = signal('');
 
@@ -169,6 +175,20 @@ export class RegisterPage implements OnInit {
   }
 
   ngOnInit(): void {
+    const socialSignup = this.authService.pendingSocialSignup();
+    if (socialSignup) {
+      this.isSocialSignup.set(true);
+      this.accountForm.patchValue({ name: socialSignup.name, email: socialSignup.email });
+      // No password to collect - Firebase already authenticated this person
+      // via the provider. Email comes from the verified provider account, so
+      // it's not user-editable either.
+      this.accountForm.controls.email.disable();
+      this.accountForm.controls.password.disable();
+      this.accountForm.controls.password.clearValidators();
+      this.accountForm.controls.confirmPassword.disable();
+      this.accountForm.controls.confirmPassword.clearValidators();
+    }
+
     this.disciplineService.getAll().subscribe({
       next: (disciplines) => {
         if (disciplines.length) {
@@ -332,12 +352,14 @@ export class RegisterPage implements OnInit {
     this.isSubmitting.set(true);
     this.errorMessage.set(null);
 
-    try {
-      await this.authService.registerWithEmail(account.email.trim(), account.password);
-    } catch (err) {
-      this.isSubmitting.set(false);
-      this.errorMessage.set(firebaseErrorMessage(err, this.translate));
-      return;
+    if (!this.isSocialSignup()) {
+      try {
+        await this.authService.registerWithEmail(account.email.trim(), account.password);
+      } catch (err) {
+        this.isSubmitting.set(false);
+        this.errorMessage.set(firebaseErrorMessage(err, this.translate));
+        return;
+      }
     }
 
     const payload: CreateUserPayload = {
@@ -360,6 +382,7 @@ export class RegisterPage implements OnInit {
     try {
       const user = await firstValueFrom(this.userService.createUser(payload));
       this.authService.syncProfile(user);
+      this.authService.pendingSocialSignup.set(null);
       this.onboarding.maybeShowWelcome();
       this.router.navigateByUrl('/tabs/explorer');
     } catch (err: any) {
