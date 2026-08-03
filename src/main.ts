@@ -5,6 +5,9 @@ import { IonicRouteStrategy, provideIonicAngular } from '@ionic/angular/standalo
 import { provideTranslateService } from '@ngx-translate/core';
 import { provideTranslateHttpLoader } from '@ngx-translate/http-loader';
 import { defineCustomElements } from '@ionic/pwa-elements/loader';
+import { isDevMode } from '@angular/core';
+import { provideServiceWorker } from '@angular/service-worker';
+import { Capacitor } from '@capacitor/core';
 
 import { routes } from './app/app.routes';
 import { AppComponent } from './app/app.component';
@@ -25,5 +28,13 @@ bootstrapApplication(AppComponent, {
     provideHttpClient(withInterceptors([authInterceptor])),
     provideTranslateService({ lang: detectInitialLanguage(), fallbackLang: DEFAULT_LANGUAGE }),
     provideTranslateHttpLoader({ prefix: '/assets/i18n/', suffix: '.json' }),
+    // Only for the real PWA (browser) build - the native Capacitor app already
+    // gets fresh code on every `cap sync`, so a service worker caching its
+    // bundle would just risk showing stale JS after an update instead of
+    // helping anything.
+    provideServiceWorker('ngsw-worker.js', {
+      enabled: !isDevMode() && !Capacitor.isNativePlatform(),
+      registrationStrategy: 'registerWhenStable:30000',
+    }),
   ],
 });

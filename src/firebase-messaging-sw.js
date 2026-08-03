@@ -28,7 +28,7 @@ messaging.onBackgroundMessage((payload) => {
   }
   self.registration.showNotification(title, {
     body,
-    icon: 'assets/icons/tabs/dancemeet-wallpaper.svg',
+    icon: 'icons/icon-192x192.png',
     data: payload.data,
   });
 });
