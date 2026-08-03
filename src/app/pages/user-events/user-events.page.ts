@@ -196,8 +196,8 @@ export class UserEventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWil
       .filter((event) => event.typeIds.some((id) => typeIds.includes(id)))
       .filter((event) => statuses.includes(event.status))
       .filter((event) => {
-        const isOrganizer = event.relation === 'creator' || event.relation === 'both';
-        const isAttendee = event.relation === 'favorite' || event.relation === 'both';
+        const isOrganizer = event.relation === 'creator';
+        const isAttendee = event.relation === 'favorite';
         return (wantsOrganizer && isOrganizer) || (wantsAttendee && isAttendee);
       })
       .filter((event) => dateFrom === undefined || event.eventDateFrom >= dateFrom)

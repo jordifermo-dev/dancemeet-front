@@ -213,8 +213,7 @@
     "relationOrganizer": "Organitzo",
     "relationAttendee": "Assisteixo",
     "relationCreatorBadge": "Organitzes",
-    "relationFavoriteBadge": "Assisteixes",
-    "relationBothBadge": "Organitzes i assisteixes"
+    "relationFavoriteBadge": "Assisteixes"
   },
   "userDetail": {
     "notFound": "No s'ha trobat aquest usuari.",

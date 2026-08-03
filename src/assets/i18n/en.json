@@ -213,8 +213,7 @@
     "relationOrganizer": "Organising",
     "relationAttendee": "Attending",
     "relationCreatorBadge": "You're organising",
-    "relationFavoriteBadge": "You're attending",
-    "relationBothBadge": "Organising and attending"
+    "relationFavoriteBadge": "You're attending"
   },
   "userDetail": {
     "notFound": "This user could not be found.",

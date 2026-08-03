@@ -213,8 +213,7 @@
     "relationOrganizer": "Organizo",
     "relationAttendee": "Asisto",
     "relationCreatorBadge": "Organizas",
-    "relationFavoriteBadge": "Asistes",
-    "relationBothBadge": "Organizas y asistes"
+    "relationFavoriteBadge": "Asistes"
   },
   "userDetail": {
     "notFound": "No se ha encontrado este usuario.",

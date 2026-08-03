@@ -7,7 +7,6 @@ import { EventCardView } from './event-card.model';
 const RELATION_BADGE_KEYS: Record<EventRelation, string> = {
   creator: 'favorites.relationCreatorBadge',
   favorite: 'favorites.relationFavoriteBadge',
-  both: 'favorites.relationBothBadge',
 };
 
 /** Turns a hydrated event into the view-model <app-event-card> renders -

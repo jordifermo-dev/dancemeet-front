@@ -27,7 +27,7 @@ export interface Event {
   updatedAt?: number;
 }
 
-export type EventRelation = 'creator' | 'favorite' | 'both';
+export type EventRelation = 'creator' | 'favorite';
 
 export type PriceOption = 'free' | 'paid';
 

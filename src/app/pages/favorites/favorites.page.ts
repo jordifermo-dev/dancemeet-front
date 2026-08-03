@@ -213,8 +213,8 @@ export class FavoritesPage implements OnInit, AfterViewInit, OnDestroy, ViewWill
       .filter((event) => event.typeIds.some((id) => typeIds.includes(id)))
       .filter((event) => statuses.includes(event.status))
       .filter((event) => {
-        const isOrganizer = event.relation === 'creator' || event.relation === 'both';
-        const isAttendee = event.relation === 'favorite' || event.relation === 'both';
+        const isOrganizer = event.relation === 'creator';
+        const isAttendee = event.relation === 'favorite';
         return (wantsOrganizer && isOrganizer) || (wantsAttendee && isAttendee);
       })
       .filter((event) => priceOptions.includes(event.isFree ? 'free' : 'paid'))
