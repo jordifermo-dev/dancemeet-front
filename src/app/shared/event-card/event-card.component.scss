@@ -1,7 +1,7 @@
 .event-card {
   display: flex;
   gap: 12px;
-  background: #fff;
+  background: var(--app-surface-card);
   border-radius: 16px;
   padding: 10px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -50,7 +50,7 @@
   margin: 0;
   font-size: 1rem;
   font-weight: 800;
-  color: #1a1a1a;
+  color: var(--app-text-strong);
   overflow: hidden;
   text-overflow: ellipsis;
   display: -webkit-box;
@@ -74,7 +74,7 @@
   padding: 3px 8px 3px 4px;
   font-size: 0.7rem;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--app-text-strong);
   white-space: nowrap;
 }
 
@@ -113,7 +113,7 @@
   height: 16px;
   border-radius: 50%;
   object-fit: cover;
-  background: #fff;
+  background: var(--app-surface-card);
 }
 
 .event-card-line {

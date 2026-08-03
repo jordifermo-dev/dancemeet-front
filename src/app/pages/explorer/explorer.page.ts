@@ -34,6 +34,8 @@ import { Discipline, DISCIPLINE_NAMES, EventType, EVENT_TYPE_NAMES, EventStatus,
 import { disciplineIconUrl, eventTypeIconUrl, statusIconUrl, sortByNameOrder, STATUS_LABEL_KEYS } from '../../shared/icon-catalog';
 import { LocationFilterButtonComponent } from '../../shared/location-filter-button/location-filter-button.component';
 import { NotificationBellComponent } from '../../shared/notification-bell/notification-bell.component';
+import { NIGHT_MAP_STYLES } from '../../shared/maps';
+import { ThemeService } from '../../services/theme.service';
 import { DateQuickOption, ExplorerFiltersService } from './explorer-filters.service';
 
 const STATUS_OPTIONS = EVENT_STATUSES.map((id) => ({ id, labelKey: STATUS_LABEL_KEYS[id] }));
@@ -108,6 +110,7 @@ export class ExplorerPage implements OnInit, ViewWillEnter {
   private readonly eventTypeService = inject(EventTypeService);
   private readonly eventService = inject(EventService);
   private readonly mapsLoader = inject(GoogleMapsLoaderService);
+  private readonly themeService = inject(ThemeService);
   private readonly router = inject(Router);
   readonly filters = inject(ExplorerFiltersService);
 
@@ -140,7 +143,10 @@ export class ExplorerPage implements OnInit, ViewWillEnter {
     lng: this.filters.appliedLongitude() ?? DEFAULT_LONGITUDE,
   }));
   readonly mapZoom = signal(12);
-  readonly mapOptions: google.maps.MapOptions = {
+  // Computed (not a plain object) so toggling Light/Dark/System live-restyles
+  // an already-open map instead of only applying on the next visit - GoogleMap
+  // forwards options changes straight to the underlying Maps JS instance.
+  readonly mapOptions = computed<google.maps.MapOptions>(() => ({
     disableDefaultUI: true,
     zoomControl: true,
     clickableIcons: false,
@@ -149,7 +155,8 @@ export class ExplorerPage implements OnInit, ViewWillEnter {
     // two-finger touch gesture on a real device), floating right above our
     // zoom buttons.
     rotateControl: false,
-  };
+    styles: this.themeService.isDark() ? NIGHT_MAP_STYLES : undefined,
+  }));
 
   // Visualizes the user's saved distance radius as a translucent circle
   // around the search center, so the search area is visible, not just a number.

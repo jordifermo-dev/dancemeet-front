@@ -14,7 +14,7 @@
   border-radius: 50%;
   border: none;
   background: var(--ion-color-light-shade);
-  color: #1a1a1a;
+  color: var(--app-text-strong);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -227,7 +227,7 @@
   font-size: 0.66rem;
   font-weight: 600;
   background: var(--ion-background-color);
-  color: #1a1a1a;
+  color: var(--app-text-strong);
 
   &.selected {
     border-color: var(--ion-color-primary);

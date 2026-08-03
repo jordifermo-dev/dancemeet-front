@@ -38,3 +38,28 @@ export function mapEmbedUrl(latitude: number, longitude: number, zoom = 15, mapT
   });
   return `https://www.google.com/maps/embed/v1/place?${params.toString()}`;
 }
+
+/** Only for the Explorer map, which renders via the real Maps JS API
+ * (<google-map>) - the Maps Embed API used by mapEmbedUrl's iframes has no
+ * style parameter at all, so those stay light regardless of app theme.
+ * Colors lean on the app's own dark palette (--app-surface-card, water
+ * tinted from --ion-color-primary-shade) instead of a generic community
+ * "night mode" JSON, so the map reads as part of this app, not a stock demo. */
+export const NIGHT_MAP_STYLES: google.maps.MapTypeStyle[] = [
+  { elementType: 'geometry', stylers: [{ color: '#1c1c1e' }] },
+  { elementType: 'labels.text.stroke', stylers: [{ color: '#1c1c1e' }] },
+  { elementType: 'labels.text.fill', stylers: [{ color: '#8c8c94' }] },
+  { featureType: 'administrative', elementType: 'geometry', stylers: [{ color: '#3a3a3c' }] },
+  { featureType: 'poi', elementType: 'geometry', stylers: [{ color: '#242426' }] },
+  { featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: '#1e2a28' }] },
+  { featureType: 'poi.park', elementType: 'labels.text.fill', stylers: [{ color: '#5c6b64' }] },
+  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#2c2c2e' }] },
+  { featureType: 'road', elementType: 'geometry.stroke', stylers: [{ color: '#1c1c1e' }] },
+  { featureType: 'road.arterial', elementType: 'geometry', stylers: [{ color: '#333336' }] },
+  { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#3a3a3d' }] },
+  { featureType: 'road.highway', elementType: 'geometry.stroke', stylers: [{ color: '#1c1c1e' }] },
+  { featureType: 'road.local', elementType: 'labels.text.fill', stylers: [{ color: '#6c6c70' }] },
+  { featureType: 'transit', elementType: 'geometry', stylers: [{ color: '#242426' }] },
+  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#0d3335' }] },
+  { featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#4a7a7c' }] },
+];

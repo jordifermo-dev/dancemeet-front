@@ -24,10 +24,14 @@ import {
   todayOutline,
   calendarOutline,
   sparklesOutline,
+  contrastOutline,
+  sunnyOutline,
+  moonOutline,
 } from 'ionicons/icons';
 import { AuthService } from '../../services/auth.service';
 import { UserService } from '../../services/user.service';
 import { OnboardingService } from '../../services/onboarding.service';
+import { ThemeService, ThemeMode } from '../../services/theme.service';
 import { NotificationType } from '../../models';
 import { ALL_NOTIFICATION_TYPES, NOTIFICATION_TYPE_ICONS, NOTIFICATION_TYPE_LABEL_KEYS } from '../../shared/notification-types';
 
@@ -48,11 +52,19 @@ export class SettingsPage {
   private readonly authService = inject(AuthService);
   private readonly userService = inject(UserService);
   private readonly onboarding = inject(OnboardingService);
+  private readonly themeService = inject(ThemeService);
   private readonly router = inject(Router);
 
   readonly allTypes = ALL_NOTIFICATION_TYPES;
   readonly typeIcons = NOTIFICATION_TYPE_ICONS;
   readonly typeLabelKeys = NOTIFICATION_TYPE_LABEL_KEYS;
+
+  readonly themeMode = this.themeService.mode;
+  readonly themeOptions: { mode: ThemeMode; icon: string; labelKey: string }[] = [
+    { mode: 'system', icon: 'contrast-outline', labelKey: 'settings.themeSystem' },
+    { mode: 'light', icon: 'sunny-outline', labelKey: 'settings.themeLight' },
+    { mode: 'dark', icon: 'moon-outline', labelKey: 'settings.themeDark' },
+  ];
 
   readonly disabledTypes = signal<Set<NotificationType>>(
     new Set(this.authService.currentUser()?.disabledNotificationTypes ?? []),
@@ -72,7 +84,14 @@ export class SettingsPage {
       todayOutline,
       calendarOutline,
       sparklesOutline,
+      contrastOutline,
+      sunnyOutline,
+      moonOutline,
     });
+  }
+
+  setTheme(mode: ThemeMode): void {
+    this.themeService.setMode(mode);
   }
 
   isEnabled(type: NotificationType): boolean {

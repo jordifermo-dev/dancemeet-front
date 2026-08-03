@@ -30,11 +30,16 @@
  * -----------------------------------------------------
  * For more info, please see:
  * https://ionicframework.com/docs/theming/dark-mode
+ *
+ * Class-based (not dark.system.css's media query) so ThemeService can offer
+ * a manual Light/Dark override on top of "follow the system" - it toggles
+ * .ion-palette-dark on <html>, applying it itself when the OS is dark and
+ * the user picked "system".
  */
 
 /* @import "@ionic/angular/css/palettes/dark.always.css"; */
-/* @import "@ionic/angular/css/palettes/dark.class.css"; */
-@import '@ionic/angular/css/palettes/dark.system.css';
+@import '@ionic/angular/css/palettes/dark.class.css';
+/* @import "@ionic/angular/css/palettes/dark.system.css"; */
 
 /* Ionic buttons default to uppercase text; we write real sentence case.
    Too Good To Go's buttons are also full pills rather than Ionic's default

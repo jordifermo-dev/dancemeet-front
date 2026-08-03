@@ -13,6 +13,10 @@
   },
   "settings": {
     "title": "Settings",
+    "appearanceSection": "Appearance",
+    "themeSystem": "System",
+    "themeLight": "Light",
+    "themeDark": "Dark",
     "legalSection": "Legal",
     "privacyPolicyLink": "Privacy policy",
     "termsOfUseLink": "Terms of use"

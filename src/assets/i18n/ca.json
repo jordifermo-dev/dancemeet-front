@@ -13,6 +13,10 @@
   },
   "settings": {
     "title": "Ajustos",
+    "appearanceSection": "Aparença",
+    "themeSystem": "Sistema",
+    "themeLight": "Clar",
+    "themeDark": "Fosc",
     "legalSection": "Legal",
     "privacyPolicyLink": "Política de privadesa",
     "termsOfUseLink": "Termes d'ús"

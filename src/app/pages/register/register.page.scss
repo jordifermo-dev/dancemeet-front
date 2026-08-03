@@ -106,7 +106,7 @@ ion-item ion-icon[slot='end'] {
     height: 30px;
     border-radius: 50%;
     border: 1px solid var(--ion-color-light-shade);
-    background: #fff;
+    background: var(--app-surface-card);
     color: var(--ion-color-primary);
     display: flex;
     align-items: center;
@@ -123,7 +123,7 @@ ion-item ion-icon[slot='end'] {
   border: 1px solid var(--ion-color-light-shade);
   border-radius: 999px;
   padding: 6px 12px;
-  background: #fff;
+  background: var(--app-surface-card);
   color: var(--ion-color-primary);
   font-size: 0.8rem;
   font-weight: 600;
@@ -140,7 +140,7 @@ ion-item ion-icon[slot='end'] {
   --box-shadow: none;
   --placeholder-color: var(--ion-color-medium);
   --icon-color: var(--ion-color-medium);
-  --color: #1a1a1a;
+  --color: var(--app-text-strong);
 }
 
 .location-hint {
@@ -167,7 +167,7 @@ ion-item ion-icon[slot='end'] {
 .city-suggestions {
   display: flex;
   flex-direction: column;
-  background: #fff;
+  background: var(--app-surface-card);
   border: 1px solid var(--ion-color-light-shade);
   border-radius: 12px;
   margin-top: -4px;
@@ -185,7 +185,7 @@ ion-item ion-icon[slot='end'] {
   padding: 10px 14px;
   font-size: 0.85rem;
   text-align: left;
-  color: #1a1a1a;
+  color: var(--app-text-strong);
   cursor: pointer;
 
   &:not(:last-child) {
@@ -214,8 +214,8 @@ ion-item ion-icon[slot='end'] {
   padding: 10px 18px;
   font-size: 0.9rem;
   font-weight: 600;
-  background: #fff;
-  color: #1a1a1a;
+  background: var(--app-surface-card);
+  color: var(--app-text-strong);
   cursor: pointer;
   transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 
@@ -239,7 +239,7 @@ ion-item ion-icon[slot='end'] {
   border-radius: 50%;
   object-fit: cover;
   flex: 0 0 auto;
-  background: #fff;
+  background: var(--app-surface-card);
 }
 
 .range-label {

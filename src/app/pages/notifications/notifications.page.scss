@@ -29,12 +29,12 @@
   flex: 1;
   min-width: 0;
   padding: 0;
-  --background: #fff;
+  --background: var(--app-surface-card);
   --border-radius: 999px;
   --box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   --placeholder-color: var(--ion-color-medium);
   --icon-color: var(--ion-color-medium);
-  --color: #1a1a1a;
+  --color: var(--app-text-strong);
 }
 
 .icon-btn {
@@ -44,8 +44,8 @@
   height: 44px;
   border-radius: 50%;
   border: none;
-  background: #fff;
-  color: #1a1a1a;
+  background: var(--app-surface-card);
+  color: var(--app-text-strong);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   display: flex;
   align-items: center;
@@ -88,7 +88,7 @@
 }
 
 .sort-row-label {
-  color: #1a1a1a;
+  color: var(--app-text-strong);
   font-weight: 500;
 }
 
@@ -118,7 +118,7 @@
   padding: 14px 4px;
   font-size: 0.95rem;
   font-weight: 500;
-  color: #1a1a1a;
+  color: var(--app-text-strong);
   cursor: pointer;
 
   &:not(:last-child) {
@@ -159,7 +159,7 @@
   gap: 10px;
   padding: 12px;
   border-radius: 16px;
-  background: #fff;
+  background: var(--app-surface-card);
   cursor: pointer;
   transition: opacity 0.15s ease, filter 0.15s ease;
 
@@ -205,7 +205,7 @@
 .notification-title {
   font-weight: 700;
   font-size: 0.9rem;
-  color: #1a1a1a;
+  color: var(--app-text-strong);
 }
 
 .notification-text {
@@ -264,7 +264,7 @@
   border-radius: 50%;
   border: none;
   background: var(--ion-color-light-shade);
-  color: #1a1a1a;
+  color: var(--app-text-strong);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -306,8 +306,8 @@
   padding: 10px 18px;
   font-size: 0.9rem;
   font-weight: 600;
-  background: #fff;
-  color: #1a1a1a;
+  background: var(--app-surface-card);
+  color: var(--app-text-strong);
   cursor: pointer;
   transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 

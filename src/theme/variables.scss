@@ -22,3 +22,21 @@
   --ion-color-shade: var(--ion-color-primary-shade);
   --ion-color-tint: var(--ion-color-primary-tint);
 }
+
+// Card/sheet surface and its "strong" text, for the many hand-rolled white
+// cards across pages (settings rows, profile sections, event cards...) that
+// predate dark mode and hardcoded #fff/#1a1a1a directly instead of an Ionic
+// var. Keyed off .ion-palette-dark (see global.scss: dark.class.css) rather
+// than a media query, since ThemeService drives that class for the manual
+// Light/Dark/System control - a plain @media block would ignore the override.
+:root {
+  --app-surface-card: #ffffff;
+  --app-surface-card-rgb: 255, 255, 255;
+  --app-text-strong: #1a1a1a;
+}
+
+.ion-palette-dark {
+  --app-surface-card: #1c1c1e;
+  --app-surface-card-rgb: 28, 28, 30;
+  --app-text-strong: #f4f5f8;
+}

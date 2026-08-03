@@ -36,8 +36,8 @@
   border: 1.5px solid var(--ion-color-light-shade);
   border-radius: 999px;
   padding: 10px;
-  background: #fff;
-  color: #1a1a1a;
+  background: var(--app-surface-card);
+  color: var(--app-text-strong);
   font-size: 0.82rem;
   font-weight: 700;
   cursor: pointer;
@@ -49,8 +49,42 @@
   }
 }
 
+.theme-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.theme-option {
+  appearance: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  border: 1.5px solid var(--ion-color-light-shade);
+  border-radius: 16px;
+  padding: 12px 8px;
+  background: var(--app-surface-card);
+  color: var(--app-text-strong);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+
+  ion-icon {
+    font-size: 1.3rem;
+  }
+
+  &.active {
+    border-color: var(--ion-color-primary);
+    background: rgba(var(--ion-color-primary-rgb), 0.08);
+    color: var(--ion-color-primary);
+  }
+}
+
 .type-list {
-  background: #fff;
+  background: var(--app-surface-card);
   border-radius: 16px;
   overflow: hidden;
 }
@@ -86,7 +120,7 @@
   flex: 1;
   font-size: 0.88rem;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--app-text-strong);
 }
 
 .welcome-guide-button {

@@ -5,8 +5,8 @@
   height: 44px;
   border-radius: 50%;
   border: none;
-  background: #fff;
-  color: #1a1a1a;
+  background: var(--app-surface-card);
+  color: var(--app-text-strong);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   display: flex;
   align-items: center;
@@ -22,12 +22,12 @@
   flex: 1;
   min-width: 0;
   padding: 0;
-  --background: #fff;
+  --background: var(--app-surface-card);
   --border-radius: 999px;
   --box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   --placeholder-color: var(--ion-color-medium);
   --icon-color: var(--ion-color-medium);
-  --color: #1a1a1a;
+  --color: var(--app-text-strong);
 }
 
 .filter-sheet {
@@ -54,7 +54,7 @@
   border-radius: 50%;
   border: none;
   background: var(--ion-color-light-shade);
-  color: #1a1a1a;
+  color: var(--app-text-strong);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -69,7 +69,7 @@
 .city-suggestions {
   display: flex;
   flex-direction: column;
-  background: #fff;
+  background: var(--app-surface-card);
   border: 1px solid var(--ion-color-light-shade);
   border-radius: 12px;
   margin-top: 8px;
@@ -87,7 +87,7 @@
   padding: 10px 14px;
   font-size: 0.85rem;
   text-align: left;
-  color: #1a1a1a;
+  color: var(--app-text-strong);
   cursor: pointer;
 
   &:not(:last-child) {

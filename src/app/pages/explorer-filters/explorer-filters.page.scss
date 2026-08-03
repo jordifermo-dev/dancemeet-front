@@ -30,7 +30,7 @@
   border-radius: 50%;
   border: none;
   background: var(--ion-color-light-shade);
-  color: #1a1a1a;
+  color: var(--app-text-strong);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -116,8 +116,8 @@
   padding: 10px 18px;
   font-size: 0.9rem;
   font-weight: 600;
-  background: #fff;
-  color: #1a1a1a;
+  background: var(--app-surface-card);
+  color: var(--app-text-strong);
   cursor: pointer;
   transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 
@@ -141,7 +141,7 @@
   border-radius: 50%;
   object-fit: cover;
   flex: 0 0 auto;
-  background: #fff;
+  background: var(--app-surface-card);
 }
 
 .filter-actions-row {

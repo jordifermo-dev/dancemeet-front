@@ -9,6 +9,23 @@
 
 <ion-content [fullscreen]="true" class="settings-content">
   <div class="settings-container">
+    <h2 class="settings-section-title">{{ 'settings.appearanceSection' | translate }}</h2>
+    <div class="theme-row" role="radiogroup" [attr.aria-label]="'settings.appearanceSection' | translate">
+      @for (option of themeOptions; track option.mode) {
+        <button
+          type="button"
+          class="theme-option"
+          role="radio"
+          [attr.aria-checked]="themeMode() === option.mode"
+          [class.active]="themeMode() === option.mode"
+          (click)="setTheme(option.mode)"
+        >
+          <ion-icon [name]="option.icon"></ion-icon>
+          <span>{{ option.labelKey | translate }}</span>
+        </button>
+      }
+    </div>
+
     <h2 class="settings-section-title">{{ 'notifications.settingsTitle' | translate }}</h2>
     <p class="subtitle">{{ 'notifications.settingsSubtitle' | translate }}</p>
 

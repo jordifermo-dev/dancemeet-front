@@ -71,7 +71,7 @@
   // wallpaper/gradient behind it and was unreadable - so this is solid fill
   // (which does respect --background) with the border drawn manually instead.
   .google-button {
-    --background: #fff;
+    --background: var(--app-surface-card);
     --background-activated: #f2f2f2;
     --color: var(--ion-color-primary);
     --border-width: 1.5px;
