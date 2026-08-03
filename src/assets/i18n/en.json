@@ -85,7 +85,7 @@
     "registerLink": "Sign up"
   },
   "register": {
-    "title": "Sign up or log in",
+    "title": "Sign up",
     "nameLabel": "Name",
     "namePlaceholder": "What's your name?",
     "passwordPlaceholder": "At least 6 characters",
@@ -110,7 +110,7 @@
     "distanceLabel": "Distance: {{km}} km",
     "almostDoneTitle": "Almost there",
     "profileEditableHint": "Once your profile is created, you'll be able to edit and expand all of this from the Profile tab.",
-    "termsText": "I agree to the Terms and Conditions and the Privacy Policy",
+    "termsText": "I agree to the <a href=\"/terms-of-use\" target=\"_blank\" rel=\"noopener\">Terms of Use</a> and the <a href=\"/privacy-policy\" target=\"_blank\" rel=\"noopener\">Privacy Policy</a>",
     "submitButton": "Sign me up",
     "geolocationNotSupported": "Your browser doesn't allow location sharing.",
     "geolocationFailed": "We couldn't get your location.",

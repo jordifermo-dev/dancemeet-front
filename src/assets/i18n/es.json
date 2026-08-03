@@ -85,7 +85,7 @@
     "registerLink": "Regístrate"
   },
   "register": {
-    "title": "Regístrate o inicia sesión",
+    "title": "Registro",
     "nameLabel": "Nombre",
     "namePlaceholder": "¿Cómo te llamas?",
     "passwordPlaceholder": "Mínimo 6 caracteres",
@@ -110,7 +110,7 @@
     "distanceLabel": "Distancia: {{km}} km",
     "almostDoneTitle": "Ya casi estás",
     "profileEditableHint": "Una vez creado tu perfil, podrás modificar y ampliar toda esta información desde la pestaña Perfil.",
-    "termsText": "Estoy de acuerdo con los Términos y condiciones y la Política de privacidad",
+    "termsText": "Estoy de acuerdo con los <a href=\"/terms-of-use\" target=\"_blank\" rel=\"noopener\">Términos de uso</a> y la <a href=\"/privacy-policy\" target=\"_blank\" rel=\"noopener\">Política de privacidad</a>",
     "submitButton": "Inscríbeme",
     "geolocationNotSupported": "Tu navegador no permite compartir la ubicación.",
     "geolocationFailed": "No se ha podido obtener tu ubicación.",

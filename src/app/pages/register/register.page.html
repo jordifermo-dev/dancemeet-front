@@ -191,7 +191,7 @@
               justify="start"
               labelPlacement="end"
             >
-              {{ 'register.termsText' | translate }}
+              <span [innerHTML]="'register.termsText' | translate" (click)="onTermsTextClick($event)"></span>
             </ion-checkbox>
           </ion-item>
 

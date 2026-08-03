@@ -85,7 +85,7 @@
     "registerLink": "Registra't"
   },
   "register": {
-    "title": "Registra't o inicia sessió",
+    "title": "Registre",
     "nameLabel": "Nom",
     "namePlaceholder": "Com et dius?",
     "passwordPlaceholder": "Mínim 6 caràcters",
@@ -110,7 +110,7 @@
     "distanceLabel": "Distància: {{km}} km",
     "almostDoneTitle": "Ja gairebé hi ets",
     "profileEditableHint": "Un cop creat el teu perfil, podràs modificar i ampliar tota aquesta informació des de la pestanya Perfil.",
-    "termsText": "Estic d'acord amb els Termes i condicions i la Política de privadesa",
+    "termsText": "Estic d'acord amb els <a href=\"/terms-of-use\" target=\"_blank\" rel=\"noopener\">Termes d'ús</a> i la <a href=\"/privacy-policy\" target=\"_blank\" rel=\"noopener\">Política de privadesa</a>",
     "submitButton": "Inscriu-me",
     "geolocationNotSupported": "El teu navegador no permet compartir la ubicació.",
     "geolocationFailed": "No s'ha pogut obtenir la teva ubicació.",

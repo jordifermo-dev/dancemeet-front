@@ -62,14 +62,14 @@ export const routes: Routes = [
     canActivate: [authGuard],
   },
   {
+    // Public on purpose - people read these before/without ever having an
+    // account (e.g. from the register page's terms checkbox).
     path: 'privacy-policy',
     loadComponent: () => import('./pages/privacy-policy/privacy-policy.page').then((m) => m.PrivacyPolicyPage),
-    canActivate: [authGuard],
   },
   {
     path: 'terms-of-use',
     loadComponent: () => import('./pages/terms-of-use/terms-of-use.page').then((m) => m.TermsOfUsePage),
-    canActivate: [authGuard],
   },
   {
     path: 'events/new',

@@ -232,6 +232,15 @@ export class RegisterPage implements OnInit {
     }
   }
 
+  /** The Terms/Privacy links live inside ion-checkbox's own label, which
+   * toggles the checkbox on any click within it - without this, tapping a
+   * link would also flip acceptedTerms instead of just opening the page. */
+  onTermsTextClick(event: Event): void {
+    if ((event.target as HTMLElement).tagName === 'A') {
+      event.stopPropagation();
+    }
+  }
+
   togglePasswordVisibility(): void {
     this.showPassword.update((value) => !value);
   }
