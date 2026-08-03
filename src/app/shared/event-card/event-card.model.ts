@@ -1,4 +1,4 @@
-import { EventStatus } from '../../models';
+import { EventRelation, EventStatus } from '../../models';
 
 /** Fully-resolved data an <app-event-card> needs to render - built by the
  * page (Favorites today, Events later) so the card itself stays a pure,
@@ -34,4 +34,8 @@ export interface EventCardView {
    * omit to hide the badge entirely (e.g. a future Events tab listing that
    * has no personal relation to show). */
   relationLabelKey?: string;
+  /** Drives which color the relation badge renders in (see
+   * event-card.component.scss's .tag-relation-* rules) - creator/favorite/both
+   * otherwise all looked identical, making them hard to tell apart at a glance. */
+  relation?: EventRelation;
 }

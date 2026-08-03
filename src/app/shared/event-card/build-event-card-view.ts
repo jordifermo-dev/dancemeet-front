@@ -50,5 +50,6 @@ export function buildEventCardView(
     price: event.price,
     isFaded: event.status === 'finished' || event.status === 'cancelled',
     relationLabelKey: event.relation ? RELATION_BADGE_KEYS[event.relation] : undefined,
+    relation: event.relation,
   };
 }

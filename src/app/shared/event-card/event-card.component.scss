@@ -80,8 +80,22 @@
 
 .tag-relation {
   padding: 3px 10px;
-  background: var(--ion-color-primary);
   color: var(--ion-color-primary-contrast);
+}
+
+// Same three states as RELATION_BADGE_KEYS (build-event-card-view.ts) - all
+// used to render in the same teal, making "Organizas" and "Asistes" hard to
+// tell apart at a glance in a list.
+.tag-relation-creator {
+  background: var(--ion-color-primary);
+}
+
+.tag-relation-favorite {
+  background: #c97c3d;
+}
+
+.tag-relation-both {
+  background: linear-gradient(90deg, var(--ion-color-primary) 50%, #c97c3d 50%);
 }
 
 .tag-price {
