@@ -201,13 +201,12 @@
             </ion-text>
           }
 
-          <ion-button
-            expand="block"
-            [disabled]="!acceptedTerms() || isSubmitting()"
-            (click)="submit()"
-          >
-            {{ 'register.submitButton' | translate }}
-          </ion-button>
+          <div class="footer-nav">
+            <ion-button fill="outline" (click)="goBack()">{{ 'common.back' | translate }}</ion-button>
+            <ion-button [disabled]="!acceptedTerms() || isSubmitting()" (click)="submit()">
+              {{ 'register.submitButton' | translate }}
+            </ion-button>
+          </div>
         </div>
       }
     }
