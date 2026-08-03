@@ -2,6 +2,7 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { TranslateService } from '@ngx-translate/core';
 import { Capacitor } from '@capacitor/core';
+import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
 import {
   GoogleAuthProvider,
   OAuthProvider,
@@ -9,6 +10,7 @@ import {
   createUserWithEmailAndPassword,
   getRedirectResult,
   onAuthStateChanged,
+  signInWithCredential,
   signInWithEmailAndPassword,
   signInWithPopup,
   signInWithRedirect,
@@ -190,6 +192,19 @@ export class AuthService {
   }
 
   async loginWithProvider(provider: AuthProvider): Promise<void> {
+    if (Capacitor.isNativePlatform()) {
+      // signInWithPopup/signInWithRedirect below both need a real browser
+      // tab - Google's OAuth consent screen explicitly refuses to load
+      // inside any embedded WebView (which is exactly what a Capacitor app
+      // is), so native goes through the platform's own Google Sign-In SDK
+      // instead. Only Google has a native login button today (see
+      // login.page.html) - apple/microsoft aren't wired up natively yet.
+      if (provider !== 'google') {
+        throw new Error(`Native sign-in isn't implemented yet for provider "${provider}".`);
+      }
+      await this.loginWithGoogleNative();
+      return;
+    }
     const authProvider = buildProvider(provider);
     if (isMobileWebBrowser()) {
       // Navigates away - the result is picked up by consumeRedirectResult()
@@ -200,6 +215,23 @@ export class AuthService {
     }
     const credential = await signInWithPopup(firebaseAuth, authProvider);
     await this.loadProfileOrSignalSignup(credential.user);
+  }
+
+  /** capacitor.config.ts sets skipNativeAuth: true, so this only drives the
+   * native Google account picker and hands back a raw credential - it does
+   * NOT sign into Firebase on the native layer. signInWithCredential below is
+   * what actually establishes the session on the Firebase JS SDK
+   * (firebaseAuth), the same object onAuthStateChanged/getIdToken/etc.
+   * already rely on everywhere else in this service, so nothing past this
+   * point needs to know native sign-in was involved at all. */
+  private async loginWithGoogleNative(): Promise<void> {
+    const { credential } = await FirebaseAuthentication.signInWithGoogle();
+    if (!credential?.idToken) {
+      throw new Error('Google sign-in was cancelled or returned no credential.');
+    }
+    const googleCredential = GoogleAuthProvider.credential(credential.idToken);
+    const userCredential = await signInWithCredential(firebaseAuth, googleCredential);
+    await this.loadProfileOrSignalSignup(userCredential.user);
   }
 
   async getIdToken(): Promise<string | null> {
