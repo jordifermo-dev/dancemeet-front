@@ -1,7 +1,8 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
-import { Observable } from 'rxjs';
+import { Observable, firstValueFrom } from 'rxjs';
+import { TranslateService } from '@ngx-translate/core';
 import { getMessaging, getToken, isSupported, onMessage } from 'firebase/messaging';
 import { ToastController } from '@ionic/angular/standalone';
 import { Capacitor } from '@capacitor/core';
@@ -18,6 +19,15 @@ import {
 import { environment } from '../../environments/environment';
 import { firebaseApp } from './firebase';
 import { AppNotification } from '../models';
+import { ALL_NOTIFICATION_TYPES, NOTIFICATION_TYPE_LABEL_KEYS } from '../shared/notification-types';
+
+/** Android channel ids this app has retired - kept only so
+ * ensureNotificationChannels() can clean them off the user's device via
+ * deleteChannel(). A channel an app stops creating does NOT disappear from
+ * Android's own Settings > Notifications on its own; add a type's old id
+ * here for one release after removing it from ALL_NOTIFICATION_TYPES, then
+ * it can be dropped once deleteChannel has had time to run. */
+const RETIRED_NOTIFICATION_CHANNEL_IDS: string[] = [];
 
 /** Wraps both halves of the feature: the in-app inbox (plain HTTP against
  * the backend) and the device-level push plumbing (permission, token,
@@ -30,6 +40,7 @@ export class NotificationService {
   private readonly http = inject(HttpClient);
   private readonly toastController = inject(ToastController);
   private readonly router = inject(Router);
+  private readonly translate = inject(TranslateService);
   private readonly baseUrl = `${environment.apiUrl}/api/notifications`;
   private readonly usersBaseUrl = `${environment.apiUrl}/api/users`;
 
@@ -76,8 +87,43 @@ export class NotificationService {
     await this.registerWebPush(userId);
   }
 
+  /** One Android channel per NotificationType, named with the same labels
+   * Settings' own per-type toggles use, so the OS's Settings > Notifications
+   * > Categories list lets the user mute e.g. just "Nuevos seguidores"
+   * instead of only an all-or-nothing app toggle. Independent of the
+   * permission check below - channels should exist (and be visible in
+   * Settings) whether or not the user has granted push permission, and
+   * re-running this on every login is cheap: Android only lets an app
+   * change a channel's name/description after creation, never its
+   * user-facing sound/importance, so this can never clobber a user's own
+   * per-channel customization. No-ops on iOS/web (createChannel/
+   * deleteChannel are Android-only; Capacitor resolves without doing
+   * anything on other platforms). */
+  private async ensureNotificationChannels(): Promise<void> {
+    if (!Capacitor.isNativePlatform()) {
+      return;
+    }
+    try {
+      const labelKeys = ALL_NOTIFICATION_TYPES.map((type) => NOTIFICATION_TYPE_LABEL_KEYS[type]);
+      const labels = await firstValueFrom(this.translate.get(labelKeys));
+      await Promise.all([
+        ...ALL_NOTIFICATION_TYPES.map((type) =>
+          PushNotifications.createChannel({
+            id: type,
+            name: labels[NOTIFICATION_TYPE_LABEL_KEYS[type]],
+          }),
+        ),
+        ...RETIRED_NOTIFICATION_CHANNEL_IDS.map((id) => PushNotifications.deleteChannel({ id })),
+      ]);
+    } catch (err) {
+      console.error('[NotificationService] ensureNotificationChannels failed:', err);
+    }
+  }
+
   private async registerNativePush(userId: string): Promise<void> {
     try {
+      await this.ensureNotificationChannels();
+
       const current = await PushNotifications.checkPermissions();
       let receive = current.receive;
       if (receive === 'prompt' || receive === 'prompt-with-rationale') {
@@ -122,6 +168,10 @@ export class NotificationService {
 
   private async showForegroundSystemNotification(notification: PushNotificationSchema): Promise<void> {
     try {
+      // notification.data.type is always set - the backend's sendPush always
+      // includes it (see NotificationService.sendPush, dancemeet-back) - and
+      // matches one of the channel ids ensureNotificationChannels created.
+      const channelId = notification.data?.['type'];
       await LocalNotifications.schedule({
         notifications: [
           {
@@ -129,6 +179,7 @@ export class NotificationService {
             title: notification.title ?? 'DanceMeet',
             body: notification.body ?? '',
             extra: notification.data,
+            ...(typeof channelId === 'string' ? { channelId } : {}),
           },
         ],
       });
