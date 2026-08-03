@@ -1,5 +1,6 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { skip } from 'rxjs';
 import {
   IonHeader,
   IonToolbar,
@@ -136,15 +137,19 @@ export class FollowListPage implements ViewWillEnter {
       },
     });
 
-    // queryParamMap emits immediately on subscribe (covers the initial load)
-    // and again whenever ?userId changes without recreating this component -
-    // e.g. browsing from one user's followers into another's.
-    this.route.queryParamMap.subscribe(() => this.loadItems());
+    // skip(1): the initial emission (covering first load) is handled by
+    // ionViewWillEnter below - without the skip, both fired loadItems() on
+    // first entry, racing two identical in-flight requests against each
+    // other (visible as a flaky blank list on slow devices). This subscription
+    // only needs to react to *later* emissions - e.g. browsing from one
+    // user's followers into another's without recreating this component.
+    this.route.queryParamMap.pipe(skip(1)).subscribe(() => this.loadItems());
   }
 
   /** Ionic keeps this page's instance alive, so re-fetch every time it's re-entered -
    * otherwise unfollowing/removing someone on the detail screen and coming back
-   * would still show the stale, pre-change list. */
+   * would still show the stale, pre-change list. Also covers the very first
+   * entry (see the skip(1) above). */
   ionViewWillEnter(): void {
     this.loadItems();
   }
