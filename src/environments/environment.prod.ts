@@ -1,6 +1,10 @@
 export const environment = {
   production: true,
   apiUrl: 'https://dancemeet-back.onrender.com',
+  // The real public web address - used to build shareable links from the
+  // native app, where window.location.href is only the internal WebView
+  // origin (https://localhost) and useless to whoever receives the link.
+  appUrl: 'https://dancemeet-front-8pvn.vercel.app',
   googleMapsApiKey: 'AIzaSyClI0mLNW9oKEK-JSlH7jAurHTjPJ3qpCU',
   googleMapsJsApiKey: 'AIzaSyANsIqi_q9JWvnlRlI_YxJA_WKwiuUnj0E',
   firebaseConfig: {

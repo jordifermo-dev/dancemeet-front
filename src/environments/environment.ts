@@ -5,6 +5,9 @@
 export const environment = {
   production: false,
   apiUrl: 'http://localhost:3000',
+  // See environment.prod.ts - only matters when running the native app in
+  // dev mode; regular `ng serve`/`ionic serve` never hits this path.
+  appUrl: 'http://localhost:4200',
   // Maps Embed API key (console.cloud.google.com > APIs & Services > Credentials).
   googleMapsApiKey: 'AIzaSyClI0mLNW9oKEK-JSlH7jAurHTjPJ3qpCU',
   // Maps JavaScript API key, for the interactive multi-marker Explorer map -

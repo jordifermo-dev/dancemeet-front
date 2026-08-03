@@ -290,14 +290,14 @@ export class UserDetailPage {
     window.open(`https://www.google.com/maps/dir/?api=1&destination=${user.latitude},${user.longitude}`, '_blank');
   }
 
-  saveContact(): void {
+  async saveContact(): Promise<void> {
     const user = this.user();
     if (!user || !user.showPhone || !user.phone) {
       return;
     }
     const email = user.showEmail ? user.email : undefined;
     const vcard = buildVCard(user.name, user.phone, email);
-    downloadVCard(vcard);
+    await downloadVCard(vcard);
   }
 
   follow(): void {

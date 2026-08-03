@@ -260,6 +260,7 @@
     "socialLinksEmpty": "Aquest esdeveniment no té xarxes socials.",
     "calendarButton": "Afegeix al calendari",
     "shareButton": "Comparteix",
+    "shareText": "{{creator}} et convida a \"{{title}}\" a DanceMeet",
     "editButton": "Edita l'esdeveniment",
     "attendeesLabel": "Assistents",
     "attendButton": "Assistir",

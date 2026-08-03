@@ -260,6 +260,7 @@
     "socialLinksEmpty": "This event has no social links.",
     "calendarButton": "Add to calendar",
     "shareButton": "Share",
+    "shareText": "{{creator}} is inviting you to \"{{title}}\" on DanceMeet",
     "editButton": "Edit event",
     "attendeesLabel": "Attendees",
     "attendButton": "Attend",

@@ -23,7 +23,7 @@ import {
   IonDatetimeButton,
   IonSearchbar,
 } from '@ionic/angular/standalone';
-import { TranslatePipe } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { addIcons } from 'ionicons';
 import {
   navigateOutline,
@@ -75,6 +75,8 @@ import { PhotoEditorComponent } from '../../shared/photo-editor/photo-editor.com
 import { SOCIAL_URL_PATTERNS } from '../../shared/social-link-patterns';
 import { MinSelectionWarningService } from '../../shared/min-selection-warning.service';
 import { toggleWithMinimum } from '../../shared/min-selection';
+import { Share } from '@capacitor/share';
+import { environment } from '../../../environments/environment';
 
 const MIN_ZOOM = 3;
 const MAX_ZOOM = 20;
@@ -168,6 +170,7 @@ export class EventDetailPage {
   private readonly eventTypeService = inject(EventTypeService);
   private readonly languageService = inject(LanguageService);
   private readonly geocodingService = inject(GeocodingService);
+  private readonly translate = inject(TranslateService);
   readonly minSelectionWarning = inject(MinSelectionWarningService);
 
   private readonly disciplinesById = computed(() => new Map(this.disciplines().map((d) => [d.id, d])));
@@ -525,17 +528,24 @@ export class EventDetailPage {
     if (!event) {
       return;
     }
-    const url = window.location.href;
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: event.title, text: event.title, url });
-      } catch {
-        // User cancelled the native share sheet - nothing to do.
+    // environment.appUrl (not window.location.href) - inside the native app
+    // the WebView's own origin is the internal https://localhost, which is
+    // meaningless to whoever receives the link.
+    const url = `${environment.appUrl}${window.location.pathname}`;
+    const text = this.translate.instant('eventDetail.shareText', {
+      title: event.title,
+      creator: event.creatorName,
+    });
+    try {
+      // Capacitor's Share plugin falls back to the Web Share API on web
+      // builds by itself, so this one call covers both native and browser.
+      await Share.share({ title: 'DanceMeet', text, url });
+    } catch {
+      // User cancelled the native share sheet, or neither share mechanism is
+      // available - fall back to copying the link.
+      if (navigator.clipboard) {
+        await navigator.clipboard.writeText(url);
       }
-      return;
-    }
-    if (navigator.clipboard) {
-      await navigator.clipboard.writeText(url);
     }
   }
 

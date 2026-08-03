@@ -144,6 +144,11 @@ export class ExplorerPage implements OnInit, ViewWillEnter {
     disableDefaultUI: true,
     zoomControl: true,
     clickableIcons: false,
+    // disableDefaultUI doesn't cover this one - Maps shows its own compass/
+    // reset-rotation control as soon as the map is tilted or rotated (e.g. a
+    // two-finger touch gesture on a real device), floating right above our
+    // zoom buttons.
+    rotateControl: false,
   };
 
   // Visualizes the user's saved distance radius as a translucent circle

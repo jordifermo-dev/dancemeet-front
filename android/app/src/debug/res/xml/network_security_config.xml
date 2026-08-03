@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Debug builds only (src/debug/, merged only into debug variants) - lets
+     the app trust a locally-installed CA certificate (e.g. Norton's
+     SSL-inspection root, same root cause as the Gradle sync failures) so
+     HTTPS calls work while developing behind that kind of network. Release
+     builds never include this file, so Google Play builds keep the normal
+     system-only trust behavior. -->
+<network-security-config>
+    <base-config>
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="user" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

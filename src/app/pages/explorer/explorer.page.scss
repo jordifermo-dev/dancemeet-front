@@ -124,7 +124,10 @@
 
 .locate-fab {
   position: absolute;
-  right: 16px;
+  // Left side, not the bottom-right corner where Google's own zoom +/-
+  // control renders by default - avoids the overlap without needing to
+  // guess at a vertical gap between the two.
+  left: 16px;
   bottom: 24px;
   width: 48px;
   height: 48px;
