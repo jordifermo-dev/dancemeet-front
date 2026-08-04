@@ -38,9 +38,10 @@ import {
   locationOutline,
   locateOutline,
   addCircleOutline,
-  checkmarkCircleOutline,
   checkmarkOutline,
   trashOutline,
+  heart,
+  heartOutline,
   close,
 } from 'ionicons/icons';
 import { AuthService } from '../../services/auth.service';
@@ -199,6 +200,7 @@ export class EventDetailPage implements ComponentWithUnsavedChanges {
   readonly isEditMode = signal(false);
   readonly isCreateMode = signal(false);
   readonly showValidationModal = signal(false);
+  readonly showDateInvalidModal = signal(false);
   readonly isAttending = signal(false);
   readonly attendLoading = signal(false);
   readonly attendFlash = createSuccessFlash();
@@ -550,9 +552,10 @@ export class EventDetailPage implements ComponentWithUnsavedChanges {
       locationOutline,
       locateOutline,
       addCircleOutline,
-      checkmarkCircleOutline,
       checkmarkOutline,
       trashOutline,
+      heart,
+      heartOutline,
       close,
     });
 
@@ -932,15 +935,38 @@ export class EventDetailPage implements ComponentWithUnsavedChanges {
    * a tap always gives feedback - if the form isn't ready, it opens a modal
    * with exactly what's missing instead of silently doing nothing. */
   onSaveClick(): void {
-    if (this.editValid()) {
-      this.saveEdit();
-    } else {
+    if (!this.editValid()) {
       this.showValidationModal.set(true);
+      return;
     }
+    // Checked separately from editValid()/editValidationMessages() - unlike a
+    // missing field, this isn't "fix it and tap Guardar again", it's "your
+    // edits can't be saved as-is", so it gets its own modal (Ignorar/Corregir
+    // fecha) instead of joining the generic missing-fields list.
+    if (this.editDateFrom() < Date.now()) {
+      this.showDateInvalidModal.set(true);
+      return;
+    }
+    this.saveEdit();
   }
 
   closeValidationModal(): void {
     this.showValidationModal.set(false);
+  }
+
+  /** "Ignorar" on the date-invalid modal - same as tapping Cancelar: discard
+   * the in-progress edit and leave (back to the list for a new event, back to
+   * view mode for an existing one). */
+  discardDateInvalidChanges(): void {
+    this.showDateInvalidModal.set(false);
+    this.cancelEdit();
+  }
+
+  /** The other option isn't "Aplicar" (the date is still invalid, saving
+   * would just fail the same check again) - it closes the modal and leaves
+   * the form as-is so the organizer can correct the date/time themselves. */
+  dismissDateInvalidModal(): void {
+    this.showDateInvalidModal.set(false);
   }
 
   saveEdit(): void {

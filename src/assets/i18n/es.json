@@ -262,6 +262,8 @@
     "validationDiscipline": "Selecciona un baile",
     "validationLocation": "Busca la dirección y selecciona una sugerencia de la lista (o usa tu ubicación actual)",
     "validationDates": "La fecha de fin debe ser posterior a la de inicio",
+    "dateInvalidMessage": "La fecha y hora del evento deben ser iguales o posteriores al momento actual. Si no las corriges, tus cambios no se guardarán.",
+    "fixDateButton": "Corregir fecha",
     "validationInstagram": "El enlace de Instagram debe ser de instagram.com",
     "validationFacebook": "El enlace de Facebook debe ser de facebook.com",
     "validationTiktok": "El enlace de TikTok debe ser de tiktok.com",

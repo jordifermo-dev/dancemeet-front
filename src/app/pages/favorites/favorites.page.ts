@@ -51,6 +51,7 @@ import { EventCardComponent } from '../../shared/event-card/event-card.component
 import { NotificationBellComponent } from '../../shared/notification-bell/notification-bell.component';
 import { EventCardView } from '../../shared/event-card/event-card.model';
 import { buildEventCardView } from '../../shared/event-card/build-event-card-view';
+import { recoverAttendState } from '../../shared/attend-toggle';
 import { EVENT_SORT_OPTIONS, EventSortMode, sortEvents } from '../../shared/event-sort';
 import { SortPreferenceService } from '../../services/sort-preference.service';
 import { DateQuickOption, ExplorerFiltersService } from '../explorer/explorer-filters.service';
@@ -322,6 +323,38 @@ export class FavoritesPage implements OnInit, AfterViewInit, OnDestroy, ViewWill
     this.overlayResizeObserver?.disconnect();
   }
 
+  /** Guards attend/unattend requests in flight per event id - a doubled tap
+   * otherwise fires the handler twice before the first request's response
+   * updates the list, sending a duplicate remove call the backend rejects
+   * with a "not found" error. */
+  private readonly attendBusyIds = signal<Set<string>>(new Set());
+
+  /** <app-event-card>'s (attendToggle) - it already refuses to emit for the
+   * organizer's own event or a finished/cancelled one, so every card here
+   * that can fire this is currently attending (that's the only way a
+   * non-organizer event lands in this list); un-attending removes it from
+   * the list entirely, since it's no longer one of "my" events. */
+  onAttendToggle(eventId: string): void {
+    const userId = this.authService.currentUser()?.id;
+    if (!userId || this.attendBusyIds().has(eventId)) {
+      return;
+    }
+    this.attendBusyIds.update((ids) => new Set(ids).add(eventId));
+    this.favoriteService.removeFromFavorites(userId, eventId).subscribe({
+      next: () => this.allEvents.update((events) => events.filter((event) => event.id !== eventId)),
+      error: (err) => {
+        if (recoverAttendState(err, true) === false) {
+          this.allEvents.update((events) => events.filter((event) => event.id !== eventId));
+        }
+        this.attendBusyIds.update((ids) => {
+          const next = new Set(ids);
+          next.delete(eventId);
+          return next;
+        });
+      },
+    });
+  }
+
   private loadFavorites(): void {
     const user = this.authService.currentUser();
     if (!user) {
@@ -355,6 +388,34 @@ export class FavoritesPage implements OnInit, AfterViewInit, OnDestroy, ViewWill
     this.isSortModalOpen.set(false);
   }
 
+  // --- "Reestablecer filtros" helpers: restore whatever's saved on the
+  // profile (same fields Explorer's resetX() pulls from), falling back to
+  // "everything selected"/neutral only when the user never set a preference. --
+
+  private profileDisciplineIds(): string[] {
+    const user = this.authService.currentUser();
+    return user?.disciplineIds?.length ? [...user.disciplineIds] : this.disciplines().map((d) => d.id);
+  }
+
+  private profileEventTypeIds(): string[] {
+    const user = this.authService.currentUser();
+    return user?.eventTypeIds?.length ? [...user.eventTypeIds] : this.eventTypes().map((e) => e.id);
+  }
+
+  private profileStatuses(): EventStatus[] {
+    const user = this.authService.currentUser();
+    return (user?.statusIds?.length ? [...user.statusIds] : [...EVENT_STATUSES]) as EventStatus[];
+  }
+
+  private profileDateRange(): { from: number | undefined; to: number | undefined } {
+    const user = this.authService.currentUser();
+    if (user?.eventDateFrom !== undefined && user?.eventDateFrom !== null) {
+      return { from: user.eventDateFrom, to: user.eventDateTo ?? undefined };
+    }
+    const { from, to } = this.dateUtils.quickDateRange('today');
+    return { from, to };
+  }
+
   // --- Discipline modal ------------------------------------------------
 
   openDisciplineModal(): void {
@@ -374,9 +435,9 @@ export class FavoritesPage implements OnInit, AfterViewInit, OnDestroy, ViewWill
   }
 
   clearDisciplineFilter(): void {
-    const allIds = this.disciplines().map((d) => d.id);
-    this.draftDisciplineIds.set(allIds);
-    this.appliedDisciplineIds.set(allIds);
+    const ids = this.profileDisciplineIds();
+    this.draftDisciplineIds.set(ids);
+    this.appliedDisciplineIds.set(ids);
     this.isDisciplineModalOpen.set(false);
   }
 
@@ -399,9 +460,9 @@ export class FavoritesPage implements OnInit, AfterViewInit, OnDestroy, ViewWill
   }
 
   clearEventTypeFilter(): void {
-    const allIds = this.eventTypes().map((e) => e.id);
-    this.draftEventTypeIds.set(allIds);
-    this.appliedEventTypeIds.set(allIds);
+    const ids = this.profileEventTypeIds();
+    this.draftEventTypeIds.set(ids);
+    this.appliedEventTypeIds.set(ids);
     this.isEventTypeModalOpen.set(false);
   }
 
@@ -424,8 +485,9 @@ export class FavoritesPage implements OnInit, AfterViewInit, OnDestroy, ViewWill
   }
 
   clearStatusFilter(): void {
-    this.draftStatuses.set([...EVENT_STATUSES]);
-    this.appliedStatuses.set([...EVENT_STATUSES]);
+    const statuses = this.profileStatuses();
+    this.draftStatuses.set(statuses);
+    this.appliedStatuses.set(statuses);
     this.isStatusModalOpen.set(false);
   }
 
@@ -536,11 +598,8 @@ export class FavoritesPage implements OnInit, AfterViewInit, OnDestroy, ViewWill
     this.dateApplyFlash.trigger();
   }
 
-  /** There's no "no filter" state for dates, so clearing goes back to the
-   * app's neutral baseline (today onward, no end date) instead of unbounding
-   * both ends. */
   clearDateFilter(): void {
-    const { from, to } = this.dateUtils.quickDateRange('today');
+    const { from, to } = this.profileDateRange();
     this.draftDateFrom.set(from);
     this.draftDateTo.set(to);
     this.appliedDateFrom.set(from);
@@ -684,22 +743,23 @@ export class FavoritesPage implements OnInit, AfterViewInit, OnDestroy, ViewWill
   }
 
   clearGenericFilter(): void {
-    const allDisciplineIds = this.disciplines().map((d) => d.id);
-    const allEventTypeIds = this.eventTypes().map((e) => e.id);
+    const disciplineIds = this.profileDisciplineIds();
+    const eventTypeIds = this.profileEventTypeIds();
+    const statuses = this.profileStatuses();
     const allRelations: RelationFilter[] = ['organizer', 'attendee'];
     const allPriceOptions: PriceOption[] = ['free', 'paid'];
 
-    this.draftDisciplineIds.set(allDisciplineIds);
-    this.appliedDisciplineIds.set(allDisciplineIds);
-    this.draftEventTypeIds.set(allEventTypeIds);
-    this.appliedEventTypeIds.set(allEventTypeIds);
-    this.draftStatuses.set([...EVENT_STATUSES]);
-    this.appliedStatuses.set([...EVENT_STATUSES]);
+    this.draftDisciplineIds.set(disciplineIds);
+    this.appliedDisciplineIds.set(disciplineIds);
+    this.draftEventTypeIds.set(eventTypeIds);
+    this.appliedEventTypeIds.set(eventTypeIds);
+    this.draftStatuses.set(statuses);
+    this.appliedStatuses.set(statuses);
     this.draftRelation.set(allRelations);
     this.appliedRelation.set(allRelations);
     this.draftPriceOptions.set(allPriceOptions);
     this.appliedPriceOptions.set(allPriceOptions);
-    const { from, to } = this.dateUtils.quickDateRange('today');
+    const { from, to } = this.profileDateRange();
     this.draftDateFrom.set(from);
     this.draftDateTo.set(to);
     this.appliedDateFrom.set(from);

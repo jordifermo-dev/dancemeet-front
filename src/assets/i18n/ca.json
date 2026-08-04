@@ -262,6 +262,8 @@
     "validationDiscipline": "Selecciona un ball",
     "validationLocation": "Cerca l'adreça i selecciona un suggeriment de la llista (o utilitza la teva ubicació actual)",
     "validationDates": "La data de fi ha de ser posterior a la d'inici",
+    "dateInvalidMessage": "La data i hora de l'esdeveniment han de ser iguals o posteriors al moment actual. Si no les corregeixes, els teus canvis no es desaran.",
+    "fixDateButton": "Corregeix la data",
     "validationInstagram": "L'enllaç d'Instagram ha de ser d'instagram.com",
     "validationFacebook": "L'enllaç de Facebook ha de ser de facebook.com",
     "validationTiktok": "L'enllaç de TikTok ha de ser de tiktok.com",

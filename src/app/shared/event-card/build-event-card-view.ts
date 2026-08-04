@@ -20,6 +20,13 @@ export function buildEventCardView(
   eventTypesById: Map<string, EventType>,
   lang: AppLanguage | null,
   currentUserId: string | null | undefined,
+  /** IDs of events the *logged-in* user attends. `relation` on `event` isn't
+   * a safe stand-in for this - on user-events it describes how the profile
+   * being *viewed* relates to the event, which is a different person when
+   * browsing someone else's list. Pass this whenever that's a possibility
+   * (Events tab, user-events); omit only on Favorites, which is always the
+   * logged-in user's own list, so `event.relation` already is their own. */
+  attendedEventIds?: ReadonlySet<string>,
 ): EventCardView {
   const eventTypeTags = event.typeIds
     .map((id) => eventTypesById.get(id))
@@ -50,5 +57,7 @@ export function buildEventCardView(
     isFaded: event.status === 'finished' || event.status === 'cancelled',
     relationLabelKey: event.relation ? RELATION_BADGE_KEYS[event.relation] : undefined,
     relation: event.relation,
+    isOwnEvent,
+    isAttending: attendedEventIds ? attendedEventIds.has(event.id) : event.relation === 'favorite',
   };
 }

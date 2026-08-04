@@ -262,6 +262,8 @@
     "validationDiscipline": "Pick a dance style",
     "validationLocation": "Search the address and pick a suggestion from the list (or use your current location)",
     "validationDates": "The end date must be after the start date",
+    "dateInvalidMessage": "The event's date and time must be equal to or later than the current moment. If you don't fix it, your changes won't be saved.",
+    "fixDateButton": "Fix date",
     "validationInstagram": "The Instagram link must be from instagram.com",
     "validationFacebook": "The Facebook link must be from facebook.com",
     "validationTiktok": "The TikTok link must be from tiktok.com",

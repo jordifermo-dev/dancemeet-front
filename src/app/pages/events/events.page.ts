@@ -35,6 +35,7 @@ import { AuthService } from '../../services/auth.service';
 import { DisciplineService } from '../../services/discipline.service';
 import { EventTypeService } from '../../services/event-type.service';
 import { EventService } from '../../services/event.service';
+import { FavoriteService } from '../../services/favorite.service';
 import { LanguageService } from '../../services/language.service';
 import {
   Discipline,
@@ -52,6 +53,7 @@ import { NotificationBellComponent } from '../../shared/notification-bell/notifi
 import { EventCardComponent } from '../../shared/event-card/event-card.component';
 import { EventCardView } from '../../shared/event-card/event-card.model';
 import { buildEventCardView } from '../../shared/event-card/build-event-card-view';
+import { recoverAttendState } from '../../shared/attend-toggle';
 import { EVENT_SORT_OPTIONS, EventSortMode, sortEvents } from '../../shared/event-sort';
 import { SortPreferenceService } from '../../services/sort-preference.service';
 import { ExplorerFiltersService } from '../explorer/explorer-filters.service';
@@ -94,6 +96,7 @@ export class EventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWillEnt
   private readonly disciplineService = inject(DisciplineService);
   private readonly eventTypeService = inject(EventTypeService);
   private readonly eventService = inject(EventService);
+  private readonly favoriteService = inject(FavoriteService);
   private readonly authService = inject(AuthService);
   private readonly languageService = inject(LanguageService);
   private readonly router = inject(Router);
@@ -113,6 +116,15 @@ export class EventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWillEnt
   readonly loading = signal(true);
   readonly events = signal<EventWithCreatorName[]>([]);
   readonly searchTerm = signal('');
+  /** IDs of events the logged-in user attends - a plain search result has no
+   * per-event relation of its own (see buildEventCardView), so the heart on
+   * each card is driven by this separately-fetched set instead. */
+  readonly attendedEventIds = signal<Set<string>>(new Set());
+  /** Guards attend/unattend requests in flight per event id - a doubled tap
+   * otherwise fires the handler twice before the first request's response
+   * updates attendedEventIds, sending a duplicate add/remove call the
+   * backend rejects with an "already favorited"/"not found" error. */
+  private readonly attendBusyIds = signal<Set<string>>(new Set());
 
   readonly disciplines = signal<Discipline[]>([]);
   readonly disciplinesById = computed(() => new Map(this.disciplines().map((d) => [d.id, d])));
@@ -144,8 +156,9 @@ export class EventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWillEnt
     const eventTypesById = this.eventTypesById();
     const lang = this.languageService.currentLang();
     const currentUserId = this.authService.currentUser()?.id;
+    const attendedEventIds = this.attendedEventIds();
     return sortEvents(this.events(), this.sortMode()).map((event) =>
-      buildEventCardView(event, disciplinesById, eventTypesById, lang, currentUserId),
+      buildEventCardView(event, disciplinesById, eventTypesById, lang, currentUserId, attendedEventIds),
     );
   });
 
@@ -197,6 +210,71 @@ export class EventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWillEnt
    * back here would still show the stale, pre-edit card. */
   ionViewWillEnter(): void {
     this.loadEvents(this.searchTerm());
+    this.loadAttendedEventIds();
+  }
+
+  private loadAttendedEventIds(): void {
+    const userId = this.authService.currentUser()?.id;
+    if (!userId) {
+      this.attendedEventIds.set(new Set());
+      return;
+    }
+    this.favoriteService.getFavoritedEvents(userId).subscribe({
+      next: (events) => this.attendedEventIds.set(new Set(events.map((event) => event.id))),
+      error: () => this.attendedEventIds.set(new Set()),
+    });
+  }
+
+  /** <app-event-card>'s (attendToggle) - it already refuses to emit for the
+   * organizer's own event or a finished/cancelled one, so this only ever
+   * needs to flip between attending and not. */
+  onAttendToggle(eventId: string): void {
+    const userId = this.authService.currentUser()?.id;
+    if (!userId || this.attendBusyIds().has(eventId)) {
+      return;
+    }
+    this.attendBusyIds.update((ids) => new Set(ids).add(eventId));
+    const wasAttending = this.attendedEventIds().has(eventId);
+    const request$ = wasAttending
+      ? this.favoriteService.removeFromFavorites(userId, eventId)
+      : this.favoriteService.addToFavorites(userId, eventId);
+    request$.subscribe({
+      next: () => {
+        this.attendedEventIds.update((ids) => {
+          const next = new Set(ids);
+          if (wasAttending) {
+            next.delete(eventId);
+          } else {
+            next.add(eventId);
+          }
+          return next;
+        });
+        this.attendBusyIds.update((ids) => {
+          const next = new Set(ids);
+          next.delete(eventId);
+          return next;
+        });
+      },
+      error: (err) => {
+        const recovered = recoverAttendState(err, wasAttending);
+        if (recovered !== null) {
+          this.attendedEventIds.update((ids) => {
+            const next = new Set(ids);
+            if (recovered) {
+              next.add(eventId);
+            } else {
+              next.delete(eventId);
+            }
+            return next;
+          });
+        }
+        this.attendBusyIds.update((ids) => {
+          const next = new Set(ids);
+          next.delete(eventId);
+          return next;
+        });
+      },
+    });
   }
 
   ngAfterViewInit(): void {

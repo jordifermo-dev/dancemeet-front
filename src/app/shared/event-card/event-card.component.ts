@@ -1,9 +1,9 @@
-import { Component, Input } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { IonIcon } from '@ionic/angular/standalone';
 import { TranslatePipe } from '@ngx-translate/core';
 import { addIcons } from 'ionicons';
-import { calendarOutline, locationOutline } from 'ionicons/icons';
+import { calendarOutline, locationOutline, heart, heartOutline } from 'ionicons/icons';
 import { EventCardView } from './event-card.model';
 
 /** Summary card for an event: image on the left, details on the right
@@ -18,8 +18,21 @@ import { EventCardView } from './event-card.model';
 })
 export class EventCardComponent {
   @Input({ required: true }) view!: EventCardView;
+  /** The card itself stays a pure, presentational component with no service
+   * dependencies of its own (see event-card.model.ts) - the page decides what
+   * attending/unattending actually does (call FavoriteService, update its
+   * list/signals). */
+  @Output() readonly attendToggle = new EventEmitter<string>();
 
   constructor() {
-    addIcons({ calendarOutline, locationOutline });
+    addIcons({ calendarOutline, locationOutline, heart, heartOutline });
+  }
+
+  onAttendToggle(event: Event): void {
+    event.stopPropagation();
+    if (this.view.isOwnEvent || this.view.status === 'finished' || this.view.status === 'cancelled') {
+      return;
+    }
+    this.attendToggle.emit(this.view.id);
   }
 }

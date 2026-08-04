@@ -53,6 +53,7 @@ import { MinSelectionWarningService } from '../../shared/min-selection-warning.s
 import { EventCardComponent } from '../../shared/event-card/event-card.component';
 import { EventCardView } from '../../shared/event-card/event-card.model';
 import { buildEventCardView } from '../../shared/event-card/build-event-card-view';
+import { recoverAttendState } from '../../shared/attend-toggle';
 import { DateQuickOption, ExplorerFiltersService } from '../explorer/explorer-filters.service';
 import { createApplyFlash } from '../../shared/success-flash';
 
@@ -121,6 +122,11 @@ export class UserEventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWil
   readonly loading = signal(true);
   readonly searchTerm = signal('');
   readonly allEvents = signal<FavoritedEvent[]>([]);
+  /** IDs of events the *logged-in* user attends - unlike `relation` on each
+   * event (which describes how the *viewed* profile relates to it), this is
+   * always about "me", so it stays correct whether this is my own events
+   * list or someone else's. */
+  readonly attendedEventIds = signal<Set<string>>(new Set());
   readonly disciplines = signal<Discipline[]>([]);
   readonly eventTypes = signal<EventType[]>([]);
   readonly statusOptions = EVENT_STATUSES.map((id) => ({ id, labelKey: STATUS_LABEL_KEYS[id] }));
@@ -231,7 +237,7 @@ export class UserEventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWil
         return haversineDistanceMeters(lat, lng, event.latitude, event.longitude) <= radiusMeters;
       })
       .sort((a, b) => b.eventDateFrom - a.eventDateFrom)
-      .map((event) => buildEventCardView(event, disciplinesById, eventTypesById, lang, currentUserId));
+      .map((event) => buildEventCardView(event, disciplinesById, eventTypesById, lang, currentUserId, this.attendedEventIds()));
   });
 
   constructor() {
@@ -290,6 +296,7 @@ export class UserEventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWil
    * alive, so coming back here should still show fresh data. */
   ionViewWillEnter(): void {
     this.loadEvents();
+    this.loadAttendedEventIds();
   }
 
   private loadEvents(): void {
@@ -308,12 +315,121 @@ export class UserEventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWil
     });
   }
 
+  private loadAttendedEventIds(): void {
+    const myId = this.authService.currentUser()?.id;
+    if (!myId) {
+      this.attendedEventIds.set(new Set());
+      return;
+    }
+    this.favoriteService.getFavoritedEvents(myId).subscribe({
+      next: (events) => this.attendedEventIds.set(new Set(events.map((event) => event.id))),
+      error: () => this.attendedEventIds.set(new Set()),
+    });
+  }
+
+  /** Guards attend/unattend requests in flight per event id - a doubled tap
+   * otherwise fires the handler twice before the first request's response
+   * updates attendedEventIds, sending a duplicate add/remove call the
+   * backend rejects with an "already favorited"/"not found" error. */
+  private readonly attendBusyIds = signal<Set<string>>(new Set());
+
+  /** <app-event-card>'s (attendToggle) - unattending only removes the card
+   * from *this* list when it's my own (no ?userId, or ?userId is me):
+   * someone else's events list is organized/favorited by *them*, so my own
+   * attendance toggling shouldn't make their card disappear from their list. */
+  onAttendToggle(eventId: string): void {
+    const myId = this.authService.currentUser()?.id;
+    if (!myId || this.attendBusyIds().has(eventId)) {
+      return;
+    }
+    this.attendBusyIds.update((ids) => new Set(ids).add(eventId));
+    const wasAttending = this.attendedEventIds().has(eventId);
+    const request$ = wasAttending
+      ? this.favoriteService.removeFromFavorites(myId, eventId)
+      : this.favoriteService.addToFavorites(myId, eventId);
+    request$.subscribe({
+      next: () => {
+        this.attendedEventIds.update((ids) => {
+          const next = new Set(ids);
+          if (wasAttending) {
+            next.delete(eventId);
+          } else {
+            next.add(eventId);
+          }
+          return next;
+        });
+        this.attendBusyIds.update((ids) => {
+          const next = new Set(ids);
+          next.delete(eventId);
+          return next;
+        });
+        const viewedUserId = this.route.snapshot.queryParamMap.get('userId') ?? myId;
+        if (wasAttending && viewedUserId === myId) {
+          this.allEvents.update((events) => events.filter((event) => event.id !== eventId));
+        }
+      },
+      error: (err) => {
+        const recovered = recoverAttendState(err, wasAttending);
+        if (recovered !== null) {
+          this.attendedEventIds.update((ids) => {
+            const next = new Set(ids);
+            if (recovered) {
+              next.add(eventId);
+            } else {
+              next.delete(eventId);
+            }
+            return next;
+          });
+          const viewedUserId = this.route.snapshot.queryParamMap.get('userId') ?? myId;
+          if (!recovered && viewedUserId === myId) {
+            this.allEvents.update((events) => events.filter((event) => event.id !== eventId));
+          }
+        }
+        this.attendBusyIds.update((ids) => {
+          const next = new Set(ids);
+          next.delete(eventId);
+          return next;
+        });
+      },
+    });
+  }
+
   onSearchChange(value: string | null | undefined): void {
     const term = value ?? '';
     if (this.searchInputTimer) {
       clearTimeout(this.searchInputTimer);
     }
     this.searchInputTimer = setTimeout(() => this.searchTerm.set(term), 300);
+  }
+
+  // --- "Reestablecer filtros" helpers: restore whatever's saved on the
+  // profile (same fields Explorer's resetX() pulls from), falling back to
+  // "everything selected"/neutral only when the user never set a preference. --
+
+  private profileDisciplineIds(): string[] {
+    const user = this.authService.currentUser();
+    return user?.disciplineIds?.length ? [...user.disciplineIds] : this.disciplines().map((d) => d.id);
+  }
+
+  private profileEventTypeIds(): string[] {
+    const user = this.authService.currentUser();
+    return user?.eventTypeIds?.length ? [...user.eventTypeIds] : this.eventTypes().map((e) => e.id);
+  }
+
+  private profileStatuses(): EventStatus[] {
+    const user = this.authService.currentUser();
+    return (user?.statusIds?.length ? [...user.statusIds] : [...EVENT_STATUSES]) as EventStatus[];
+  }
+
+  /** Unlike Favorites, no "today onward" fallback here - this is "my own" (or
+   * someone else's) organized/attended events, so past and finished/cancelled
+   * ones should still show up when there's no saved profile date either. */
+  private profileDateRange(): { from: number | undefined; to: number | undefined } {
+    const user = this.authService.currentUser();
+    if (user?.eventDateFrom !== undefined && user?.eventDateFrom !== null) {
+      return { from: user.eventDateFrom, to: user.eventDateTo ?? undefined };
+    }
+    return { from: undefined, to: undefined };
   }
 
   // --- Discipline modal ------------------------------------------------
@@ -335,9 +451,9 @@ export class UserEventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWil
   }
 
   clearDisciplineFilter(): void {
-    const allIds = this.disciplines().map((d) => d.id);
-    this.draftDisciplineIds.set(allIds);
-    this.appliedDisciplineIds.set(allIds);
+    const ids = this.profileDisciplineIds();
+    this.draftDisciplineIds.set(ids);
+    this.appliedDisciplineIds.set(ids);
     this.isDisciplineModalOpen.set(false);
   }
 
@@ -360,9 +476,9 @@ export class UserEventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWil
   }
 
   clearEventTypeFilter(): void {
-    const allIds = this.eventTypes().map((e) => e.id);
-    this.draftEventTypeIds.set(allIds);
-    this.appliedEventTypeIds.set(allIds);
+    const ids = this.profileEventTypeIds();
+    this.draftEventTypeIds.set(ids);
+    this.appliedEventTypeIds.set(ids);
     this.isEventTypeModalOpen.set(false);
   }
 
@@ -385,8 +501,9 @@ export class UserEventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWil
   }
 
   clearStatusFilter(): void {
-    this.draftStatuses.set([...EVENT_STATUSES]);
-    this.appliedStatuses.set([...EVENT_STATUSES]);
+    const statuses = this.profileStatuses();
+    this.draftStatuses.set(statuses);
+    this.appliedStatuses.set(statuses);
     this.isStatusModalOpen.set(false);
   }
 
@@ -498,10 +615,11 @@ export class UserEventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWil
   }
 
   clearDateFilter(): void {
-    this.draftDateFrom.set(undefined);
-    this.draftDateTo.set(undefined);
-    this.appliedDateFrom.set(undefined);
-    this.appliedDateTo.set(undefined);
+    const { from, to } = this.profileDateRange();
+    this.draftDateFrom.set(from);
+    this.draftDateTo.set(to);
+    this.appliedDateFrom.set(from);
+    this.appliedDateTo.set(to);
     this.isDateModalOpen.set(false);
   }
 
@@ -637,25 +755,27 @@ export class UserEventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWil
   }
 
   clearGenericFilter(): void {
-    const allDisciplineIds = this.disciplines().map((d) => d.id);
-    const allEventTypeIds = this.eventTypes().map((e) => e.id);
+    const disciplineIds = this.profileDisciplineIds();
+    const eventTypeIds = this.profileEventTypeIds();
+    const statuses = this.profileStatuses();
     const allRelations: RelationFilter[] = ['organizer', 'attendee'];
     const allPriceOptions: PriceOption[] = ['free', 'paid'];
 
-    this.draftDisciplineIds.set(allDisciplineIds);
-    this.appliedDisciplineIds.set(allDisciplineIds);
-    this.draftEventTypeIds.set(allEventTypeIds);
-    this.appliedEventTypeIds.set(allEventTypeIds);
-    this.draftStatuses.set([...EVENT_STATUSES]);
-    this.appliedStatuses.set([...EVENT_STATUSES]);
+    this.draftDisciplineIds.set(disciplineIds);
+    this.appliedDisciplineIds.set(disciplineIds);
+    this.draftEventTypeIds.set(eventTypeIds);
+    this.appliedEventTypeIds.set(eventTypeIds);
+    this.draftStatuses.set(statuses);
+    this.appliedStatuses.set(statuses);
     this.draftRelation.set(allRelations);
     this.appliedRelation.set(allRelations);
     this.draftPriceOptions.set(allPriceOptions);
     this.appliedPriceOptions.set(allPriceOptions);
-    this.draftDateFrom.set(undefined);
-    this.draftDateTo.set(undefined);
-    this.appliedDateFrom.set(undefined);
-    this.appliedDateTo.set(undefined);
+    const { from, to } = this.profileDateRange();
+    this.draftDateFrom.set(from);
+    this.draftDateTo.set(to);
+    this.appliedDateFrom.set(from);
+    this.appliedDateTo.set(to);
 
     this.isGenericFilterModalOpen.set(false);
   }

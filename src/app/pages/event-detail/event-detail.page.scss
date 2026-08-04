@@ -123,6 +123,36 @@
   margin-bottom: 12px;
 }
 
+.creator-row-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.attend-heart-btn {
+  appearance: none;
+  border: none;
+  background: transparent;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  color: var(--app-text-strong);
+
+  ion-icon {
+    font-size: 1.6rem;
+  }
+
+  &.active {
+    color: var(--ion-color-danger);
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+}
+
 .event-creator {
   font-size: 0.85rem;
   font-weight: 700;

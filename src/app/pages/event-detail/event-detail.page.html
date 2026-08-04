@@ -257,9 +257,23 @@
       <h1 class="event-title">{{ event()!.title }}</h1>
       <div class="creator-row">
         <a class="event-creator" [routerLink]="creatorProfileLink()">{{ event()!.creatorName }}</a>
-        <div class="stat" (click)="goToAttendees()">
-          <span class="stat-count">{{ attendeesCount() }}</span>
-          <span class="stat-label">{{ 'eventDetail.attendeesLabel' | translate }}</span>
+        <div class="creator-row-right">
+          <div class="stat" (click)="goToAttendees()">
+            <span class="stat-count">{{ attendeesCount() }}</span>
+            <span class="stat-label">{{ 'eventDetail.attendeesLabel' | translate }}</span>
+          </div>
+          @if (!isOwnEvent()) {
+            <button
+              type="button"
+              class="attend-heart-btn"
+              [class.active]="isAttending()"
+              [disabled]="attendLoading() || isEventOver()"
+              [attr.aria-label]="(isAttending() ? 'eventDetail.unattendButton' : 'eventDetail.attendButton') | translate"
+              (click)="toggleAttend()"
+            >
+              <ion-icon [name]="attendFlash.active() ? 'checkmark-outline' : (isAttending() ? 'heart' : 'heart-outline')"></ion-icon>
+            </button>
+          }
         </div>
       </div>
 
@@ -312,22 +326,6 @@
         <ion-button expand="block" (click)="enterEditMode()">
           <ion-icon slot="start" name="create-outline"></ion-icon>
           {{ 'eventDetail.editButton' | translate }}
-        </ion-button>
-      } @else {
-        <ion-button
-          expand="block"
-          [fill]="isAttending() ? 'outline' : 'solid'"
-          [disabled]="attendLoading() || isEventOver()"
-          (click)="toggleAttend()"
-        >
-          <ion-icon
-            slot="start"
-            [name]="attendFlash.active() ? 'checkmark-outline' : (isAttending() ? 'checkmark-circle-outline' : 'add-circle-outline')"
-          ></ion-icon>
-          {{
-            (attendFlash.active() ? 'eventDetail.savedButton' : (isAttending() ? 'eventDetail.unattendButton' : 'eventDetail.attendButton'))
-              | translate
-          }}
         </ion-button>
       }
 
@@ -405,6 +403,27 @@
       <ion-button expand="block" (click)="closeValidationModal()">
         {{ 'eventDetail.validationOk' | translate }}
       </ion-button>
+    </div>
+  </ng-template>
+</ion-modal>
+
+<ion-modal
+  [isOpen]="showDateInvalidModal()"
+  [initialBreakpoint]="0.4"
+  [breakpoints]="[0, 0.4]"
+  (didDismiss)="dismissDateInvalidModal()"
+>
+  <ng-template>
+    <div class="validation-warning-sheet">
+      <p class="validation-warning-intro">{{ 'eventDetail.dateInvalidMessage' | translate }}</p>
+      <div class="filter-actions-row">
+        <ion-button expand="block" fill="outline" color="medium" (click)="discardDateInvalidChanges()">
+          {{ 'profile.discard' | translate }}
+        </ion-button>
+        <ion-button expand="block" (click)="dismissDateInvalidModal()">
+          {{ 'eventDetail.fixDateButton' | translate }}
+        </ion-button>
+      </div>
     </div>
   </ng-template>
 </ion-modal>

@@ -58,6 +58,8 @@ function demoEventCard(
   relationLabelKey?: string,
 ): EventCardView {
   return {
+    isOwnEvent: relationLabelKey === 'favorites.relationCreatorBadge',
+    isAttending: relationLabelKey === 'favorites.relationFavoriteBadge',
     id,
     imageUrl: `https://picsum.photos/1200/800?${photoId}`,
     title,
