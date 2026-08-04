@@ -49,6 +49,14 @@
         {{ 'favorites.relationFilterLabel' | translate }}
       </button>
     </div>
+
+    <button type="button" class="sort-row" (click)="openSortModal()">
+      <span class="sort-row-label">{{ 'eventSort.label' | translate }}</span>
+      <span class="sort-row-value">
+        {{ currentSortLabelKey() | translate }}
+        <ion-icon name="chevron-down-outline"></ion-icon>
+      </span>
+    </button>
   </div>
 
   <div class="user-events-list" [style.paddingTop.px]="listTopPadding()">
@@ -67,6 +75,42 @@
     }
   </div>
 </ion-content>
+
+<!-- Sort sheet -->
+<ion-modal
+  [isOpen]="isSortModalOpen()"
+  [initialBreakpoint]="0.45"
+  [breakpoints]="[0, 0.45, 0.7]"
+  (didDismiss)="isSortModalOpen.set(false)"
+>
+  <ng-template>
+    <div class="filter-sheet">
+      <div class="filter-sheet-header">
+        <h2>{{ 'eventSort.label' | translate }}</h2>
+        <button type="button" class="close-button" (click)="isSortModalOpen.set(false)">
+          <ion-icon name="close"></ion-icon>
+        </button>
+      </div>
+      <div class="sort-options-list">
+        @for (option of sortOptions; track option.id) {
+          <button
+            type="button"
+            class="sort-option"
+            [class.selected]="sortMode() === option.id"
+            (click)="selectSort(option.id)"
+          >
+            {{ option.labelKey | translate }}
+          </button>
+        }
+      </div>
+      <div class="filter-actions-row">
+        <ion-button expand="block" fill="outline" color="primary" (click)="isSortModalOpen.set(false)">
+          {{ 'common.cancel' | translate }}
+        </ion-button>
+      </div>
+    </div>
+  </ng-template>
+</ion-modal>
 
 <!-- Generic filter sheet: every category together (mirrors the pills) -->
 <ion-modal

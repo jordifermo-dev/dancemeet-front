@@ -29,7 +29,7 @@ import {
 } from '@ionic/angular/standalone';
 import { TranslatePipe } from '@ngx-translate/core';
 import { addIcons } from 'ionicons';
-import { locationOutline, close, locateOutline, calendarOutline, optionsOutline } from 'ionicons/icons';
+import { locationOutline, close, locateOutline, calendarOutline, optionsOutline, chevronDownOutline } from 'ionicons/icons';
 import { AuthService } from '../../services/auth.service';
 import { FavoriteService } from '../../services/favorite.service';
 import { DisciplineService } from '../../services/discipline.service';
@@ -56,6 +56,8 @@ import { buildEventCardView } from '../../shared/event-card/build-event-card-vie
 import { recoverAttendState } from '../../shared/attend-toggle';
 import { DateQuickOption, ExplorerFiltersService } from '../explorer/explorer-filters.service';
 import { createApplyFlash } from '../../shared/success-flash';
+import { EVENT_SORT_OPTIONS, EventSortMode, sortEvents } from '../../shared/event-sort';
+import { SortPreferenceService } from '../../services/sort-preference.service';
 
 type RelationFilter = 'organizer' | 'attendee';
 const RELATION_OPTIONS: { id: RelationFilter; labelKey: string }[] = [
@@ -108,6 +110,7 @@ export class UserEventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWil
    * here - this page keeps its own draft/applied signals, entirely separate
    * from Explorer's shared filter state. */
   private readonly dateUtils = inject(ExplorerFiltersService);
+  private readonly sortPreference = inject(SortPreferenceService);
 
   @ViewChild('topOverlay') private topOverlayRef?: ElementRef<HTMLDivElement>;
   private overlayResizeObserver?: ResizeObserver;
@@ -132,6 +135,13 @@ export class UserEventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWil
   readonly statusOptions = EVENT_STATUSES.map((id) => ({ id, labelKey: STATUS_LABEL_KEYS[id] }));
   readonly relationOptions = RELATION_OPTIONS;
   readonly priceOptions = PRICE_OPTIONS;
+  readonly sortOptions = EVENT_SORT_OPTIONS;
+  // Shared with Events/Favorites so the chosen order survives switching screens.
+  readonly sortMode = this.sortPreference.eventSortMode;
+  readonly isSortModalOpen = signal(false);
+  readonly currentSortLabelKey = computed(
+    () => this.sortOptions.find((option) => option.id === this.sortMode())?.labelKey ?? this.sortOptions[0].labelKey,
+  );
 
   readonly disciplineIconUrl = disciplineIconUrl;
   readonly eventTypeIconUrl = eventTypeIconUrl;
@@ -216,8 +226,9 @@ export class UserEventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWil
     const currentUserId = this.authService.currentUser()?.id;
     const wantsOrganizer = relations.includes('organizer');
     const wantsAttendee = relations.includes('attendee');
+    const sortMode = this.sortMode();
 
-    return this.allEvents()
+    const filtered = this.allEvents()
       .filter((event) => event.disciplineIds.some((id) => disciplineIds.includes(id)))
       .filter((event) => event.typeIds.some((id) => typeIds.includes(id)))
       .filter((event) => statuses.includes(event.status))
@@ -235,13 +246,15 @@ export class UserEventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWil
           return true;
         }
         return haversineDistanceMeters(lat, lng, event.latitude, event.longitude) <= radiusMeters;
-      })
-      .sort((a, b) => b.eventDateFrom - a.eventDateFrom)
-      .map((event) => buildEventCardView(event, disciplinesById, eventTypesById, lang, currentUserId, this.attendedEventIds()));
+      });
+
+    return sortEvents(filtered, sortMode).map((event) =>
+      buildEventCardView(event, disciplinesById, eventTypesById, lang, currentUserId, this.attendedEventIds()),
+    );
   });
 
   constructor() {
-    addIcons({ locationOutline, close, locateOutline, calendarOutline, optionsOutline });
+    addIcons({ locationOutline, close, locateOutline, calendarOutline, optionsOutline, chevronDownOutline });
 
     // queryParamMap emits immediately on subscribe (covers the initial load)
     // and again whenever ?userId changes without recreating this component -
@@ -400,6 +413,15 @@ export class UserEventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWil
       clearTimeout(this.searchInputTimer);
     }
     this.searchInputTimer = setTimeout(() => this.searchTerm.set(term), 300);
+  }
+
+  openSortModal(): void {
+    this.isSortModalOpen.set(true);
+  }
+
+  selectSort(value: EventSortMode): void {
+    this.sortMode.set(value);
+    this.isSortModalOpen.set(false);
   }
 
   // --- "Reestablecer filtros" helpers: restore whatever's saved on the
