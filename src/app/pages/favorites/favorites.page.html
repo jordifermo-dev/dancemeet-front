@@ -195,17 +195,45 @@
         <section class="filter-section">
           <p class="group-label">{{ 'explorer.dateFilterLabel' | translate }}</p>
           <div class="chip-grid">
-            <button type="button" class="chip" (click)="setDraftQuickDate('today')">
+            <button
+              type="button"
+              class="chip"
+              [class.selected]="draftActiveQuickDate() === 'today'"
+              (click)="setDraftQuickDate('today')"
+            >
               {{ 'explorer.today' | translate }}
             </button>
-            <button type="button" class="chip" (click)="setDraftQuickDate('week')">
+            <button
+              type="button"
+              class="chip"
+              [class.selected]="draftActiveQuickDate() === 'week'"
+              (click)="setDraftQuickDate('week')"
+            >
               {{ 'explorer.thisWeek' | translate }}
             </button>
-            <button type="button" class="chip" (click)="setDraftQuickDate('weekend')">
+            <button
+              type="button"
+              class="chip"
+              [class.selected]="draftActiveQuickDate() === 'month'"
+              (click)="setDraftQuickDate('month')"
+            >
+              {{ 'explorer.thisMonth' | translate }}
+            </button>
+            <button
+              type="button"
+              class="chip"
+              [class.selected]="draftActiveQuickDate() === 'weekend'"
+              (click)="setDraftQuickDate('weekend')"
+            >
               {{ 'explorer.thisWeekend' | translate }}
             </button>
-            <button type="button" class="chip" (click)="setDraftQuickDate('month')">
-              {{ 'explorer.thisMonth' | translate }}
+            <button
+              type="button"
+              class="chip"
+              [class.selected]="draftActiveQuickDate() === 'next30days'"
+              (click)="setDraftQuickDate('next30days')"
+            >
+              {{ 'explorer.next30Days' | translate }}
             </button>
           </div>
           <div class="date-range-row">
@@ -277,10 +305,10 @@
 
     <div class="filter-actions-row generic-filter-actions">
       <ion-button expand="block" fill="outline" color="primary" (click)="clearGenericFilter()">
-        {{ 'explorer.clearFilter' | translate }}
+        {{ 'explorer.resetFilters' | translate }}
       </ion-button>
       <ion-button expand="block" (click)="applyGenericFilter()">
-        {{ 'profile.apply' | translate }}
+        {{ (genericApplyFlash.active() ? 'profile.applied' : 'profile.apply') | translate }}
       </ion-button>
     </div>
   </ng-template>
@@ -327,14 +355,14 @@
       </ion-button>
 
       <p class="range-label">{{ 'register.distanceLabel' | translate: { km: draftDistanceRange() } }}</p>
-      <ion-range [min]="1" [max]="100" [value]="draftDistanceRange()" (ionChange)="onDistanceChange($event)"></ion-range>
+      <ion-range [min]="1" [max]="150" [value]="draftDistanceRange()" (ionChange)="onDistanceChange($event)"></ion-range>
 
       <div class="filter-actions-row">
         <ion-button expand="block" fill="outline" color="primary" (click)="clearLocationFilter()">
-          {{ 'explorer.clearFilter' | translate }}
+          {{ 'explorer.resetFilters' | translate }}
         </ion-button>
         <ion-button expand="block" (click)="applyLocationFilter()">
-          {{ 'profile.apply' | translate }}
+          {{ (locationApplyFlash.active() ? 'profile.applied' : 'profile.apply') | translate }}
         </ion-button>
       </div>
     </div>
@@ -374,10 +402,10 @@
       }
       <div class="filter-actions-row">
         <ion-button expand="block" fill="outline" color="primary" (click)="clearEventTypeFilter()">
-          {{ 'explorer.clearFilter' | translate }}
+          {{ 'explorer.resetFilters' | translate }}
         </ion-button>
         <ion-button expand="block" (click)="applyEventTypeFilter()">
-          {{ 'profile.apply' | translate }}
+          {{ (eventTypeApplyFlash.active() ? 'profile.applied' : 'profile.apply') | translate }}
         </ion-button>
       </div>
     </div>
@@ -417,10 +445,10 @@
       }
       <div class="filter-actions-row">
         <ion-button expand="block" fill="outline" color="primary" (click)="clearDisciplineFilter()">
-          {{ 'explorer.clearFilter' | translate }}
+          {{ 'explorer.resetFilters' | translate }}
         </ion-button>
         <ion-button expand="block" (click)="applyDisciplineFilter()">
-          {{ 'profile.apply' | translate }}
+          {{ (disciplineApplyFlash.active() ? 'profile.applied' : 'profile.apply') | translate }}
         </ion-button>
       </div>
     </div>
@@ -460,10 +488,10 @@
       }
       <div class="filter-actions-row">
         <ion-button expand="block" fill="outline" color="primary" (click)="clearStatusFilter()">
-          {{ 'explorer.clearFilter' | translate }}
+          {{ 'explorer.resetFilters' | translate }}
         </ion-button>
         <ion-button expand="block" (click)="applyStatusFilter()">
-          {{ 'profile.apply' | translate }}
+          {{ (statusApplyFlash.active() ? 'profile.applied' : 'profile.apply') | translate }}
         </ion-button>
       </div>
     </div>
@@ -502,10 +530,10 @@
       }
       <div class="filter-actions-row">
         <ion-button expand="block" fill="outline" color="primary" (click)="clearRelationFilter()">
-          {{ 'explorer.clearFilter' | translate }}
+          {{ 'explorer.resetFilters' | translate }}
         </ion-button>
         <ion-button expand="block" (click)="applyRelationFilter()">
-          {{ 'profile.apply' | translate }}
+          {{ (relationApplyFlash.active() ? 'profile.applied' : 'profile.apply') | translate }}
         </ion-button>
       </div>
     </div>
@@ -544,10 +572,10 @@
       }
       <div class="filter-actions-row">
         <ion-button expand="block" fill="outline" color="primary" (click)="clearPriceFilter()">
-          {{ 'explorer.clearFilter' | translate }}
+          {{ 'explorer.resetFilters' | translate }}
         </ion-button>
         <ion-button expand="block" (click)="applyPriceFilter()">
-          {{ 'profile.apply' | translate }}
+          {{ (priceApplyFlash.active() ? 'profile.applied' : 'profile.apply') | translate }}
         </ion-button>
       </div>
     </div>
@@ -570,17 +598,45 @@
         </button>
       </div>
       <div class="chip-grid">
-        <button type="button" class="chip" (click)="setDraftQuickDate('today')">
+        <button
+          type="button"
+          class="chip"
+          [class.selected]="draftActiveQuickDate() === 'today'"
+          (click)="setDraftQuickDate('today')"
+        >
           {{ 'explorer.today' | translate }}
         </button>
-        <button type="button" class="chip" (click)="setDraftQuickDate('week')">
+        <button
+          type="button"
+          class="chip"
+          [class.selected]="draftActiveQuickDate() === 'week'"
+          (click)="setDraftQuickDate('week')"
+        >
           {{ 'explorer.thisWeek' | translate }}
         </button>
-        <button type="button" class="chip" (click)="setDraftQuickDate('weekend')">
+        <button
+          type="button"
+          class="chip"
+          [class.selected]="draftActiveQuickDate() === 'month'"
+          (click)="setDraftQuickDate('month')"
+        >
+          {{ 'explorer.thisMonth' | translate }}
+        </button>
+        <button
+          type="button"
+          class="chip"
+          [class.selected]="draftActiveQuickDate() === 'weekend'"
+          (click)="setDraftQuickDate('weekend')"
+        >
           {{ 'explorer.thisWeekend' | translate }}
         </button>
-        <button type="button" class="chip" (click)="setDraftQuickDate('month')">
-          {{ 'explorer.thisMonth' | translate }}
+        <button
+          type="button"
+          class="chip"
+          [class.selected]="draftActiveQuickDate() === 'next30days'"
+          (click)="setDraftQuickDate('next30days')"
+        >
+          {{ 'explorer.next30Days' | translate }}
         </button>
       </div>
 
@@ -612,10 +668,10 @@
 
       <div class="filter-actions-row">
         <ion-button expand="block" fill="outline" color="primary" (click)="clearDateFilter()">
-          {{ 'explorer.clearFilter' | translate }}
+          {{ 'explorer.resetFilters' | translate }}
         </ion-button>
         <ion-button expand="block" (click)="applyDateFilter()">
-          {{ 'profile.apply' | translate }}
+          {{ (dateApplyFlash.active() ? 'profile.applied' : 'profile.apply') | translate }}
         </ion-button>
       </div>
     </div>

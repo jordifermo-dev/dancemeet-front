@@ -58,51 +58,38 @@
 
       <section class="section">
         <h2>{{ 'profile.socialLinksLabel' | translate }}</h2>
-        <ion-item>
-          <ion-icon
-            slot="start"
-            class="contact-icon"
-            [src]="socialIconUrl('instagram')"
-            [attr.aria-label]="'profile.instagramLabel' | translate"
-          ></ion-icon>
-          <ion-input formControlName="instagram"></ion-input>
-        </ion-item>
-        <ion-item>
-          <ion-icon
-            slot="start"
-            class="contact-icon"
-            [src]="socialIconUrl('facebook')"
-            [attr.aria-label]="'profile.facebookLabel' | translate"
-          ></ion-icon>
-          <ion-input formControlName="facebook"></ion-input>
-        </ion-item>
-        <ion-item>
-          <ion-icon
-            slot="start"
-            class="contact-icon"
-            [src]="socialIconUrl('tiktok')"
-            [attr.aria-label]="'profile.tiktokLabel' | translate"
-          ></ion-icon>
-          <ion-input formControlName="tiktok"></ion-input>
-        </ion-item>
-        <ion-item>
-          <ion-icon
-            slot="start"
-            class="contact-icon"
-            [src]="socialIconUrl('youtube')"
-            [attr.aria-label]="'profile.youtubeLabel' | translate"
-          ></ion-icon>
-          <ion-input formControlName="youtube"></ion-input>
-        </ion-item>
-        <ion-item>
-          <ion-icon
-            slot="start"
-            class="contact-icon"
-            [src]="socialIconUrl('website')"
-            [attr.aria-label]="'profile.websiteLabel' | translate"
-          ></ion-icon>
-          <ion-input formControlName="website"></ion-input>
-        </ion-item>
+        @for (key of activeSocialNetworks(); track key) {
+          <ion-item>
+            <ion-icon
+              slot="start"
+              class="contact-icon"
+              [src]="socialIconUrl(key)"
+              [attr.aria-label]="socialNetworkLabelKey(key) | translate"
+            ></ion-icon>
+            <ion-input [formControlName]="key"></ion-input>
+            <button
+              type="button"
+              slot="end"
+              class="remove-social-button"
+              [attr.aria-label]="'profile.removeSocialLink' | translate"
+              (click)="removeSocialNetwork(key)"
+            >
+              <ion-icon name="trash-outline"></ion-icon>
+            </button>
+          </ion-item>
+          @if (editForm.controls[key].invalid && socialNetworkErrorKey(key); as errorKey) {
+            <p class="social-link-error">{{ errorKey | translate }}</p>
+          }
+        }
+        <ion-button
+          expand="block"
+          fill="outline"
+          [disabled]="!availableSocialNetworks().length"
+          (click)="openAddSocialSheet()"
+        >
+          <ion-icon slot="start" name="add-circle-outline"></ion-icon>
+          {{ 'profile.addSocialLinkButton' | translate }}
+        </ion-button>
       </section>
 
       <section class="section">
@@ -260,7 +247,7 @@
           {{ 'eventDetail.cancelButton' | translate }}
         </ion-button>
         <ion-button expand="block" [disabled]="saving()" (click)="onSaveClick()">
-          {{ 'eventDetail.saveButton' | translate }}
+          {{ (savedFlash.active() ? 'eventDetail.savedButton' : 'eventDetail.saveButton') | translate }}
         </ion-button>
       </div>
     </form>
@@ -309,12 +296,15 @@
 
       <div class="actions-row">
         <ion-button expand="block" fill="outline" (click)="addToCalendar()">
-          <ion-icon slot="start" name="download-outline"></ion-icon>
-          {{ 'eventDetail.calendarButton' | translate }}
+          <ion-icon slot="start" [name]="calendarFlash.active() ? 'checkmark-outline' : 'download-outline'"></ion-icon>
+          {{ (calendarFlash.active() ? 'eventDetail.calendarAdded' : 'eventDetail.calendarButton') | translate }}
         </ion-button>
         <ion-button expand="block" fill="outline" (click)="share()">
-          <ion-icon slot="start" name="share-social-outline"></ion-icon>
-          {{ 'eventDetail.shareButton' | translate }}
+          <ion-icon slot="start" [name]="shareFlash.active() ? 'checkmark-outline' : 'share-social-outline'"></ion-icon>
+          {{
+            (shareFlash.active() ? (shareFeedback() === 'copied' ? 'eventDetail.linkCopied' : 'eventDetail.shared') : 'eventDetail.shareButton')
+              | translate
+          }}
         </ion-button>
       </div>
 
@@ -330,8 +320,14 @@
           [disabled]="attendLoading() || isEventOver()"
           (click)="toggleAttend()"
         >
-          <ion-icon slot="start" [name]="isAttending() ? 'checkmark-circle-outline' : 'add-circle-outline'"></ion-icon>
-          {{ (isAttending() ? 'eventDetail.unattendButton' : 'eventDetail.attendButton') | translate }}
+          <ion-icon
+            slot="start"
+            [name]="attendFlash.active() ? 'checkmark-outline' : (isAttending() ? 'checkmark-circle-outline' : 'add-circle-outline')"
+          ></ion-icon>
+          {{
+            (attendFlash.active() ? 'eventDetail.savedButton' : (isAttending() ? 'eventDetail.unattendButton' : 'eventDetail.attendButton'))
+              | translate
+          }}
         </ion-button>
       }
 
@@ -384,8 +380,8 @@
           </button>
         </div>
         <ion-button expand="block" fill="outline" (click)="openDirections()">
-          <ion-icon slot="start" name="navigate-outline"></ion-icon>
-          {{ 'userDetail.directionsButton' | translate }}
+          <ion-icon slot="start" [name]="directionsFlash.active() ? 'checkmark-outline' : 'navigate-outline'"></ion-icon>
+          {{ (directionsFlash.active() ? 'eventDetail.directionsOpened' : 'userDetail.directionsButton') | translate }}
         </ion-button>
       </section>
     </div>
@@ -409,6 +405,56 @@
       <ion-button expand="block" (click)="closeValidationModal()">
         {{ 'eventDetail.validationOk' | translate }}
       </ion-button>
+    </div>
+  </ng-template>
+</ion-modal>
+
+<ion-modal
+  [isOpen]="showAddSocialSheet()"
+  [initialBreakpoint]="0.4"
+  [breakpoints]="[0, 0.4]"
+  (didDismiss)="closeAddSocialSheet()"
+>
+  <ng-template>
+    <div class="filter-sheet">
+      <div class="filter-sheet-header">
+        <h2>{{ 'profile.addSocialLinkTitle' | translate }}</h2>
+        <button type="button" class="close-button" (click)="closeAddSocialSheet()">
+          <ion-icon name="close"></ion-icon>
+        </button>
+      </div>
+      <div class="social-picker-list">
+        @for (key of availableSocialNetworks(); track key) {
+          <button type="button" class="social-picker-option" (click)="addSocialNetwork(key)">
+            <ion-icon class="contact-icon" [src]="socialIconUrl(key)"></ion-icon>
+            <span>{{ socialNetworkLabelKey(key) | translate }}</span>
+          </button>
+        }
+      </div>
+    </div>
+  </ng-template>
+</ion-modal>
+
+<ion-modal
+  [isOpen]="showUnsavedChangesModal()"
+  [initialBreakpoint]="0.35"
+  [breakpoints]="[0, 0.35]"
+  (didDismiss)="onUnsavedChangesModalDismiss()"
+>
+  <ng-template>
+    <div class="filter-sheet">
+      <div class="filter-sheet-header">
+        <h2>{{ 'profile.unsavedChangesTitle' | translate }}</h2>
+      </div>
+      <p>{{ 'profile.unsavedChangesMessage' | translate }}</p>
+      <div class="filter-actions-row">
+        <ion-button expand="block" fill="outline" color="primary" (click)="confirmDiscardChanges()">
+          {{ 'profile.discard' | translate }}
+        </ion-button>
+        <ion-button expand="block" (click)="confirmApplyChanges()">
+          {{ 'profile.apply' | translate }}
+        </ion-button>
+      </div>
     </div>
   </ng-template>
 </ion-modal>

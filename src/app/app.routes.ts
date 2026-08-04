@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard, publicGuard } from './guards/auth.guard';
+import { unsavedChangesGuard } from './guards/unsaved-changes.guard';
 
 export const routes: Routes = [
   {
@@ -75,11 +76,13 @@ export const routes: Routes = [
     path: 'events/new',
     loadComponent: () => import('./pages/event-detail/event-detail.page').then((m) => m.EventDetailPage),
     canActivate: [authGuard],
+    canDeactivate: [unsavedChangesGuard],
   },
   {
     path: 'events/:id',
     loadComponent: () => import('./pages/event-detail/event-detail.page').then((m) => m.EventDetailPage),
     canActivate: [authGuard],
+    canDeactivate: [unsavedChangesGuard],
   },
   {
     path: '',

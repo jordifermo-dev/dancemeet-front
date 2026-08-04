@@ -42,6 +42,7 @@ import { NotificationSortMode, SortPreferenceService } from '../../services/sort
 import { MinSelectionWarningService } from '../../shared/min-selection-warning.service';
 import { toggleWithMinimum } from '../../shared/min-selection';
 import { AppNotification, Discipline, EventType, FollowUser, NotificationType } from '../../models';
+import { createApplyFlash, createSuccessFlash } from '../../shared/success-flash';
 import { buildEventCardView } from '../../shared/event-card/build-event-card-view';
 import { EventCardView } from '../../shared/event-card/event-card.model';
 import { EventCardComponent } from '../../shared/event-card/event-card.component';
@@ -117,6 +118,13 @@ export class NotificationsPage implements ViewWillEnter, AfterViewInit, OnDestro
    * top padding always clears it exactly - a hardcoded guess drifts the
    * moment the sort row wraps or a translation runs longer. */
   readonly listTopPadding = signal(110);
+
+  readonly markAllReadFlash = createSuccessFlash();
+  /** Which row's envelope icon should show the brief success-pulse right now
+   * - only one at a time, since toggleRead() is a single-row action. Cleared
+   * on the same timer the pulse animation itself runs for. */
+  readonly justToggledId = signal<string | null>(null);
+  private toggledPulseTimer: ReturnType<typeof setTimeout> | null = null;
 
   readonly loading = signal(true);
   readonly items = signal<AppNotification[]>([]);
@@ -253,6 +261,9 @@ export class NotificationsPage implements ViewWillEnter, AfterViewInit, OnDestro
 
   ngOnDestroy(): void {
     this.overlayResizeObserver?.disconnect();
+    if (this.toggledPulseTimer) {
+      clearTimeout(this.toggledPulseTimer);
+    }
   }
 
   onSearchChange(value: string | null | undefined): void {
@@ -379,6 +390,7 @@ export class NotificationsPage implements ViewWillEnter, AfterViewInit, OnDestro
         // badge on the other tabs updates immediately instead of waiting for
         // their own next 30s poll.
         this.notificationService.unreadCount.set(0);
+        this.markAllReadFlash.trigger();
       },
     });
   }
@@ -409,6 +421,11 @@ export class NotificationsPage implements ViewWillEnter, AfterViewInit, OnDestro
       next: () => {
         this.items.update((list) => list.map((i) => (i.id === item.id ? { ...i, read: !item.read } : i)));
         this.notificationService.unreadCount.update((count) => (item.read ? count + 1 : Math.max(0, count - 1)));
+        if (this.toggledPulseTimer) {
+          clearTimeout(this.toggledPulseTimer);
+        }
+        this.justToggledId.set(item.id);
+        this.toggledPulseTimer = setTimeout(() => this.justToggledId.set(null), 350);
       },
     });
   }
@@ -436,10 +453,12 @@ export class NotificationsPage implements ViewWillEnter, AfterViewInit, OnDestro
     this.draftReadFilter.set(value);
   }
 
+  readonly filtersApplyFlash = createApplyFlash(() => this.isFilterModalOpen.set(false));
+
   applyFilters(): void {
     this.selectedTypes.set(this.draftTypes());
     this.readFilter.set(this.draftReadFilter());
-    this.isFilterModalOpen.set(false);
+    this.filtersApplyFlash.trigger();
   }
 
   clearFilters(): void {

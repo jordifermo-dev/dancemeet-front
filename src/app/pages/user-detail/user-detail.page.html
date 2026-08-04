@@ -55,19 +55,19 @@
           }
           @if (isMyFollower()) {
             <ion-button expand="block" fill="outline" color="primary" [disabled]="followActionBusy()" (click)="confirmRemoveFollower()">
-              {{ 'userDetail.removeFollowerButton' | translate }}
+              {{ (removeFollowerFlash.active() ? 'eventDetail.savedButton' : 'userDetail.removeFollowerButton') | translate }}
             </ion-button>
           }
           @if (!amFollowing() && !isMyFollower()) {
             <ion-button expand="block" [disabled]="followActionBusy()" (click)="follow()">
-              <ion-icon slot="start" name="person-add-outline"></ion-icon>
-              {{ 'userDetail.followButton' | translate }}
+              <ion-icon slot="start" [name]="followFlash.active() ? 'checkmark-outline' : 'person-add-outline'"></ion-icon>
+              {{ (followFlash.active() ? 'eventDetail.savedButton' : 'userDetail.followButton') | translate }}
             </ion-button>
           }
           @if (canSaveContact()) {
             <ion-button expand="block" fill="outline" (click)="saveContact()">
-              <ion-icon slot="start" name="download-outline"></ion-icon>
-              {{ 'userDetail.saveContactButton' | translate }}
+              <ion-icon slot="start" [name]="contactFlash.active() ? 'checkmark-outline' : 'download-outline'"></ion-icon>
+              {{ (contactFlash.active() ? 'eventDetail.savedButton' : 'userDetail.saveContactButton') | translate }}
             </ion-button>
           }
         </div>
@@ -185,8 +185,8 @@
             </button>
           </div>
           <ion-button expand="block" fill="outline" (click)="openDirections()">
-            <ion-icon slot="start" name="navigate-outline"></ion-icon>
-            {{ 'userDetail.directionsButton' | translate }}
+            <ion-icon slot="start" [name]="directionsFlash.active() ? 'checkmark-outline' : 'navigate-outline'"></ion-icon>
+            {{ (directionsFlash.active() ? 'eventDetail.directionsOpened' : 'userDetail.directionsButton') | translate }}
           </ion-button>
         } @else {
           <p class="city-only">{{ user()!.city }}</p>

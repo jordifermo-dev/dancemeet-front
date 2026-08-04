@@ -23,7 +23,7 @@
 
     <div class="top-row">
       <button type="button" class="mark-all-link" (click)="markAllRead()">
-        {{ 'notifications.markAllRead' | translate }}
+        {{ (markAllReadFlash.active() ? 'notifications.markAllReadDone' : 'notifications.markAllRead') | translate }}
       </button>
     </div>
 
@@ -65,7 +65,10 @@
                 [attr.aria-label]="(item.read ? 'notifications.markUnread' : 'notifications.markRead') | translate"
                 (click)="toggleRead(item, $event)"
               >
-                <ion-icon [name]="item.read ? 'mail-outline' : 'mail-unread-outline'"></ion-icon>
+                <ion-icon
+                  [name]="item.read ? 'mail-outline' : 'mail-unread-outline'"
+                  [class.success-pulse]="justToggledId() === item.id"
+                ></ion-icon>
               </button>
             </div>
 
@@ -175,10 +178,10 @@
 
       <div class="filter-actions-row">
         <ion-button expand="block" fill="outline" color="medium" (click)="clearFilters()">
-          {{ 'explorer.resetFilters' | translate }}
+          {{ 'explorer.clearFilter' | translate }}
         </ion-button>
         <ion-button expand="block" (click)="applyFilters()">
-          {{ 'profile.apply' | translate }}
+          {{ (filtersApplyFlash.active() ? 'profile.applied' : 'profile.apply') | translate }}
         </ion-button>
       </div>
     </div>

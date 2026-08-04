@@ -24,7 +24,6 @@ import {
   todayOutline,
   calendarOutline,
   sparklesOutline,
-  contrastOutline,
   sunnyOutline,
   moonOutline,
 } from 'ionicons/icons';
@@ -34,6 +33,7 @@ import { OnboardingService } from '../../services/onboarding.service';
 import { ThemeService, ThemeMode } from '../../services/theme.service';
 import { NotificationType } from '../../models';
 import { ALL_NOTIFICATION_TYPES, NOTIFICATION_TYPE_ICONS, NOTIFICATION_TYPE_LABEL_KEYS } from '../../shared/notification-types';
+import { createSuccessFlash } from '../../shared/success-flash';
 
 /** Single settings screen consolidating what used to be spread across three
  * places: the "how the app works" tour replay (was a button on Profile), the
@@ -61,10 +61,12 @@ export class SettingsPage {
 
   readonly themeMode = this.themeService.mode;
   readonly themeOptions: { mode: ThemeMode; icon: string; labelKey: string }[] = [
-    { mode: 'system', icon: 'contrast-outline', labelKey: 'settings.themeSystem' },
     { mode: 'light', icon: 'sunny-outline', labelKey: 'settings.themeLight' },
     { mode: 'dark', icon: 'moon-outline', labelKey: 'settings.themeDark' },
   ];
+
+  readonly enableAllFlash = createSuccessFlash();
+  readonly disableAllFlash = createSuccessFlash();
 
   readonly disabledTypes = signal<Set<NotificationType>>(
     new Set(this.authService.currentUser()?.disabledNotificationTypes ?? []),
@@ -84,7 +86,6 @@ export class SettingsPage {
       todayOutline,
       calendarOutline,
       sparklesOutline,
-      contrastOutline,
       sunnyOutline,
       moonOutline,
     });
@@ -110,10 +111,12 @@ export class SettingsPage {
 
   enableAll(): void {
     this.save(new Set());
+    this.enableAllFlash.trigger();
   }
 
   disableAll(): void {
     this.save(new Set(this.allTypes));
+    this.disableAllFlash.trigger();
   }
 
   private save(next: Set<NotificationType>): void {

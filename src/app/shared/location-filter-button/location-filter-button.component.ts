@@ -5,6 +5,7 @@ import { addIcons } from 'ionicons';
 import { locationOutline, close, locateOutline } from 'ionicons/icons';
 import { CitySuggestion, GeocodingService } from '../../services/geocoding.service';
 import { ExplorerFiltersService } from '../../pages/explorer/explorer-filters.service';
+import { createApplyFlash } from '../success-flash';
 
 /** The "Ubicación" icon button + bottom sheet (distance, city search, current
  * location) shared by every tab that filters by location - all bound to the
@@ -98,15 +99,13 @@ export class LocationFilterButtonComponent {
     );
   }
 
+  readonly applyLocationFlash = createApplyFlash(() => this.isOpen.set(false));
+
   applyLocationFilter(): void {
     this.filters.applyLocation();
-    this.isOpen.set(false);
+    this.applyLocationFlash.trigger();
   }
 
-  clearLocationFilter(): void {
-    this.filters.clearLocation();
-    this.isOpen.set(false);
-  }
 
   resetLocationFilter(): void {
     this.filters.resetLocation();

@@ -35,8 +35,9 @@ import { disciplineIconUrl, eventTypeIconUrl, statusIconUrl, sortByNameOrder, ST
 import { LocationFilterButtonComponent } from '../../shared/location-filter-button/location-filter-button.component';
 import { NotificationBellComponent } from '../../shared/notification-bell/notification-bell.component';
 import { NIGHT_MAP_STYLES } from '../../shared/maps';
+import { createApplyFlash } from '../../shared/success-flash';
 import { ThemeService } from '../../services/theme.service';
-import { DateQuickOption, ExplorerFiltersService } from './explorer-filters.service';
+import { ExplorerFiltersService } from './explorer-filters.service';
 
 const STATUS_OPTIONS = EVENT_STATUSES.map((id) => ({ id, labelKey: STATUS_LABEL_KEYS[id] }));
 const PRICE_OPTIONS: { id: PriceOption; labelKey: string }[] = [
@@ -357,12 +358,6 @@ export class ExplorerPage implements OnInit, ViewWillEnter {
     this.filters.toggleDraftPriceOption(id);
   }
 
-  setDraftQuickDate(option: DateQuickOption): void {
-    const { from, to } = this.filters.quickDateRange(option);
-    this.filters.draftDateFrom.set(from);
-    this.filters.draftDateTo.set(to);
-  }
-
   onDraftDateFromChange(event: Event): void {
     const value = (event as CustomEvent<{ value: string | string[] | null }>).detail.value;
     const iso = Array.isArray(value) ? value[0] : value;
@@ -385,14 +380,11 @@ export class ExplorerPage implements OnInit, ViewWillEnter {
     this.filters.draftDateTo.set(undefined);
   }
 
+  readonly eventTypeApplyFlash = createApplyFlash(() => this.isEventTypeModalOpen.set(false));
+
   applyEventTypeFilter(): void {
     this.filters.applyEventTypes();
-    this.isEventTypeModalOpen.set(false);
-  }
-
-  clearEventTypeFilter(): void {
-    this.filters.clearEventTypes(this.eventTypes().map((e) => e.id));
-    this.isEventTypeModalOpen.set(false);
+    this.eventTypeApplyFlash.trigger();
   }
 
   resetEventTypeFilter(): void {
@@ -405,14 +397,11 @@ export class ExplorerPage implements OnInit, ViewWillEnter {
     this.isEventTypeModalOpen.set(false);
   }
 
+  readonly disciplineApplyFlash = createApplyFlash(() => this.isDisciplineModalOpen.set(false));
+
   applyDisciplineFilter(): void {
     this.filters.applyDisciplines();
-    this.isDisciplineModalOpen.set(false);
-  }
-
-  clearDisciplineFilter(): void {
-    this.filters.clearDisciplines(this.disciplines().map((d) => d.id));
-    this.isDisciplineModalOpen.set(false);
+    this.disciplineApplyFlash.trigger();
   }
 
   resetDisciplineFilter(): void {
@@ -425,14 +414,11 @@ export class ExplorerPage implements OnInit, ViewWillEnter {
     this.isDisciplineModalOpen.set(false);
   }
 
+  readonly statusApplyFlash = createApplyFlash(() => this.isStatusModalOpen.set(false));
+
   applyStatusFilter(): void {
     this.filters.applyStatuses();
-    this.isStatusModalOpen.set(false);
-  }
-
-  clearStatusFilter(): void {
-    this.filters.clearStatuses();
-    this.isStatusModalOpen.set(false);
+    this.statusApplyFlash.trigger();
   }
 
   resetStatusFilter(): void {
@@ -445,9 +431,11 @@ export class ExplorerPage implements OnInit, ViewWillEnter {
     this.isStatusModalOpen.set(false);
   }
 
+  readonly priceApplyFlash = createApplyFlash(() => this.isPriceModalOpen.set(false));
+
   applyPriceFilter(): void {
     this.filters.applyPriceOptions();
-    this.isPriceModalOpen.set(false);
+    this.priceApplyFlash.trigger();
   }
 
   clearPriceFilter(): void {
@@ -455,15 +443,13 @@ export class ExplorerPage implements OnInit, ViewWillEnter {
     this.isPriceModalOpen.set(false);
   }
 
+  readonly dateApplyFlash = createApplyFlash(() => this.isDateModalOpen.set(false));
+
   applyDateFilter(): void {
     this.filters.applyDate();
-    this.isDateModalOpen.set(false);
+    this.dateApplyFlash.trigger();
   }
 
-  clearDateFilter(): void {
-    this.filters.clearDate();
-    this.isDateModalOpen.set(false);
-  }
 
   resetDateFilter(): void {
     this.filters.resetDate();

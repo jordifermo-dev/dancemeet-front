@@ -125,7 +125,10 @@ export class RegisterPage implements OnInit {
   readonly editAddress = signal('');
   readonly editCity = signal('');
 
-  readonly distanceRange = signal(25);
+  // 50km rather than a narrower default - a brand-new account has no saved
+  // filter history yet, and too tight a radius reads as "no events near me"
+  // for anyone outside a dense city center (e.g. Lleida).
+  readonly distanceRange = signal(50);
   readonly latitude = signal<number | null>(null);
   readonly longitude = signal<number | null>(null);
   readonly locatingMe = signal(false);

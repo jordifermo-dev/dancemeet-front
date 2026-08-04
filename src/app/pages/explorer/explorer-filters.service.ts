@@ -8,7 +8,9 @@ import { EventTypeService } from '../../services/event-type.service';
 import { MinSelectionWarningService } from '../../shared/min-selection-warning.service';
 import { toggleWithMinimum } from '../../shared/min-selection';
 
-export type DateQuickOption = 'today' | 'week' | 'weekend' | 'month';
+export type DateQuickOption = 'today' | 'week' | 'weekend' | 'month' | 'next30days';
+
+const ALL_DATE_QUICK_OPTIONS: DateQuickOption[] = ['today', 'week', 'weekend', 'month', 'next30days'];
 
 const ALL_PRICE_OPTIONS: PriceOption[] = ['free', 'paid'];
 
@@ -56,8 +58,8 @@ export class ExplorerFiltersService {
   readonly appliedPriceOptions = signal<PriceOption[]>([...ALL_PRICE_OPTIONS]);
   readonly draftPriceOptions = signal<PriceOption[]>([...ALL_PRICE_OPTIONS]);
 
-  readonly appliedDistanceRange = signal(25);
-  readonly draftDistanceRange = signal(25);
+  readonly appliedDistanceRange = signal(50);
+  readonly draftDistanceRange = signal(50);
 
   readonly appliedLatitude = signal<number | null>(null);
   readonly appliedLongitude = signal<number | null>(null);
@@ -67,11 +69,18 @@ export class ExplorerFiltersService {
   readonly appliedCity = signal<string>('');
   readonly draftCity = signal<string>('');
 
-  private readonly initialRange = this.quickDateRange('week');
+  private readonly initialRange = this.quickDateRange('today');
   readonly appliedDateFrom = signal<number>(this.initialRange.from);
   readonly appliedDateTo = signal<number | undefined>(this.initialRange.to);
   readonly draftDateFrom = signal<number>(this.initialRange.from);
   readonly draftDateTo = signal<number | undefined>(this.initialRange.to);
+
+  /** Which quick-date pill (if any) the current draft range exactly matches -
+   * derived, not separately tracked, so every path that sets draftDateFrom/
+   * draftDateTo (a pill click, a manual calendar edit, resetting, applying a
+   * saved profile date...) keeps the pill highlight correct for free instead
+   * of needing to remember to clear/set it itself. */
+  readonly draftActiveQuickDate = computed(() => this.matchQuickDate(this.draftDateFrom(), this.draftDateTo()));
 
   /** Whether the "at least one must stay selected" hint should show next to
    * the given category's chip-grid right now ('disciplines' | 'eventTypes' |
@@ -158,12 +167,44 @@ export class ExplorerFiltersService {
       const to = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59, 999).getTime();
       return { from, to };
     }
+    if (option === 'next30days') {
+      // Today through today+30 (inclusive), 23:59:59.999 on the last day - a
+      // 31-calendar-day window, not "today + 30 more" (30 days total).
+      const to = new Date(today);
+      to.setDate(to.getDate() + 30);
+      return { from: today.getTime(), to: new Date(to.getFullYear(), to.getMonth(), to.getDate(), 23, 59, 59, 999).getTime() };
+    }
     // Upcoming Saturday 00:00 through end of Sunday.
     const daysUntilSaturday = (6 - today.getDay() + 7) % 7;
     const saturday = new Date(today);
     saturday.setDate(saturday.getDate() + daysUntilSaturday);
     const from = saturday.getTime();
     return { from, to: from + 2 * 24 * 60 * 60 * 1000 - 1 };
+  }
+
+  /** The pill that produced exactly this from/to, if any - a manually-edited
+   * range (or one loaded from a saved profile preference) simply matches
+   * none of them. `from` is optional because Favorites/UserEvents (unlike
+   * Explorer) allow no date filter at all. */
+  matchQuickDate(from: number | undefined, to: number | undefined): DateQuickOption | null {
+    if (from === undefined) {
+      return null;
+    }
+    return ALL_DATE_QUICK_OPTIONS.find((option) => {
+      const range = this.quickDateRange(option);
+      return range.from === from && range.to === to;
+    }) ?? null;
+  }
+
+  /** Shared by every page that renders the quick-date pills (Explorer, its
+   * "Filtrar todo" page, Events) - Favorites/UserEvents keep their own local
+   * draftDateFrom/draftDateTo instead of this service's (see their
+   * setDraftQuickDate()), so they call quickDateRange()/matchQuickDate()
+   * directly rather than this. */
+  setDraftQuickDate(option: DateQuickOption): void {
+    const { from, to } = this.quickDateRange(option);
+    this.draftDateFrom.set(from);
+    this.draftDateTo.set(to);
   }
 
   // --- Date range (Desde/Hasta) -------------------------------------------
@@ -195,17 +236,6 @@ export class ExplorerFiltersService {
     this.appliedDateTo.set(this.draftDateTo());
   }
 
-  /** Like clearLocation(), there's no "no filter" state for dates either -
-   * clearing just goes back to the app's neutral baseline (this week),
-   * regardless of what's saved as the profile default. */
-  clearDate(): void {
-    const { from, to } = this.quickDateRange('week');
-    this.draftDateFrom.set(from);
-    this.draftDateTo.set(to);
-    this.appliedDateFrom.set(from);
-    this.appliedDateTo.set(to);
-  }
-
   resetDate(): void {
     const user = this.authService.currentUser();
     if (user) {
@@ -221,8 +251,9 @@ export class ExplorerFiltersService {
     this.persistToProfile({ eventDateFrom: from, eventDateTo: to ?? null });
   }
 
-  /** No saved eventDateFrom means the user never set a preference, so the
-   * default is "this week" rather than an unbounded "today onward". */
+  /** No saved eventDateFrom means the user never set a preference (true for
+   * every new registration - see register.page.ts), so the default is today
+   * onward with no end date. */
   private seedDateFromProfile(user: User): void {
     if (user.eventDateFrom !== undefined && user.eventDateFrom !== null) {
       const from = user.eventDateFrom;
@@ -233,7 +264,7 @@ export class ExplorerFiltersService {
       this.draftDateTo.set(to);
       return;
     }
-    const { from, to } = this.quickDateRange('week');
+    const { from, to } = this.quickDateRange('today');
     this.appliedDateFrom.set(from);
     this.draftDateFrom.set(from);
     this.appliedDateTo.set(to);
@@ -252,15 +283,6 @@ export class ExplorerFiltersService {
     this.appliedDisciplineIds.set(this.draftDisciplineIds());
   }
 
-  /** There's no "no filter" state once an empty selection means "match
-   * nothing" (see EventRepository.findFiltered) - "Eliminar filtro" selects
-   * every available discipline instead, which is filter-equivalent to no
-   * constraint at all. */
-  clearDisciplines(allIds: string[]): void {
-    this.draftDisciplineIds.set([...allIds]);
-    this.appliedDisciplineIds.set([...allIds]);
-  }
-
   resetDisciplines(): void {
     const user = this.authService.currentUser();
     if (user) {
@@ -275,7 +297,7 @@ export class ExplorerFiltersService {
   }
 
   /** No saved preference defaults to "every discipline" rather than an empty
-   * selection, which would otherwise match zero events (see clearDisciplines()). */
+   * selection, which would otherwise match zero events. */
   private seedDisciplinesFromProfile(user: User): void {
     const ids = [...(user.disciplineIds ?? [])];
     if (ids.length > 0) {
@@ -304,13 +326,6 @@ export class ExplorerFiltersService {
     this.appliedEventTypeIds.set(this.draftEventTypeIds());
   }
 
-  /** Same reasoning as clearDisciplines(): selects every event type instead
-   * of none. */
-  clearEventTypes(allIds: string[]): void {
-    this.draftEventTypeIds.set([...allIds]);
-    this.appliedEventTypeIds.set([...allIds]);
-  }
-
   resetEventTypes(): void {
     const user = this.authService.currentUser();
     if (user) {
@@ -325,7 +340,7 @@ export class ExplorerFiltersService {
   }
 
   /** No saved preference defaults to "every event type" - see
-   * seedDisciplinesFromProfile(). */
+   * seedDisciplinesFromProfile() above. */
   private seedEventTypesFromProfile(user: User): void {
     const ids = [...(user.eventTypeIds ?? [])];
     if (ids.length > 0) {
@@ -350,13 +365,6 @@ export class ExplorerFiltersService {
 
   applyStatuses(): void {
     this.appliedStatuses.set(this.draftStatuses());
-  }
-
-  /** Same reasoning as clearDisciplines(): selects every status instead of
-   * none. */
-  clearStatuses(): void {
-    this.draftStatuses.set([...EVENT_STATUSES]);
-    this.appliedStatuses.set([...EVENT_STATUSES]);
   }
 
   resetStatuses(): void {
@@ -392,8 +400,8 @@ export class ExplorerFiltersService {
     this.appliedPriceOptions.set(this.draftPriceOptions());
   }
 
-  /** Same reasoning as clearDisciplines(): selects both options instead of
-   * none, which is filter-equivalent to no constraint at all. */
+  /** An empty selection would match zero events, so "Eliminar filtro" selects
+   * both options instead, which is filter-equivalent to no constraint at all. */
   clearPriceOptions(): void {
     this.draftPriceOptions.set([...ALL_PRICE_OPTIONS]);
     this.appliedPriceOptions.set([...ALL_PRICE_OPTIONS]);
@@ -418,13 +426,6 @@ export class ExplorerFiltersService {
     this.appliedLatitude.set(this.draftLatitude());
     this.appliedLongitude.set(this.draftLongitude());
     this.appliedCity.set(this.draftCity());
-  }
-
-  /** There's no "no location" state for a geo search, so clearing this filter
-   * just widens the radius to the max instead of leaving it empty. */
-  clearLocation(): void {
-    this.draftDistanceRange.set(100);
-    this.appliedDistanceRange.set(100);
   }
 
   resetLocation(): void {
@@ -452,7 +453,7 @@ export class ExplorerFiltersService {
   }
 
   private seedLocationFromProfile(user: User): void {
-    const distanceRange = user.distanceRange || 25;
+    const distanceRange = user.distanceRange || 50;
     const latitude = user.latitude || null;
     const longitude = user.longitude || null;
     const city = user.city || '';
@@ -475,25 +476,6 @@ export class ExplorerFiltersService {
     this.appliedPriceOptions.set(this.draftPriceOptions());
     this.appliedDateFrom.set(this.draftDateFrom());
     this.appliedDateTo.set(this.draftDateTo());
-  }
-
-  /** Same reasoning as clearDisciplines()/clearEventTypes(): selects every
-   * discipline/event type/status/price option instead of none, since empty
-   * means "match nothing" everywhere search is built from these. */
-  clearAll(allDisciplineIds: string[], allEventTypeIds: string[]): void {
-    this.draftDisciplineIds.set([...allDisciplineIds]);
-    this.appliedDisciplineIds.set([...allDisciplineIds]);
-    this.draftEventTypeIds.set([...allEventTypeIds]);
-    this.appliedEventTypeIds.set([...allEventTypeIds]);
-    this.draftStatuses.set([...EVENT_STATUSES]);
-    this.appliedStatuses.set([...EVENT_STATUSES]);
-    this.draftPriceOptions.set([...ALL_PRICE_OPTIONS]);
-    this.appliedPriceOptions.set([...ALL_PRICE_OPTIONS]);
-    const { from, to } = this.quickDateRange('week');
-    this.draftDateFrom.set(from);
-    this.draftDateTo.set(to);
-    this.appliedDateFrom.set(from);
-    this.appliedDateTo.set(to);
   }
 
   /** Resets discipline/eventType/status/date to whatever's saved on the

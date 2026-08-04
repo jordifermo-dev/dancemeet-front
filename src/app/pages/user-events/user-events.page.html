@@ -19,12 +19,12 @@
       <button type="button" class="icon-btn" (click)="openLocationModal()">
         <ion-icon name="location-outline"></ion-icon>
       </button>
-    </div>
-
-    <div class="filter-row">
       <button type="button" class="icon-btn filter-all-btn" (click)="openGenericFilterModal()">
         <ion-icon name="options-outline"></ion-icon>
       </button>
+    </div>
+
+    <div class="filter-row">
       <button type="button" class="pill" [class.active]="draftEventTypeIds().length < eventTypes().length" (click)="openEventTypeModal()">
         {{ 'explorer.eventTypesFilterLabel' | translate }}
       </button>
@@ -34,11 +34,19 @@
       <button type="button" class="pill" [class.active]="appliedStatuses().length < statusOptions.length" (click)="openStatusModal()">
         {{ 'explorer.statusFilterLabel' | translate }}
       </button>
-      <button type="button" class="pill" [class.active]="appliedRelation().length < relationOptions.length" (click)="openRelationModal()">
-        {{ 'favorites.relationFilterLabel' | translate }}
-      </button>
       <button type="button" class="pill" (click)="openDateModal()">
         {{ 'explorer.dateFilterLabel' | translate }}
+      </button>
+      <button
+        type="button"
+        class="pill"
+        [class.active]="appliedPriceOptions().length < priceOptions.length"
+        (click)="openPriceModal()"
+      >
+        {{ 'explorer.priceFilterLabel' | translate }}
+      </button>
+      <button type="button" class="pill" [class.active]="appliedRelation().length < relationOptions.length" (click)="openRelationModal()">
+        {{ 'favorites.relationFilterLabel' | translate }}
       </button>
     </div>
   </div>
@@ -137,38 +145,47 @@
         </section>
 
         <section class="filter-section">
-          <p class="group-label">{{ 'favorites.relationFilterLabel' | translate }}</p>
-          <div class="chip-grid">
-            @for (option of relationOptions; track option.id) {
-              <button
-                type="button"
-                class="chip"
-                [class.selected]="draftRelation().includes(option.id)"
-                (click)="toggleDraftRelation(option.id)"
-              >
-                {{ option.labelKey | translate }}
-              </button>
-            }
-          </div>
-          @if (minSelectionWarning.isActive('relation')) {
-            <p class="min-selection-warning">{{ 'explorer.minSelectionWarning' | translate }}</p>
-          }
-        </section>
-
-        <section class="filter-section">
           <p class="group-label">{{ 'explorer.dateFilterLabel' | translate }}</p>
           <div class="chip-grid">
-            <button type="button" class="chip" (click)="setDraftQuickDate('today')">
+            <button
+              type="button"
+              class="chip"
+              [class.selected]="draftActiveQuickDate() === 'today'"
+              (click)="setDraftQuickDate('today')"
+            >
               {{ 'explorer.today' | translate }}
             </button>
-            <button type="button" class="chip" (click)="setDraftQuickDate('week')">
+            <button
+              type="button"
+              class="chip"
+              [class.selected]="draftActiveQuickDate() === 'week'"
+              (click)="setDraftQuickDate('week')"
+            >
               {{ 'explorer.thisWeek' | translate }}
             </button>
-            <button type="button" class="chip" (click)="setDraftQuickDate('weekend')">
+            <button
+              type="button"
+              class="chip"
+              [class.selected]="draftActiveQuickDate() === 'month'"
+              (click)="setDraftQuickDate('month')"
+            >
+              {{ 'explorer.thisMonth' | translate }}
+            </button>
+            <button
+              type="button"
+              class="chip"
+              [class.selected]="draftActiveQuickDate() === 'weekend'"
+              (click)="setDraftQuickDate('weekend')"
+            >
               {{ 'explorer.thisWeekend' | translate }}
             </button>
-            <button type="button" class="chip" (click)="setDraftQuickDate('month')">
-              {{ 'explorer.thisMonth' | translate }}
+            <button
+              type="button"
+              class="chip"
+              [class.selected]="draftActiveQuickDate() === 'next30days'"
+              (click)="setDraftQuickDate('next30days')"
+            >
+              {{ 'explorer.next30Days' | translate }}
             </button>
           </div>
           <div class="date-range-row">
@@ -197,15 +214,53 @@
             </div>
           </div>
         </section>
+
+        <section class="filter-section">
+          <p class="group-label">{{ 'explorer.priceFilterLabel' | translate }}</p>
+          <div class="chip-grid">
+            @for (option of priceOptions; track option.id) {
+              <button
+                type="button"
+                class="chip"
+                [class.selected]="draftPriceOptions().includes(option.id)"
+                (click)="toggleDraftPriceOption(option.id)"
+              >
+                {{ option.labelKey | translate }}
+              </button>
+            }
+          </div>
+          @if (minSelectionWarning.isActive('priceOptions')) {
+            <p class="min-selection-warning">{{ 'explorer.minSelectionWarning' | translate }}</p>
+          }
+        </section>
+
+        <section class="filter-section">
+          <p class="group-label">{{ 'favorites.relationFilterLabel' | translate }}</p>
+          <div class="chip-grid">
+            @for (option of relationOptions; track option.id) {
+              <button
+                type="button"
+                class="chip"
+                [class.selected]="draftRelation().includes(option.id)"
+                (click)="toggleDraftRelation(option.id)"
+              >
+                {{ option.labelKey | translate }}
+              </button>
+            }
+          </div>
+          @if (minSelectionWarning.isActive('relation')) {
+            <p class="min-selection-warning">{{ 'explorer.minSelectionWarning' | translate }}</p>
+          }
+        </section>
       </div>
     </ion-content>
 
     <div class="filter-actions-row generic-filter-actions">
       <ion-button expand="block" fill="outline" color="primary" (click)="clearGenericFilter()">
-        {{ 'explorer.clearFilter' | translate }}
+        {{ 'explorer.resetFilters' | translate }}
       </ion-button>
       <ion-button expand="block" (click)="applyGenericFilter()">
-        {{ 'profile.apply' | translate }}
+        {{ (genericApplyFlash.active() ? 'profile.applied' : 'profile.apply') | translate }}
       </ion-button>
     </div>
   </ng-template>
@@ -252,14 +307,14 @@
       </ion-button>
 
       <p class="range-label">{{ 'register.distanceLabel' | translate: { km: draftDistanceRange() } }}</p>
-      <ion-range [min]="1" [max]="100" [value]="draftDistanceRange()" (ionChange)="onDistanceChange($event)"></ion-range>
+      <ion-range [min]="1" [max]="150" [value]="draftDistanceRange()" (ionChange)="onDistanceChange($event)"></ion-range>
 
       <div class="filter-actions-row">
         <ion-button expand="block" fill="outline" color="primary" (click)="clearLocationFilter()">
-          {{ 'explorer.clearFilter' | translate }}
+          {{ 'explorer.resetFilters' | translate }}
         </ion-button>
         <ion-button expand="block" (click)="applyLocationFilter()">
-          {{ 'profile.apply' | translate }}
+          {{ (locationApplyFlash.active() ? 'profile.applied' : 'profile.apply') | translate }}
         </ion-button>
       </div>
     </div>
@@ -299,10 +354,10 @@
       }
       <div class="filter-actions-row">
         <ion-button expand="block" fill="outline" color="primary" (click)="clearEventTypeFilter()">
-          {{ 'explorer.clearFilter' | translate }}
+          {{ 'explorer.resetFilters' | translate }}
         </ion-button>
         <ion-button expand="block" (click)="applyEventTypeFilter()">
-          {{ 'profile.apply' | translate }}
+          {{ (eventTypeApplyFlash.active() ? 'profile.applied' : 'profile.apply') | translate }}
         </ion-button>
       </div>
     </div>
@@ -342,10 +397,10 @@
       }
       <div class="filter-actions-row">
         <ion-button expand="block" fill="outline" color="primary" (click)="clearDisciplineFilter()">
-          {{ 'explorer.clearFilter' | translate }}
+          {{ 'explorer.resetFilters' | translate }}
         </ion-button>
         <ion-button expand="block" (click)="applyDisciplineFilter()">
-          {{ 'profile.apply' | translate }}
+          {{ (disciplineApplyFlash.active() ? 'profile.applied' : 'profile.apply') | translate }}
         </ion-button>
       </div>
     </div>
@@ -385,10 +440,10 @@
       }
       <div class="filter-actions-row">
         <ion-button expand="block" fill="outline" color="primary" (click)="clearStatusFilter()">
-          {{ 'explorer.clearFilter' | translate }}
+          {{ 'explorer.resetFilters' | translate }}
         </ion-button>
         <ion-button expand="block" (click)="applyStatusFilter()">
-          {{ 'profile.apply' | translate }}
+          {{ (statusApplyFlash.active() ? 'profile.applied' : 'profile.apply') | translate }}
         </ion-button>
       </div>
     </div>
@@ -427,10 +482,52 @@
       }
       <div class="filter-actions-row">
         <ion-button expand="block" fill="outline" color="primary" (click)="clearRelationFilter()">
-          {{ 'explorer.clearFilter' | translate }}
+          {{ 'explorer.resetFilters' | translate }}
         </ion-button>
         <ion-button expand="block" (click)="applyRelationFilter()">
-          {{ 'profile.apply' | translate }}
+          {{ (relationApplyFlash.active() ? 'profile.applied' : 'profile.apply') | translate }}
+        </ion-button>
+      </div>
+    </div>
+  </ng-template>
+</ion-modal>
+
+<!-- Price filter (free / paid) -->
+<ion-modal
+  [isOpen]="isPriceModalOpen()"
+  [initialBreakpoint]="0.45"
+  [breakpoints]="[0, 0.45, 0.7]"
+  (didDismiss)="isPriceModalOpen.set(false)"
+>
+  <ng-template>
+    <div class="filter-sheet">
+      <div class="filter-sheet-header">
+        <h2>{{ 'explorer.priceFilterLabel' | translate }}</h2>
+        <button type="button" class="close-button" (click)="isPriceModalOpen.set(false)">
+          <ion-icon name="close"></ion-icon>
+        </button>
+      </div>
+      <div class="chip-grid">
+        @for (option of priceOptions; track option.id) {
+          <button
+            type="button"
+            class="chip"
+            [class.selected]="draftPriceOptions().includes(option.id)"
+            (click)="toggleDraftPriceOption(option.id)"
+          >
+            {{ option.labelKey | translate }}
+          </button>
+        }
+      </div>
+      @if (minSelectionWarning.isActive('priceOptions')) {
+        <p class="min-selection-warning">{{ 'explorer.minSelectionWarning' | translate }}</p>
+      }
+      <div class="filter-actions-row">
+        <ion-button expand="block" fill="outline" color="primary" (click)="clearPriceFilter()">
+          {{ 'explorer.resetFilters' | translate }}
+        </ion-button>
+        <ion-button expand="block" (click)="applyPriceFilter()">
+          {{ (priceApplyFlash.active() ? 'profile.applied' : 'profile.apply') | translate }}
         </ion-button>
       </div>
     </div>
@@ -453,17 +550,45 @@
         </button>
       </div>
       <div class="chip-grid">
-        <button type="button" class="chip" (click)="setDraftQuickDate('today')">
+        <button
+          type="button"
+          class="chip"
+          [class.selected]="draftActiveQuickDate() === 'today'"
+          (click)="setDraftQuickDate('today')"
+        >
           {{ 'explorer.today' | translate }}
         </button>
-        <button type="button" class="chip" (click)="setDraftQuickDate('week')">
+        <button
+          type="button"
+          class="chip"
+          [class.selected]="draftActiveQuickDate() === 'week'"
+          (click)="setDraftQuickDate('week')"
+        >
           {{ 'explorer.thisWeek' | translate }}
         </button>
-        <button type="button" class="chip" (click)="setDraftQuickDate('weekend')">
+        <button
+          type="button"
+          class="chip"
+          [class.selected]="draftActiveQuickDate() === 'month'"
+          (click)="setDraftQuickDate('month')"
+        >
+          {{ 'explorer.thisMonth' | translate }}
+        </button>
+        <button
+          type="button"
+          class="chip"
+          [class.selected]="draftActiveQuickDate() === 'weekend'"
+          (click)="setDraftQuickDate('weekend')"
+        >
           {{ 'explorer.thisWeekend' | translate }}
         </button>
-        <button type="button" class="chip" (click)="setDraftQuickDate('month')">
-          {{ 'explorer.thisMonth' | translate }}
+        <button
+          type="button"
+          class="chip"
+          [class.selected]="draftActiveQuickDate() === 'next30days'"
+          (click)="setDraftQuickDate('next30days')"
+        >
+          {{ 'explorer.next30Days' | translate }}
         </button>
       </div>
 
@@ -495,10 +620,10 @@
 
       <div class="filter-actions-row">
         <ion-button expand="block" fill="outline" color="primary" (click)="clearDateFilter()">
-          {{ 'explorer.clearFilter' | translate }}
+          {{ 'explorer.resetFilters' | translate }}
         </ion-button>
         <ion-button expand="block" (click)="applyDateFilter()">
-          {{ 'profile.apply' | translate }}
+          {{ (dateApplyFlash.active() ? 'profile.applied' : 'profile.apply') | translate }}
         </ion-button>
       </div>
     </div>

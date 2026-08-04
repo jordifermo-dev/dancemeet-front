@@ -14,7 +14,6 @@ import {
   IonItem,
   IonInput,
   IonSearchbar,
-  IonToggle,
   IonRange,
   IonModal,
   ViewWillEnter,
@@ -29,6 +28,11 @@ import {
   removeOutline,
   layersOutline,
   settingsOutline,
+  eyeOutline,
+  eyeOffOutline,
+  close,
+  trashOutline,
+  addCircleOutline,
 } from 'ionicons/icons';
 import { AuthService } from '../../services/auth.service';
 import { UserService } from '../../services/user.service';
@@ -63,6 +67,13 @@ import { MapType, mapEmbedUrl as buildMapEmbedUrl } from '../../shared/maps';
 import { PhotoEditorComponent } from '../../shared/photo-editor/photo-editor.component';
 import { NotificationBellComponent } from '../../shared/notification-bell/notification-bell.component';
 import { SOCIAL_URL_PATTERNS } from '../../shared/social-link-patterns';
+import { createSuccessFlash } from '../../shared/success-flash';
+import {
+  ALL_SOCIAL_NETWORKS,
+  SOCIAL_NETWORK_ERROR_KEYS,
+  SOCIAL_NETWORK_LABEL_KEYS,
+  SocialNetworkKey,
+} from '../../shared/social-networks';
 
 const MIN_ZOOM = 3;
 const MAX_ZOOM = 20;
@@ -112,7 +123,6 @@ const LANGUAGE_OPTIONS = SUPPORTED_LANGUAGES.map((code) => ({
     IonItem,
     IonInput,
     IonSearchbar,
-    IonToggle,
     IonRange,
     IonModal,
     TranslatePipe,
@@ -193,8 +203,17 @@ export class ProfilePage implements OnInit, ViewWillEnter, ComponentWithUnsavedC
   readonly showPhone = signal(false);
   readonly showLocation = signal(false);
 
+  /** Only networks with a saved link (or just added this session) render
+   * their own field - see openAddSocialSheet()/addSocialNetwork() for how a
+   * network moves from the picker sheet into this list. */
+  readonly activeSocialNetworks = signal<SocialNetworkKey[]>([]);
+  readonly availableSocialNetworks = computed(() =>
+    ALL_SOCIAL_NETWORKS.filter((key) => !this.activeSocialNetworks().includes(key)),
+  );
+  readonly showAddSocialSheet = signal(false);
+
   readonly isSaving = signal(false);
-  readonly justSaved = signal(false);
+  readonly savedFlash = createSuccessFlash();
 
   readonly showUnsavedChangesModal = signal(false);
   private pendingLeaveResolve: (() => void) | null = null;
@@ -209,6 +228,11 @@ export class ProfilePage implements OnInit, ViewWillEnter, ComponentWithUnsavedC
       removeOutline,
       layersOutline,
       settingsOutline,
+      eyeOutline,
+      eyeOffOutline,
+      close,
+      trashOutline,
+      addCircleOutline,
     });
 
     // The draft must always track *whoever is currently authenticated*, not
@@ -262,6 +286,34 @@ export class ProfilePage implements OnInit, ViewWillEnter, ComponentWithUnsavedC
     return socialIconUrl(name);
   }
 
+  socialNetworkLabelKey(key: SocialNetworkKey): string {
+    return SOCIAL_NETWORK_LABEL_KEYS[key];
+  }
+
+  socialNetworkErrorKey(key: SocialNetworkKey): string | null {
+    return SOCIAL_NETWORK_ERROR_KEYS[key] ?? null;
+  }
+
+  openAddSocialSheet(): void {
+    this.showAddSocialSheet.set(true);
+  }
+
+  closeAddSocialSheet(): void {
+    this.showAddSocialSheet.set(false);
+  }
+
+  addSocialNetwork(key: SocialNetworkKey): void {
+    this.activeSocialNetworks.update((keys) => (keys.includes(key) ? keys : [...keys, key]));
+    this.showAddSocialSheet.set(false);
+  }
+
+  /** Clears the field's value (not just hides it) - otherwise a removed-then-
+   * unsaved link would silently come back on the next save. */
+  removeSocialNetwork(key: SocialNetworkKey): void {
+    this.accountForm.controls.socialLinks.controls[key].reset('');
+    this.activeSocialNetworks.update((keys) => keys.filter((k) => k !== key));
+  }
+
   private populateFromUser(user: User): void {
     this.accountForm.reset({
       name: user.name ?? '',
@@ -286,6 +338,7 @@ export class ProfilePage implements OnInit, ViewWillEnter, ComponentWithUnsavedC
     this.selectedDisciplineIds.set([...(user.disciplineIds ?? [])]);
     this.selectedEventTypeIds.set([...(user.eventTypeIds ?? [])]);
     this.selectedStatusIds.set([...(user.statusIds ?? [])]);
+    this.activeSocialNetworks.set(ALL_SOCIAL_NETWORKS.filter((key) => !!user.socialLinks?.[key]));
     this.showEmail.set(user.showEmail ?? false);
     this.showPhone.set(user.showPhone ?? false);
     this.showLocation.set(user.showCity || user.showLocation || false);
@@ -317,6 +370,7 @@ export class ProfilePage implements OnInit, ViewWillEnter, ComponentWithUnsavedC
     this.selectedDisciplineIds.set([]);
     this.selectedEventTypeIds.set([]);
     this.selectedStatusIds.set([]);
+    this.activeSocialNetworks.set([]);
     this.showEmail.set(false);
     this.showPhone.set(false);
     this.showLocation.set(false);
@@ -341,6 +395,7 @@ export class ProfilePage implements OnInit, ViewWillEnter, ComponentWithUnsavedC
       disciplineIds: [...this.selectedDisciplineIds()].sort(),
       eventTypeIds: [...this.selectedEventTypeIds()].sort(),
       statusIds: [...this.selectedStatusIds()].sort(),
+      activeSocialNetworks: [...this.activeSocialNetworks()].sort(),
       language: this.draftLanguage(),
       showEmail: this.showEmail(),
       showPhone: this.showPhone(),
@@ -560,8 +615,7 @@ export class ProfilePage implements OnInit, ViewWillEnter, ComponentWithUnsavedC
       if (this.currentUser()?.id === user.id) {
         this.languageService.setLanguage(this.draftLanguage());
         this.authService.syncProfile({ ...user, ...payload });
-        this.justSaved.set(true);
-        setTimeout(() => this.justSaved.set(false), 2000);
+        this.savedFlash.trigger();
       }
     } finally {
       this.isSaving.set(false);

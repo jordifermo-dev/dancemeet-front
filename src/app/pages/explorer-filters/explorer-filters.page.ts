@@ -10,12 +10,13 @@ import {
 } from '@ionic/angular/standalone';
 import { TranslatePipe } from '@ngx-translate/core';
 import { addIcons } from 'ionicons';
-import { chevronBack, calendarOutline, close } from 'ionicons/icons';
+import { calendarOutline, close } from 'ionicons/icons';
 import { DisciplineService } from '../../services/discipline.service';
 import { EventTypeService } from '../../services/event-type.service';
 import { Discipline, DISCIPLINE_NAMES, EventType, EVENT_TYPE_NAMES, EventStatus, EVENT_STATUSES, PriceOption } from '../../models';
 import { disciplineIconUrl, eventTypeIconUrl, statusIconUrl, sortByNameOrder, STATUS_LABEL_KEYS } from '../../shared/icon-catalog';
-import { DateQuickOption, ExplorerFiltersService } from '../explorer/explorer-filters.service';
+import { ExplorerFiltersService } from '../explorer/explorer-filters.service';
+import { createApplyFlash } from '../../shared/success-flash';
 
 const STATUS_OPTIONS = EVENT_STATUSES.map((id) => ({ id, labelKey: STATUS_LABEL_KEYS[id] }));
 const PRICE_OPTIONS: { id: PriceOption; labelKey: string }[] = [
@@ -46,7 +47,7 @@ export class ExplorerFiltersPage implements OnInit {
   readonly statusIconUrl = statusIconUrl;
 
   constructor() {
-    addIcons({ chevronBack, calendarOutline, close });
+    addIcons({ calendarOutline, close });
   }
 
   ngOnInit(): void {
@@ -90,12 +91,6 @@ export class ExplorerFiltersPage implements OnInit {
     this.filters.toggleDraftPriceOption(id);
   }
 
-  setDraftQuickDate(option: DateQuickOption): void {
-    const { from, to } = this.filters.quickDateRange(option);
-    this.filters.draftDateFrom.set(from);
-    this.filters.draftDateTo.set(to);
-  }
-
   onDraftDateFromChange(event: Event): void {
     const value = (event as CustomEvent<{ value: string | string[] | null }>).detail.value;
     const iso = Array.isArray(value) ? value[0] : value;
@@ -118,17 +113,11 @@ export class ExplorerFiltersPage implements OnInit {
     this.filters.draftDateTo.set(undefined);
   }
 
-  clearAll(): void {
-    this.filters.clearAll(
-      this.disciplines().map((d) => d.id),
-      this.eventTypes().map((e) => e.id),
-    );
-    this.goBack();
-  }
+  readonly applyAllFlash = createApplyFlash(() => this.goBack(), 900);
 
   applyAll(): void {
     this.filters.applyAll();
-    this.goBack();
+    this.applyAllFlash.trigger();
   }
 
   resetAll(): void {

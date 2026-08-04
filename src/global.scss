@@ -31,10 +31,9 @@
  * For more info, please see:
  * https://ionicframework.com/docs/theming/dark-mode
  *
- * Class-based (not dark.system.css's media query) so ThemeService can offer
- * a manual Light/Dark override on top of "follow the system" - it toggles
- * .ion-palette-dark on <html>, applying it itself when the OS is dark and
- * the user picked "system".
+ * Class-based (not dark.system.css's media query) so ThemeService can drive
+ * the app's own Light/Dark choice directly - it toggles .ion-palette-dark on
+ * <html> based on what the user picked in Settings, independent of the OS.
  */
 
 /* @import "@ionic/angular/css/palettes/dark.always.css"; */
@@ -74,4 +73,29 @@ ion-item {
   /* Ionic's own :host rule has higher specificity than a plain type selector,
      so this needs !important to actually win. */
   --highlight-color-valid: var(--ion-color-primary) !important;
+}
+
+/* Momentary confirmation for toggle-style buttons whose icon/label already
+   change permanently on success (follow/unfollow, attend/unattend, read/
+   unread) - a brief scale pop on top of that state change, rather than a
+   temporary label swap like Aplicar/Guardado uses, since replacing an
+   already-meaningful icon with a checkmark would hide the very state change
+   the button exists to show. Toggled on/off via createSuccessFlash()
+   (src/app/shared/success-flash.ts). */
+@keyframes success-pulse {
+  0% {
+    transform: scale(1);
+  }
+
+  40% {
+    transform: scale(1.22);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+.success-pulse {
+  animation: success-pulse 0.35s ease;
 }

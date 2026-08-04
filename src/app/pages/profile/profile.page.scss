@@ -20,6 +20,12 @@
   }
 }
 
+// Matches the notification bell next to it and the rest of the app's header
+// icons (app-text-strong) instead of ion-button's default primary color.
+.settings-button {
+  --color: var(--app-text-strong);
+}
+
 .section {
   background: var(--app-surface-card);
   border-radius: 16px;
@@ -49,6 +55,12 @@
   h2 {
     margin: 0;
   }
+}
+
+.visibility-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .profile-header-row {
@@ -119,9 +131,29 @@
     flex: 1;
     min-width: 0;
   }
+}
 
-  ion-toggle {
-    flex: 0 0 auto;
+// The eye icon itself is now the show/hide control (email, phone, location) -
+// tapping it toggles visibility directly, an open vs. crossed-out eye reads
+// as on/off without a separate switch next to it.
+.visibility-toggle-btn {
+  appearance: none;
+  border: none;
+  background: transparent;
+  padding: 8px;
+  margin: -8px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+
+.visibility-icon {
+  font-size: 1.15rem;
+  color: var(--ion-color-medium);
+
+  &.active {
+    color: var(--ion-color-primary);
   }
 }
 
@@ -262,7 +294,11 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  border: 1px solid var(--ion-color-light-shade);
+  // Matches the app's real outline buttons (e.g. "Añadir red social"), whose
+  // border comes from --ion-color-primary - unlike --ion-color-light-shade,
+  // which Ionic's dark palette redefines to a near-black that all but
+  // disappears against this button's --app-surface-card background.
+  border: 1px solid var(--ion-color-primary);
   border-radius: 999px;
   padding: 6px 12px;
   background: var(--app-surface-card);
@@ -301,6 +337,52 @@
 .social-link-error-summary {
   margin: 0 0 12px;
   font-size: 0.85rem;
+}
+
+.remove-social-button {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--app-text-strong);
+  padding: 0;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+
+  ion-icon {
+    font-size: 1.3rem;
+  }
+}
+
+.social-picker-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.social-picker-option {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  border: none;
+  border-radius: 12px;
+  padding: 12px 8px;
+  background: transparent;
+  color: var(--app-text-strong);
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+
+  &:active {
+    background: var(--ion-color-light-shade);
+  }
+
+  .contact-icon {
+    margin-inline-end: 0;
+  }
 }
 
 .event-detail-line {
@@ -363,6 +445,7 @@
   flex-direction: column;
   gap: 10px;
   background: transparent;
+  border: none;
   box-shadow: none;
   padding: 0;
 }

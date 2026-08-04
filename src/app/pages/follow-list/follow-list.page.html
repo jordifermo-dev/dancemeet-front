@@ -19,7 +19,7 @@
       <button
         type="button"
         class="filter-button"
-        [class.active]="appliedDisciplineFilterIds().length > 0"
+        [class.active]="appliedDisciplineFilterIds().length > 0 && appliedDisciplineFilterIds().length < disciplines().length"
         (click)="openFilterModal()"
       >
         <ion-icon name="options-outline"></ion-icon>
@@ -78,7 +78,7 @@
                   [disabled]="isFollowBusy(item)"
                   (click)="confirmUnfollow(item, $event)"
                 >
-                  {{ 'profile.following' | translate }}
+                  {{ (justToggledFollowId() === item.id ? 'eventDetail.savedButton' : 'profile.following') | translate }}
                 </button>
               } @else {
                 <button
@@ -87,8 +87,8 @@
                   [disabled]="isFollowBusy(item)"
                   (click)="follow(item, $event)"
                 >
-                  <ion-icon name="person-add-outline"></ion-icon>
-                  {{ 'userDetail.followButton' | translate }}
+                  <ion-icon [name]="justToggledFollowId() === item.id ? 'checkmark-outline' : 'person-add-outline'"></ion-icon>
+                  {{ (justToggledFollowId() === item.id ? 'eventDetail.savedButton' : 'userDetail.followButton') | translate }}
                 </button>
               }
             }
@@ -130,10 +130,10 @@
 
       <div class="filter-actions-row">
         <ion-button expand="block" fill="outline" color="primary" (click)="clearDisciplineFilter()">
-          {{ 'explorer.resetFilters' | translate }}
+          {{ 'explorer.clearFilter' | translate }}
         </ion-button>
         <ion-button expand="block" (click)="applyDisciplineFilter()">
-          {{ 'profile.apply' | translate }}
+          {{ (disciplineApplyFlash.active() ? 'profile.applied' : 'profile.apply') | translate }}
         </ion-button>
       </div>
     </div>

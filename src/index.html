@@ -14,16 +14,12 @@
   <meta name="theme-color" content="#106568"/>
 
   <script>
-    // Applies the dark class before Angular/Ionic load, so a saved or
-    // OS-level dark preference doesn't flash light first. Mirrors
-    // ThemeService.resolveIsDark (src/app/services/theme.service.ts) - keep
-    // the two in sync if that logic ever changes.
+    // Applies the dark class before Angular/Ionic load, so a saved dark
+    // preference doesn't flash light first. Mirrors ThemeService's default
+    // (src/app/services/theme.service.ts) - keep the two in sync if that
+    // logic ever changes.
     (function () {
-      var saved = localStorage.getItem('dancemeet_theme');
-      var mode = saved === 'light' || saved === 'dark' ? saved : 'system';
-      var systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      var isDark = mode === 'dark' || (mode === 'system' && systemPrefersDark);
-      if (isDark) {
+      if (localStorage.getItem('dancemeet_theme') === 'dark') {
         document.documentElement.classList.add('ion-palette-dark');
       }
     })();

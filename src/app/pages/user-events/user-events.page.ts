@@ -44,6 +44,7 @@ import {
   EventStatus,
   EVENT_STATUSES,
   FavoritedEvent,
+  PriceOption,
 } from '../../models';
 import { disciplineIconUrl, eventTypeIconUrl, statusIconUrl, sortByNameOrder, STATUS_LABEL_KEYS } from '../../shared/icon-catalog';
 import { haversineDistanceMeters } from '../../shared/maps';
@@ -53,11 +54,16 @@ import { EventCardComponent } from '../../shared/event-card/event-card.component
 import { EventCardView } from '../../shared/event-card/event-card.model';
 import { buildEventCardView } from '../../shared/event-card/build-event-card-view';
 import { DateQuickOption, ExplorerFiltersService } from '../explorer/explorer-filters.service';
+import { createApplyFlash } from '../../shared/success-flash';
 
 type RelationFilter = 'organizer' | 'attendee';
 const RELATION_OPTIONS: { id: RelationFilter; labelKey: string }[] = [
   { id: 'organizer', labelKey: 'favorites.relationOrganizer' },
   { id: 'attendee', labelKey: 'favorites.relationAttendee' },
+];
+const PRICE_OPTIONS: { id: PriceOption; labelKey: string }[] = [
+  { id: 'free', labelKey: 'explorer.priceFreeOption' },
+  { id: 'paid', labelKey: 'explorer.pricePaidOption' },
 ];
 
 /** "X's events" list (organized + favorited) - your own (no ?userId) or
@@ -119,6 +125,7 @@ export class UserEventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWil
   readonly eventTypes = signal<EventType[]>([]);
   readonly statusOptions = EVENT_STATUSES.map((id) => ({ id, labelKey: STATUS_LABEL_KEYS[id] }));
   readonly relationOptions = RELATION_OPTIONS;
+  readonly priceOptions = PRICE_OPTIONS;
 
   readonly disciplineIconUrl = disciplineIconUrl;
   readonly eventTypeIconUrl = eventTypeIconUrl;
@@ -133,19 +140,29 @@ export class UserEventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWil
   readonly appliedStatuses = signal<EventStatus[]>([...EVENT_STATUSES]);
   readonly draftRelation = signal<RelationFilter[]>(['organizer', 'attendee']);
   readonly appliedRelation = signal<RelationFilter[]>(['organizer', 'attendee']);
+  readonly draftPriceOptions = signal<PriceOption[]>(['free', 'paid']);
+  readonly appliedPriceOptions = signal<PriceOption[]>(['free', 'paid']);
+  /** Unlike Explorer/Favorites, no date default here - this is "my own" (or
+   * someone else's) organized/attended events, so past and finished/cancelled
+   * ones should still show up by default instead of only upcoming ones. */
   readonly draftDateFrom = signal<number | undefined>(undefined);
   readonly appliedDateFrom = signal<number | undefined>(undefined);
   readonly draftDateTo = signal<number | undefined>(undefined);
   readonly appliedDateTo = signal<number | undefined>(undefined);
 
-  readonly draftCity = signal('');
-  readonly appliedCity = signal('');
-  readonly draftDistanceRange = signal(100);
-  readonly appliedDistanceRange = signal(100);
-  readonly draftLatitude = signal<number | null>(null);
-  readonly appliedLatitude = signal<number | null>(null);
-  readonly draftLongitude = signal<number | null>(null);
-  readonly appliedLongitude = signal<number | null>(null);
+  /** Distance/location default to whatever's saved on the logged-in user's
+   * own profile (see profile.page.ts's distanceRange/city/lat/lng) - even
+   * when browsing someone else's events - same fallback (50km, no
+   * coordinates) ExplorerFiltersService.seedLocationFromProfile() uses. */
+  private readonly profileDefaults = this.authService.currentUser();
+  readonly draftCity = signal(this.profileDefaults?.city || '');
+  readonly appliedCity = signal(this.profileDefaults?.city || '');
+  readonly draftDistanceRange = signal(this.profileDefaults?.distanceRange || 50);
+  readonly appliedDistanceRange = signal(this.profileDefaults?.distanceRange || 50);
+  readonly draftLatitude = signal<number | null>(this.profileDefaults?.latitude || null);
+  readonly appliedLatitude = signal<number | null>(this.profileDefaults?.latitude || null);
+  readonly draftLongitude = signal<number | null>(this.profileDefaults?.longitude || null);
+  readonly appliedLongitude = signal<number | null>(this.profileDefaults?.longitude || null);
 
   readonly citySuggestions = signal<CitySuggestion[]>([]);
   readonly locatingMe = signal(false);
@@ -154,6 +171,7 @@ export class UserEventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWil
   readonly isEventTypeModalOpen = signal(false);
   readonly isStatusModalOpen = signal(false);
   readonly isRelationModalOpen = signal(false);
+  readonly isPriceModalOpen = signal(false);
   readonly isDateModalOpen = signal(false);
   readonly isLocationModalOpen = signal(false);
   readonly isGenericFilterModalOpen = signal(false);
@@ -166,6 +184,7 @@ export class UserEventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWil
     const to = this.draftDateTo();
     return to !== undefined ? this.dateUtils.toDateOnlyIso(to) : null;
   });
+  readonly draftActiveQuickDate = computed(() => this.dateUtils.matchQuickDate(this.draftDateFrom(), this.draftDateTo()));
 
   private readonly disciplinesById = computed(() => new Map(this.disciplines().map((d) => [d.id, d])));
   private readonly eventTypesById = computed(() => new Map(this.eventTypes().map((e) => [e.id, e])));
@@ -179,6 +198,7 @@ export class UserEventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWil
     const typeIds = this.appliedEventTypeIds();
     const statuses = this.appliedStatuses();
     const relations = this.appliedRelation();
+    const priceOptions = this.appliedPriceOptions();
     const dateFrom = this.appliedDateFrom();
     const dateTo = this.appliedDateTo();
     const lat = this.appliedLatitude();
@@ -200,6 +220,7 @@ export class UserEventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWil
         const isAttendee = event.relation === 'favorite';
         return (wantsOrganizer && isOrganizer) || (wantsAttendee && isAttendee);
       })
+      .filter((event) => priceOptions.includes(event.isFree ? 'free' : 'paid'))
       .filter((event) => dateFrom === undefined || event.eventDateFrom >= dateFrom)
       .filter((event) => dateTo === undefined || event.eventDateFrom <= dateTo)
       .filter((event) => !term || event.title.toLowerCase().includes(term))
@@ -306,9 +327,11 @@ export class UserEventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWil
     this.draftDisciplineIds.update((ids) => toggleWithMinimum(ids, id, () => this.minSelectionWarning.flash('disciplines')));
   }
 
+  readonly disciplineApplyFlash = createApplyFlash(() => this.isDisciplineModalOpen.set(false));
+
   applyDisciplineFilter(): void {
     this.appliedDisciplineIds.set(this.draftDisciplineIds());
-    this.isDisciplineModalOpen.set(false);
+    this.disciplineApplyFlash.trigger();
   }
 
   clearDisciplineFilter(): void {
@@ -329,9 +352,11 @@ export class UserEventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWil
     this.draftEventTypeIds.update((ids) => toggleWithMinimum(ids, id, () => this.minSelectionWarning.flash('eventTypes')));
   }
 
+  readonly eventTypeApplyFlash = createApplyFlash(() => this.isEventTypeModalOpen.set(false));
+
   applyEventTypeFilter(): void {
     this.appliedEventTypeIds.set(this.draftEventTypeIds());
-    this.isEventTypeModalOpen.set(false);
+    this.eventTypeApplyFlash.trigger();
   }
 
   clearEventTypeFilter(): void {
@@ -352,9 +377,11 @@ export class UserEventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWil
     this.draftStatuses.update((ids) => toggleWithMinimum(ids, id, () => this.minSelectionWarning.flash('statuses')));
   }
 
+  readonly statusApplyFlash = createApplyFlash(() => this.isStatusModalOpen.set(false));
+
   applyStatusFilter(): void {
     this.appliedStatuses.set(this.draftStatuses());
-    this.isStatusModalOpen.set(false);
+    this.statusApplyFlash.trigger();
   }
 
   clearStatusFilter(): void {
@@ -374,9 +401,11 @@ export class UserEventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWil
     this.draftRelation.update((ids) => toggleWithMinimum(ids, id, () => this.minSelectionWarning.flash('relation')));
   }
 
+  readonly relationApplyFlash = createApplyFlash(() => this.isRelationModalOpen.set(false));
+
   applyRelationFilter(): void {
     this.appliedRelation.set(this.draftRelation());
-    this.isRelationModalOpen.set(false);
+    this.relationApplyFlash.trigger();
   }
 
   clearRelationFilter(): void {
@@ -384,6 +413,31 @@ export class UserEventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWil
     this.draftRelation.set(all);
     this.appliedRelation.set(all);
     this.isRelationModalOpen.set(false);
+  }
+
+  // --- Price modal (free / paid) --------------------------------------------
+
+  openPriceModal(): void {
+    this.draftPriceOptions.set([...this.appliedPriceOptions()]);
+    this.isPriceModalOpen.set(true);
+  }
+
+  toggleDraftPriceOption(id: PriceOption): void {
+    this.draftPriceOptions.update((ids) => toggleWithMinimum(ids, id, () => this.minSelectionWarning.flash('priceOptions')));
+  }
+
+  readonly priceApplyFlash = createApplyFlash(() => this.isPriceModalOpen.set(false));
+
+  applyPriceFilter(): void {
+    this.appliedPriceOptions.set(this.draftPriceOptions());
+    this.priceApplyFlash.trigger();
+  }
+
+  clearPriceFilter(): void {
+    const all: PriceOption[] = ['free', 'paid'];
+    this.draftPriceOptions.set(all);
+    this.appliedPriceOptions.set(all);
+    this.isPriceModalOpen.set(false);
   }
 
   // --- Date modal ------------------------------------------------------
@@ -435,10 +489,12 @@ export class UserEventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWil
     this.draftDateTo.set(undefined);
   }
 
+  readonly dateApplyFlash = createApplyFlash(() => this.isDateModalOpen.set(false));
+
   applyDateFilter(): void {
     this.appliedDateFrom.set(this.draftDateFrom());
     this.appliedDateTo.set(this.draftDateTo());
-    this.isDateModalOpen.set(false);
+    this.dateApplyFlash.trigger();
   }
 
   clearDateFilter(): void {
@@ -524,23 +580,33 @@ export class UserEventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWil
     );
   }
 
+  readonly locationApplyFlash = createApplyFlash(() => this.isLocationModalOpen.set(false));
+
   applyLocationFilter(): void {
     this.appliedDistanceRange.set(this.draftDistanceRange());
     this.appliedLatitude.set(this.draftLatitude());
     this.appliedLongitude.set(this.draftLongitude());
     this.appliedCity.set(this.draftCity());
-    this.isLocationModalOpen.set(false);
+    this.locationApplyFlash.trigger();
   }
 
+  /** Labeled "Reestablecer filtros" (there's no profile save here to make
+   * "Eliminar" vs "Reestablecer" mean different things) - goes back to the
+   * same profile-seeded city/distance/coordinates the page loads with. */
   clearLocationFilter(): void {
-    this.draftCity.set('');
-    this.draftDistanceRange.set(100);
-    this.draftLatitude.set(null);
-    this.draftLongitude.set(null);
-    this.appliedCity.set('');
-    this.appliedDistanceRange.set(100);
-    this.appliedLatitude.set(null);
-    this.appliedLongitude.set(null);
+    const user = this.authService.currentUser();
+    const city = user?.city || '';
+    const distanceRange = user?.distanceRange || 50;
+    const latitude = user?.latitude || null;
+    const longitude = user?.longitude || null;
+    this.draftCity.set(city);
+    this.draftDistanceRange.set(distanceRange);
+    this.draftLatitude.set(latitude);
+    this.draftLongitude.set(longitude);
+    this.appliedCity.set(city);
+    this.appliedDistanceRange.set(distanceRange);
+    this.appliedLatitude.set(latitude);
+    this.appliedLongitude.set(longitude);
     this.isLocationModalOpen.set(false);
   }
 
@@ -551,25 +617,30 @@ export class UserEventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWil
     this.draftEventTypeIds.set([...this.appliedEventTypeIds()]);
     this.draftStatuses.set([...this.appliedStatuses()]);
     this.draftRelation.set([...this.appliedRelation()]);
+    this.draftPriceOptions.set([...this.appliedPriceOptions()]);
     this.draftDateFrom.set(this.appliedDateFrom());
     this.draftDateTo.set(this.appliedDateTo());
     this.isGenericFilterModalOpen.set(true);
   }
+
+  readonly genericApplyFlash = createApplyFlash(() => this.isGenericFilterModalOpen.set(false));
 
   applyGenericFilter(): void {
     this.appliedDisciplineIds.set(this.draftDisciplineIds());
     this.appliedEventTypeIds.set(this.draftEventTypeIds());
     this.appliedStatuses.set(this.draftStatuses());
     this.appliedRelation.set(this.draftRelation());
+    this.appliedPriceOptions.set(this.draftPriceOptions());
     this.appliedDateFrom.set(this.draftDateFrom());
     this.appliedDateTo.set(this.draftDateTo());
-    this.isGenericFilterModalOpen.set(false);
+    this.genericApplyFlash.trigger();
   }
 
   clearGenericFilter(): void {
     const allDisciplineIds = this.disciplines().map((d) => d.id);
     const allEventTypeIds = this.eventTypes().map((e) => e.id);
     const allRelations: RelationFilter[] = ['organizer', 'attendee'];
+    const allPriceOptions: PriceOption[] = ['free', 'paid'];
 
     this.draftDisciplineIds.set(allDisciplineIds);
     this.appliedDisciplineIds.set(allDisciplineIds);
@@ -579,6 +650,8 @@ export class UserEventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWil
     this.appliedStatuses.set([...EVENT_STATUSES]);
     this.draftRelation.set(allRelations);
     this.appliedRelation.set(allRelations);
+    this.draftPriceOptions.set(allPriceOptions);
+    this.appliedPriceOptions.set(allPriceOptions);
     this.draftDateFrom.set(undefined);
     this.draftDateTo.set(undefined);
     this.appliedDateFrom.set(undefined);

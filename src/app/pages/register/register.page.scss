@@ -120,7 +120,11 @@ ion-item ion-icon[slot='end'] {
   display: flex;
   align-items: center;
   gap: 6px;
-  border: 1px solid var(--ion-color-light-shade);
+  // Matches the app's real outline buttons (e.g. "Añadir red social"), whose
+  // border comes from --ion-color-primary - unlike --ion-color-light-shade,
+  // which Ionic's dark palette redefines to a near-black that all but
+  // disappears against this button's --app-surface-card background.
+  border: 1px solid var(--ion-color-primary);
   border-radius: 999px;
   padding: 6px 12px;
   background: var(--app-surface-card);

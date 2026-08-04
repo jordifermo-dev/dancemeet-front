@@ -1,10 +1,10 @@
 <ion-content [fullscreen]="true" class="explorer-filters-content">
   <div class="explorer-filters-container">
     <div class="top-bar">
-      <button type="button" class="close-button" (click)="goBack()">
-        <ion-icon name="chevron-back"></ion-icon>
-      </button>
       <h1>{{ 'explorer.filterAllTitle' | translate }}</h1>
+      <button type="button" class="close-button" (click)="goBack()">
+        <ion-icon name="close"></ion-icon>
+      </button>
     </div>
 
     <section class="section">
@@ -89,17 +89,45 @@
     <section class="section">
       <h2>{{ 'explorer.dateFilterLabel' | translate }}</h2>
       <div class="chip-grid">
-        <button type="button" class="chip" (click)="setDraftQuickDate('today')">
+        <button
+          type="button"
+          class="chip"
+          [class.selected]="filters.draftActiveQuickDate() === 'today'"
+          (click)="filters.setDraftQuickDate('today')"
+        >
           {{ 'explorer.today' | translate }}
         </button>
-        <button type="button" class="chip" (click)="setDraftQuickDate('week')">
+        <button
+          type="button"
+          class="chip"
+          [class.selected]="filters.draftActiveQuickDate() === 'week'"
+          (click)="filters.setDraftQuickDate('week')"
+        >
           {{ 'explorer.thisWeek' | translate }}
         </button>
-        <button type="button" class="chip" (click)="setDraftQuickDate('weekend')">
+        <button
+          type="button"
+          class="chip"
+          [class.selected]="filters.draftActiveQuickDate() === 'month'"
+          (click)="filters.setDraftQuickDate('month')"
+        >
+          {{ 'explorer.thisMonth' | translate }}
+        </button>
+        <button
+          type="button"
+          class="chip"
+          [class.selected]="filters.draftActiveQuickDate() === 'weekend'"
+          (click)="filters.setDraftQuickDate('weekend')"
+        >
           {{ 'explorer.thisWeekend' | translate }}
         </button>
-        <button type="button" class="chip" (click)="setDraftQuickDate('month')">
-          {{ 'explorer.thisMonth' | translate }}
+        <button
+          type="button"
+          class="chip"
+          [class.selected]="filters.draftActiveQuickDate() === 'next30days'"
+          (click)="filters.setDraftQuickDate('next30days')"
+        >
+          {{ 'explorer.next30Days' | translate }}
         </button>
       </div>
 
@@ -170,19 +198,16 @@
     </ion-modal>
 
     <div class="filter-actions-row">
-      <ion-button expand="block" fill="outline" color="medium" (click)="resetAll()">
-        {{ 'explorer.resetFilters' | translate }}
-      </ion-button>
       <ion-button expand="block" (click)="saveAll()">
         {{ 'explorer.saveFilters' | translate }}
       </ion-button>
     </div>
     <div class="filter-actions-row secondary-row">
-      <ion-button expand="block" fill="outline" color="primary" (click)="clearAll()">
-        {{ 'explorer.clearFilter' | translate }}
+      <ion-button expand="block" fill="outline" color="medium" (click)="resetAll()">
+        {{ 'explorer.resetFilters' | translate }}
       </ion-button>
       <ion-button expand="block" (click)="applyAll()">
-        {{ 'profile.apply' | translate }}
+        {{ (applyAllFlash.active() ? 'profile.applied' : 'profile.apply') | translate }}
       </ion-button>
     </div>
   </div>

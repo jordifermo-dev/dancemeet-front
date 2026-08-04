@@ -22,6 +22,58 @@
   flex: 0 0 auto;
 }
 
+.social-link-error {
+  margin: -6px 0 10px 38px;
+  font-size: 0.78rem;
+  color: var(--ion-color-danger);
+}
+
+.remove-social-button {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--app-text-strong);
+  padding: 0;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+
+  ion-icon {
+    font-size: 1.3rem;
+  }
+}
+
+.social-picker-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.social-picker-option {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  border: none;
+  border-radius: 12px;
+  padding: 12px 8px;
+  background: transparent;
+  color: var(--app-text-strong);
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+
+  &:active {
+    background: var(--ion-color-light-shade);
+  }
+
+  .contact-icon {
+    margin-inline-end: 0;
+  }
+}
+
 .event-image {
   width: 100%;
   height: 320px;
@@ -177,9 +229,13 @@
     font-weight: 800;
   }
 
-  ion-input,
-  ion-textarea,
-  ion-select {
+  // Direct-child only: a descendant selector would also catch the social
+  // link's <ion-input> nested inside its <ion-item> further down, whose
+  // extra bottom margin (with none on the icons beside it) throws off the
+  // row's vertical centering.
+  > ion-input,
+  > ion-textarea,
+  > ion-select {
     margin-bottom: 10px;
   }
 }
@@ -288,7 +344,11 @@ a.info-row {
   display: flex;
   align-items: center;
   gap: 6px;
-  border: 1px solid var(--ion-color-light-shade);
+  // Matches the app's real outline buttons (e.g. "Añadir red social"), whose
+  // border comes from --ion-color-primary - unlike --ion-color-light-shade,
+  // which Ionic's dark palette redefines to a near-black that all but
+  // disappears against this button's --app-surface-card background.
+  border: 1px solid var(--ion-color-primary);
   border-radius: 999px;
   padding: 6px 12px;
   background: var(--app-surface-card);
@@ -508,6 +568,48 @@ a.info-row {
 
   ion-button {
     margin-top: 16px;
+  }
+}
+
+.filter-sheet {
+  padding: 20px 20px 16px;
+
+  p {
+    color: var(--ion-color-medium);
+    font-size: 0.9rem;
+    margin: 0;
+  }
+}
+
+.filter-sheet-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+
+  h2 {
+    font-size: 1.3rem;
+    font-weight: 800;
+    margin: 0;
+  }
+}
+
+.close-button {
+  appearance: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: var(--ion-color-light-shade);
+  color: var(--app-text-strong);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex: 0 0 auto;
+
+  ion-icon {
+    font-size: 1.2rem;
   }
 }
 

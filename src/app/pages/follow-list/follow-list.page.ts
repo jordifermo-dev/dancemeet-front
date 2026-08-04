@@ -17,7 +17,7 @@ import {
 } from '@ionic/angular/standalone';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { addIcons } from 'ionicons';
-import { personOutline, optionsOutline, close, personAddOutline, chevronDownOutline } from 'ionicons/icons';
+import { personOutline, optionsOutline, close, personAddOutline, chevronDownOutline, checkmarkOutline } from 'ionicons/icons';
 import { AuthService } from '../../services/auth.service';
 import { FollowService } from '../../services/follow.service';
 import { FavoriteService } from '../../services/favorite.service';
@@ -25,6 +25,7 @@ import { DisciplineService } from '../../services/discipline.service';
 import { FollowSortMode, SortPreferenceService } from '../../services/sort-preference.service';
 import { Discipline, DISCIPLINE_NAMES, FollowUser } from '../../models';
 import { sortByNameOrder } from '../../shared/icon-catalog';
+import { createApplyFlash } from '../../shared/success-flash';
 
 type FollowListMode = 'followers' | 'following' | 'attendees';
 type SortMode = FollowSortMode;
@@ -98,6 +99,10 @@ export class FollowListPage implements ViewWillEnter {
   // instead of waiting for `currentUser()` to be resynced from the backend.
   private readonly amFollowingOverrides = signal<Map<string, boolean>>(new Map());
   private readonly followBusy = signal<Set<string>>(new Set());
+  /** Which row's follow/unfollow button should show the brief success-pulse
+   * right now - only one row can be mid-toggle at a time in practice. */
+  readonly justToggledFollowId = signal<string | null>(null);
+  private followPulseTimer: ReturnType<typeof setTimeout> | null = null;
 
   readonly showConfirmModal = signal(false);
   readonly confirmTitleKey = signal('');
@@ -109,10 +114,13 @@ export class FollowListPage implements ViewWillEnter {
     const term = this.searchTerm().trim().toLowerCase();
     let list = term ? this.items().filter((item) => item.name.toLowerCase().includes(term)) : [...this.items()];
 
+    // Same "any of the selected disciplines" convention as Explorer/Favorites -
+    // every discipline selected (the default, matching what's shown before any
+    // filter is touched) or none selected are both treated as no constraint,
+    // rather than only the emptied-out state.
     const filterIds = this.appliedDisciplineFilterIds();
-    if (filterIds.length) {
-      // AND, not OR: only users who have every selected discipline match.
-      list = list.filter((item) => filterIds.every((id) => item.disciplineIds.includes(id)));
+    if (filterIds.length > 0 && filterIds.length < this.disciplines().length) {
+      list = list.filter((item) => item.disciplineIds.some((id) => filterIds.includes(id)));
     }
 
     switch (this.sortMode()) {
@@ -128,12 +136,18 @@ export class FollowListPage implements ViewWillEnter {
   });
 
   constructor() {
-    addIcons({ personOutline, optionsOutline, close, personAddOutline, chevronDownOutline });
+    addIcons({ personOutline, optionsOutline, close, personAddOutline, chevronDownOutline, checkmarkOutline });
 
     this.disciplineService.getAll().subscribe({
       next: (disciplines) => {
         this.disciplinesById.set(new Map(disciplines.map((d) => [d.id, d])));
-        this.disciplines.set(sortByNameOrder(disciplines, DISCIPLINE_NAMES));
+        const sorted = sortByNameOrder(disciplines, DISCIPLINE_NAMES);
+        this.disciplines.set(sorted);
+        // No preference set yet = every discipline selected (matches what's
+        // actually shown - no filter applied), not an empty selection.
+        const ids = sorted.map((d) => d.id);
+        this.draftDisciplineFilterIds.set(ids);
+        this.appliedDisciplineFilterIds.set(ids);
       },
     });
 
@@ -246,6 +260,23 @@ export class FollowListPage implements ViewWillEnter {
     });
   }
 
+  /** Flashes "Guardado ✓" on this row's button, then - after the same beat
+   * saveEdit()/toggleAttend() use - settles it into its real, permanent
+   * follow/unfollow state via applyOverride. */
+  private flashThenApply(itemId: string, applyOverride: () => void): void {
+    if (this.followPulseTimer) {
+      clearTimeout(this.followPulseTimer);
+    }
+    this.justToggledFollowId.set(itemId);
+    this.followPulseTimer = setTimeout(() => {
+      this.justToggledFollowId.set(null);
+    }, 2000);
+    setTimeout(() => {
+      applyOverride();
+      this.setFollowBusy(itemId, false);
+    }, 900);
+  }
+
   follow(item: FollowUser, event: Event): void {
     event.stopPropagation();
     const me = this.authService.currentUser();
@@ -255,12 +286,13 @@ export class FollowListPage implements ViewWillEnter {
     this.setFollowBusy(item.id, true);
     this.followService.follow(item.id, me.id).subscribe({
       next: () => {
-        this.amFollowingOverrides.update((map) => new Map(map).set(item.id, true));
         // Keeps the shared currentUser in sync so other views reading it (e.g. the
         // Profile tab's "Seguint" count) reflect this without needing a full reload.
         this.authService.syncProfile({ ...me, followingId: [...(me.followingId ?? []), item.id] });
+        this.flashThenApply(item.id, () => {
+          this.amFollowingOverrides.update((map) => new Map(map).set(item.id, true));
+        });
       },
-      complete: () => this.setFollowBusy(item.id, false),
       error: () => this.setFollowBusy(item.id, false),
     });
   }
@@ -281,13 +313,14 @@ export class FollowListPage implements ViewWillEnter {
     this.setFollowBusy(item.id, true);
     this.followService.unfollow(item.id, me.id).subscribe({
       next: () => {
-        this.amFollowingOverrides.update((map) => new Map(map).set(item.id, false));
         this.authService.syncProfile({
           ...me,
           followingId: (me.followingId ?? []).filter((id) => id !== item.id),
         });
+        this.flashThenApply(item.id, () => {
+          this.amFollowingOverrides.update((map) => new Map(map).set(item.id, false));
+        });
       },
-      complete: () => this.setFollowBusy(item.id, false),
       error: () => this.setFollowBusy(item.id, false),
     });
   }
@@ -332,14 +365,17 @@ export class FollowListPage implements ViewWillEnter {
     );
   }
 
+  readonly disciplineApplyFlash = createApplyFlash(() => this.isFilterModalOpen.set(false));
+
   applyDisciplineFilter(): void {
     this.appliedDisciplineFilterIds.set(this.draftDisciplineFilterIds());
-    this.isFilterModalOpen.set(false);
+    this.disciplineApplyFlash.trigger();
   }
 
   clearDisciplineFilter(): void {
-    this.draftDisciplineFilterIds.set([]);
-    this.appliedDisciplineFilterIds.set([]);
+    const allIds = this.disciplines().map((d) => d.id);
+    this.draftDisciplineFilterIds.set(allIds);
+    this.appliedDisciplineFilterIds.set(allIds);
     this.isFilterModalOpen.set(false);
   }
 

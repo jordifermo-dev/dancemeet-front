@@ -39,6 +39,9 @@ import {
   locateOutline,
   addCircleOutline,
   checkmarkCircleOutline,
+  checkmarkOutline,
+  trashOutline,
+  close,
 } from 'ionicons/icons';
 import { AuthService } from '../../services/auth.service';
 import { EventService } from '../../services/event.service';
@@ -73,8 +76,16 @@ import { formatEventDateRange } from '../../shared/event-date-format';
 import { buildGoogleCalendarUrl, buildIcs, downloadIcs } from '../../shared/calendar-export';
 import { PhotoEditorComponent } from '../../shared/photo-editor/photo-editor.component';
 import { SOCIAL_URL_PATTERNS } from '../../shared/social-link-patterns';
+import {
+  ALL_SOCIAL_NETWORKS,
+  SOCIAL_NETWORK_ERROR_KEYS,
+  SOCIAL_NETWORK_LABEL_KEYS,
+  SocialNetworkKey,
+} from '../../shared/social-networks';
+import { ComponentWithUnsavedChanges } from '../../guards/unsaved-changes.guard';
 import { MinSelectionWarningService } from '../../shared/min-selection-warning.service';
 import { toggleWithMinimum } from '../../shared/min-selection';
+import { createSuccessFlash } from '../../shared/success-flash';
 import { Share } from '@capacitor/share';
 import { environment } from '../../../environments/environment';
 
@@ -157,7 +168,7 @@ function withTimePart(base: number, timeValue: string): number {
     PhotoEditorComponent,
   ],
 })
-export class EventDetailPage {
+export class EventDetailPage implements ComponentWithUnsavedChanges {
   private readonly fb = inject(FormBuilder);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -184,12 +195,36 @@ export class EventDetailPage {
   readonly notFound = signal(false);
   readonly event = signal<EventWithCreatorName | null>(null);
   readonly saving = signal(false);
+  readonly savedFlash = createSuccessFlash();
   readonly isEditMode = signal(false);
   readonly isCreateMode = signal(false);
   readonly showValidationModal = signal(false);
   readonly isAttending = signal(false);
   readonly attendLoading = signal(false);
+  readonly attendFlash = createSuccessFlash();
   readonly attendeesCount = signal(0);
+  readonly shareFlash = createSuccessFlash();
+  readonly shareFeedback = signal<'shared' | 'copied'>('shared');
+  readonly directionsFlash = createSuccessFlash();
+  readonly calendarFlash = createSuccessFlash();
+
+  /** Only networks with a saved link (or just added this session) render
+   * their own field - see openAddSocialSheet()/addSocialNetwork() for how a
+   * network moves from the picker sheet into this list. Same pattern as
+   * profile.page.ts's own social links section. */
+  readonly activeSocialNetworks = signal<SocialNetworkKey[]>([]);
+  readonly availableSocialNetworks = computed(() =>
+    ALL_SOCIAL_NETWORKS.filter((key) => !this.activeSocialNetworks().includes(key)),
+  );
+  readonly showAddSocialSheet = signal(false);
+
+  readonly showUnsavedChangesModal = signal(false);
+  private pendingLeaveResolve: (() => void) | null = null;
+  private pendingLeaveApplied = false;
+  /** Snapshot of the edit form the last time it was loaded/saved, used to
+   * detect unsaved edits when navigating away - same pattern as Profile's
+   * own baseline/buildSnapshot. Only meaningful while isEditMode() is true. */
+  private editBaseline: string | null = null;
 
   readonly isOwnEvent = computed(() => {
     const event = this.event();
@@ -268,6 +303,117 @@ export class EventDetailPage {
   readonly eventTypeIconUrl = eventTypeIconUrl;
   readonly statusIconUrl = statusIconUrl;
   readonly socialIconUrl = socialIconUrl;
+
+  socialNetworkLabelKey(key: SocialNetworkKey): string {
+    return SOCIAL_NETWORK_LABEL_KEYS[key];
+  }
+
+  socialNetworkErrorKey(key: SocialNetworkKey): string | null {
+    return SOCIAL_NETWORK_ERROR_KEYS[key] ?? null;
+  }
+
+  openAddSocialSheet(): void {
+    this.showAddSocialSheet.set(true);
+  }
+
+  closeAddSocialSheet(): void {
+    this.showAddSocialSheet.set(false);
+  }
+
+  addSocialNetwork(key: SocialNetworkKey): void {
+    this.activeSocialNetworks.update((keys) => (keys.includes(key) ? keys : [...keys, key]));
+    this.showAddSocialSheet.set(false);
+  }
+
+  /** Clears the field's value (not just hides it) - otherwise a removed-then-
+   * unsaved link would silently come back on the next save. */
+  removeSocialNetwork(key: SocialNetworkKey): void {
+    this.editForm.controls[key].reset('');
+    this.activeSocialNetworks.update((keys) => keys.filter((k) => k !== key));
+  }
+
+  /** Serializes every field the edit form actually saves (see saveEdit's
+   * payload) so it can be compared against editBaseline to detect unsaved
+   * changes - covers both the reactive form controls and the plain signals
+   * (chips, dates, location) the custom pickers write to directly. */
+  private buildEditSnapshot(): string {
+    const raw = this.editForm.getRawValue();
+    return JSON.stringify({
+      title: raw.title,
+      description: raw.description,
+      additionalInfo: raw.additionalInfo,
+      imageUrl: raw.imageUrl,
+      isFree: raw.isFree,
+      price: raw.price,
+      socialLinks: {
+        instagram: raw.instagram,
+        facebook: raw.facebook,
+        tiktok: raw.tiktok,
+        youtube: raw.youtube,
+        website: raw.website,
+      },
+      typeIds: [...this.editTypeIds()].sort(),
+      disciplineIds: [...this.editDisciplineIds()].sort(),
+      status: this.editStatus(),
+      dateFrom: this.editDateFrom(),
+      dateTo: this.editDateTo(),
+      address: this.editAddress(),
+      city: this.editCity(),
+      latitude: this.editLatitude(),
+      longitude: this.editLongitude(),
+    });
+  }
+
+  private captureEditBaseline(): void {
+    this.editBaseline = this.buildEditSnapshot();
+  }
+
+  private isEditDirty(): boolean {
+    return this.editBaseline !== null && this.buildEditSnapshot() !== this.editBaseline;
+  }
+
+  /** Invoked by unsavedChangesGuard (see app.routes.ts) before navigating
+   * away from /events/new or /events/:id while mid-edit. */
+  async canLeave(): Promise<boolean> {
+    if (!this.isEditMode() || !this.isEditDirty()) {
+      return true;
+    }
+    this.pendingLeaveApplied = false;
+    this.showUnsavedChangesModal.set(true);
+    // Waits for (didDismiss), not the button click itself - same reasoning
+    // as Profile's own version of this modal.
+    await new Promise<void>((resolve) => {
+      this.pendingLeaveResolve = resolve;
+    });
+    return true;
+  }
+
+  confirmDiscardChanges(): void {
+    this.pendingLeaveApplied = false;
+    this.showUnsavedChangesModal.set(false);
+  }
+
+  confirmApplyChanges(): void {
+    this.pendingLeaveApplied = true;
+    this.showUnsavedChangesModal.set(false);
+  }
+
+  /** Fires once the sheet has fully closed. Applying re-runs saveEdit()
+   * (which itself no-ops silently if the form is invalid, same as the
+   * Guardar button's own guard) rather than blocking navigation on
+   * validity - losing an invalid in-progress edit on the way out is the
+   * same tradeoff Profile's own unsaved-changes modal makes. */
+  onUnsavedChangesModalDismiss(): void {
+    if (this.pendingLeaveApplied) {
+      this.saveEdit();
+    } else if (this.event()) {
+      // Existing event: revert the form to the last-saved state. Nothing to
+      // revert to in create mode - the page is being navigated away from anyway.
+      this.enterEditMode();
+    }
+    this.pendingLeaveResolve?.();
+    this.pendingLeaveResolve = null;
+  }
   readonly formatSocialUrl = formatSocialUrl;
 
   /** Edit mode - reference implementation for CreateEventDto/UpdateEventDto.
@@ -405,6 +551,9 @@ export class EventDetailPage {
       locateOutline,
       addCircleOutline,
       checkmarkCircleOutline,
+      checkmarkOutline,
+      trashOutline,
+      close,
     });
 
     this.disciplineService.getAll().subscribe({
@@ -414,6 +563,12 @@ export class EventDetailPage {
           this.disciplines.set(sorted);
           if (this.isCreateMode() && !this.editDisciplineIds().length) {
             this.editDisciplineIds.set([sorted[0].id]);
+            // Re-baseline over this auto-picked default so it doesn't itself
+            // count as an unsaved edit - but only if the user hasn't actually
+            // started editing yet in the meantime.
+            if (!this.isEditDirty()) {
+              this.captureEditBaseline();
+            }
           }
         }
       },
@@ -425,6 +580,9 @@ export class EventDetailPage {
           this.eventTypes.set(sorted);
           if (this.isCreateMode() && !this.editTypeIds().length) {
             this.editTypeIds.set([sorted[0].id]);
+            if (!this.isEditDirty()) {
+              this.captureEditBaseline();
+            }
           }
         }
       },
@@ -435,6 +593,7 @@ export class EventDetailPage {
       // /events/new - no event to load, start straight in (create) edit mode.
       this.isCreateMode.set(true);
       this.isEditMode.set(true);
+      this.captureEditBaseline();
       this.loading.set(false);
       return;
     }
@@ -495,6 +654,7 @@ export class EventDetailPage {
     if (!event) {
       return;
     }
+    this.directionsFlash.trigger();
     window.open(`https://www.google.com/maps/dir/?api=1&destination=${event.latitude},${event.longitude}`, '_blank');
   }
 
@@ -514,6 +674,7 @@ export class EventDetailPage {
     if (!event) {
       return;
     }
+    this.calendarFlash.trigger();
     if (this.isIOS()) {
       downloadIcs(buildIcs(event));
     } else {
@@ -536,15 +697,20 @@ export class EventDetailPage {
       title: event.title,
       creator: event.creatorName,
     });
+    this.shareFeedback.set('shared');
+    this.shareFlash.trigger();
     try {
       // Capacitor's Share plugin falls back to the Web Share API on web
       // builds by itself, so this one call covers both native and browser.
       await Share.share({ title: 'DanceMeet', text, url });
     } catch {
       // User cancelled the native share sheet, or neither share mechanism is
-      // available - fall back to copying the link.
+      // available - fall back to copying the link. Re-triggers the flash
+      // (resetting its timer) with the more accurate "copied" wording.
       if (navigator.clipboard) {
         await navigator.clipboard.writeText(url);
+        this.shareFeedback.set('copied');
+        this.shareFlash.trigger();
       }
     }
   }
@@ -567,9 +733,16 @@ export class EventDetailPage {
       : this.favoriteService.addToFavorites(me.id, event.id);
     request$.subscribe({
       next: () => {
-        this.isAttending.set(!wasAttending);
         this.attendeesCount.update((count) => Math.max(0, count + (wasAttending ? -1 : 1)));
-        this.attendLoading.set(false);
+        this.attendFlash.trigger();
+        // Same "flash the confirmation, then settle into the real state"
+        // beat as saveEdit() - flipping isAttending immediately would swap
+        // the icon/label straight to "No asistir" before anyone saw the
+        // "Guardado ✓" confirmation.
+        setTimeout(() => {
+          this.isAttending.set(!wasAttending);
+          this.attendLoading.set(false);
+        }, 900);
       },
       error: () => this.attendLoading.set(false),
     });
@@ -732,6 +905,7 @@ export class EventDetailPage {
       youtube: event.socialLinks?.youtube ?? '',
       website: event.socialLinks?.website ?? '',
     });
+    this.activeSocialNetworks.set(ALL_SOCIAL_NETWORKS.filter((key) => !!event.socialLinks?.[key]));
     this.editTypeIds.set([...event.typeIds]);
     this.editDisciplineIds.set([...event.disciplineIds]);
     this.editStatus.set(event.status === 'finished' ? 'published' : event.status);
@@ -743,6 +917,7 @@ export class EventDetailPage {
     this.editLongitude.set(event.longitude);
     this.editCitySuggestions.set([]);
     this.isEditMode.set(true);
+    this.captureEditBaseline();
   }
 
   cancelEdit(): void {
@@ -827,8 +1002,15 @@ export class EventDetailPage {
     this.eventService.updateEvent(event.id, payload).subscribe({
       next: () => {
         this.event.set({ ...event, ...payload });
-        this.saving.set(false);
-        this.isEditMode.set(false);
+        this.savedFlash.trigger();
+        // Keeps the form (and its now-disabled Save button, still reading
+        // "saving") on screen just long enough to read "Guardado ✓" before
+        // collapsing back to view mode - flipping isEditMode immediately
+        // would yank the confirmation away before anyone could see it.
+        setTimeout(() => {
+          this.saving.set(false);
+          this.isEditMode.set(false);
+        }, 900);
       },
       error: () => this.saving.set(false),
     });

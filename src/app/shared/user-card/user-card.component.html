@@ -21,13 +21,23 @@
   </div>
   @if (!isMe()) {
     @if (isFollowedByMe()) {
-      <button type="button" class="follow-btn follow-btn-following" [disabled]="followBusy()" (click)="toggleFollow($event)">
-        {{ 'profile.following' | translate }}
+      <button
+        type="button"
+        class="follow-btn follow-btn-following"
+        [disabled]="followBusy()"
+        (click)="toggleFollow($event)"
+      >
+        {{ (followFlash.active() ? 'eventDetail.savedButton' : 'profile.following') | translate }}
       </button>
     } @else {
-      <button type="button" class="follow-btn follow-btn-follow" [disabled]="followBusy()" (click)="toggleFollow($event)">
-        <ion-icon name="person-add-outline"></ion-icon>
-        {{ 'userDetail.followButton' | translate }}
+      <button
+        type="button"
+        class="follow-btn follow-btn-follow"
+        [disabled]="followBusy()"
+        (click)="toggleFollow($event)"
+      >
+        <ion-icon [name]="followFlash.active() ? 'checkmark-outline' : 'person-add-outline'"></ion-icon>
+        {{ (followFlash.active() ? 'eventDetail.savedButton' : 'userDetail.followButton') | translate }}
       </button>
     }
   }

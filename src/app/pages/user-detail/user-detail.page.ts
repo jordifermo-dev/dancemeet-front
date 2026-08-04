@@ -25,6 +25,7 @@ import {
   personAddOutline,
   downloadOutline,
   locationOutline,
+  checkmarkOutline,
 } from 'ionicons/icons';
 import { AuthService } from '../../services/auth.service';
 import { UserService } from '../../services/user.service';
@@ -44,6 +45,7 @@ import {
 } from '../../shared/icon-catalog';
 import { MapType, mapEmbedUrl as buildMapEmbedUrl } from '../../shared/maps';
 import { buildVCard, downloadVCard } from '../../shared/vcard';
+import { createSuccessFlash } from '../../shared/success-flash';
 
 const MIN_ZOOM = 3;
 const MAX_ZOOM = 20;
@@ -118,6 +120,10 @@ export class UserDetailPage {
    * updates amFollowingOverride, sending a duplicate call the backend rejects
    * with an "already follows"/"not following" business error. */
   readonly followActionBusy = signal(false);
+  readonly followFlash = createSuccessFlash();
+  readonly directionsFlash = createSuccessFlash();
+  readonly contactFlash = createSuccessFlash();
+  readonly removeFollowerFlash = createSuccessFlash();
 
   /** True only if I actually follow this person right now (not just "which list I browsed here from"). */
   readonly amFollowing = computed(() => {
@@ -211,6 +217,7 @@ export class UserDetailPage {
       personAddOutline,
       downloadOutline,
       locationOutline,
+      checkmarkOutline,
     });
 
     this.disciplineService.getAll().subscribe({
@@ -287,6 +294,7 @@ export class UserDetailPage {
     if (!user) {
       return;
     }
+    this.directionsFlash.trigger();
     window.open(`https://www.google.com/maps/dir/?api=1&destination=${user.latitude},${user.longitude}`, '_blank');
   }
 
@@ -295,6 +303,7 @@ export class UserDetailPage {
     if (!user || !user.showPhone || !user.phone) {
       return;
     }
+    this.contactFlash.trigger();
     const email = user.showEmail ? user.email : undefined;
     const vcard = buildVCard(user.name, user.phone, email);
     await downloadVCard(vcard);
@@ -309,12 +318,18 @@ export class UserDetailPage {
     this.followActionBusy.set(true);
     this.followService.follow(user.id, me.id).subscribe({
       next: () => {
-        this.amFollowingOverride.set(true);
         // Keeps the shared currentUser in sync so other views reading it (e.g. the
         // Profile tab's "Seguint" count) reflect this without needing a full reload.
         this.authService.syncProfile({ ...me, followingId: [...(me.followingId ?? []), user.id] });
+        this.followFlash.trigger();
+        // Flash "Guardado ✓" for a beat before the button settles into its
+        // real, permanent "Siguiendo" state - same reasoning as Event
+        // Detail's toggleAttend().
+        setTimeout(() => {
+          this.amFollowingOverride.set(true);
+          this.followActionBusy.set(false);
+        }, 900);
       },
-      complete: () => this.followActionBusy.set(false),
       error: () => this.followActionBusy.set(false),
     });
   }
@@ -366,9 +381,12 @@ export class UserDetailPage {
           ...me,
           followedId: (me.followedId ?? []).filter((id) => id !== user.id),
         });
-        this.location.back();
+        this.removeFollowerFlash.trigger();
+        // Same "flash the confirmation, then act" beat as follow()/
+        // toggleAttend() - navigating away immediately would cut off the
+        // "Guardado ✓" confirmation before it could ever be seen.
+        setTimeout(() => this.location.back(), 900);
       },
-      complete: () => this.followActionBusy.set(false),
       error: () => this.followActionBusy.set(false),
     });
   }

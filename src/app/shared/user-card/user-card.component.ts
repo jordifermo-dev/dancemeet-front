@@ -3,10 +3,11 @@ import { Router } from '@angular/router';
 import { IonIcon } from '@ionic/angular/standalone';
 import { TranslatePipe } from '@ngx-translate/core';
 import { addIcons } from 'ionicons';
-import { personOutline, personAddOutline } from 'ionicons/icons';
+import { personOutline, personAddOutline, checkmarkOutline } from 'ionicons/icons';
 import { AuthService } from '../../services/auth.service';
 import { FollowService } from '../../services/follow.service';
 import { Discipline, FollowUser } from '../../models';
+import { createSuccessFlash } from '../success-flash';
 
 /** Self-contained follower/following row - avatar, name, disciplines and a
  * follow/unfollow button that manages itself. Used by the notifications
@@ -33,6 +34,7 @@ export class UserCardComponent {
    * response lands - the second call would hit the backend's "already
    * follows"/"not following" business-rule error. */
   readonly followBusy = signal(false);
+  readonly followFlash = createSuccessFlash();
 
   readonly disciplines = computed(() =>
     (this.user.disciplineIds ?? [])
@@ -52,7 +54,7 @@ export class UserCardComponent {
   });
 
   constructor() {
-    addIcons({ personOutline, personAddOutline });
+    addIcons({ personOutline, personAddOutline, checkmarkOutline });
   }
 
   open(): void {
@@ -69,22 +71,30 @@ export class UserCardComponent {
     if (this.isFollowedByMe()) {
       this.followService.unfollow(this.user.id, me.id).subscribe({
         next: () => {
-          this.followOverride.set(false);
           this.authService.syncProfile({
             ...me,
             followingId: (me.followingId ?? []).filter((id) => id !== this.user.id),
           });
+          this.followFlash.trigger();
+          // Same "flash the confirmation, then settle into the real state"
+          // beat as Event Detail/User Detail's own follow/attend buttons.
+          setTimeout(() => {
+            this.followOverride.set(false);
+            this.followBusy.set(false);
+          }, 900);
         },
-        complete: () => this.followBusy.set(false),
         error: () => this.followBusy.set(false),
       });
     } else {
       this.followService.follow(this.user.id, me.id).subscribe({
         next: () => {
-          this.followOverride.set(true);
           this.authService.syncProfile({ ...me, followingId: [...(me.followingId ?? []), this.user.id] });
+          this.followFlash.trigger();
+          setTimeout(() => {
+            this.followOverride.set(true);
+            this.followBusy.set(false);
+          }, 900);
         },
-        complete: () => this.followBusy.set(false),
         error: () => this.followBusy.set(false),
       });
     }

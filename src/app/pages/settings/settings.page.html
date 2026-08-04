@@ -31,10 +31,10 @@
 
     <div class="quick-actions-row">
       <button type="button" class="quick-action" [class.active]="allEnabled()" (click)="enableAll()">
-        {{ 'notifications.enableAll' | translate }}
+        {{ (enableAllFlash.active() ? 'notifications.enableAllDone' : 'notifications.enableAll') | translate }}
       </button>
       <button type="button" class="quick-action" [class.active]="allDisabled()" (click)="disableAll()">
-        {{ 'notifications.disableAll' | translate }}
+        {{ (disableAllFlash.active() ? 'notifications.disableAllDone' : 'notifications.disableAll') | translate }}
       </button>
     </div>
 
