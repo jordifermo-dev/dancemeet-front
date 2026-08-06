@@ -88,6 +88,26 @@
   background: rgba(255, 255, 255, 0.96);
   border-radius: 16px;
   padding: 16px;
+
+  // Same section-title look as Profile's chip groups (Disciplinas, Tipos de
+  // evento...) and register.page.scss's identical rule - a plain label
+  // above the field instead of Ionic's floating label inside it.
+  .group-label {
+    margin: 0 0 -4px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--ion-color-medium);
+  }
+
+  .required-marker {
+    color: var(--ion-color-primary);
+    margin-left: 2px;
+  }
+
+  ion-icon[slot='end'] {
+    cursor: pointer;
+    color: var(--ion-color-primary);
+  }
 }
 
 .register-link {

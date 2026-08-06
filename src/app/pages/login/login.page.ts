@@ -5,7 +5,6 @@ import {
   IonContent,
   IonButton,
   IonIcon,
-  IonItem,
   IonInput,
   IonText,
 } from '@ionic/angular/standalone';
@@ -34,7 +33,6 @@ import { firebaseErrorMessage } from '../../shared/firebase-error-message';
     IonContent,
     IonButton,
     IonIcon,
-    IonItem,
     IonInput,
     IonText,
     TranslatePipe,

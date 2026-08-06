@@ -28,9 +28,28 @@
   }
 }
 
-ion-item ion-icon[slot='end'] {
+ion-input ion-icon[slot='end'] {
   cursor: pointer;
+  color: var(--ion-color-primary);
+}
+
+// Same section-title look as Profile's chip groups (Disciplinas, Tipos de
+// evento...) - a plain label above the field instead of Ionic's floating
+// label inside it, so a field's title reads the same way everywhere.
+.required-marker {
+  color: var(--ion-color-primary);
+  margin-left: 2px;
+}
+
+.group-label {
+  margin: 16px 0 0;
+  font-size: 0.8rem;
+  font-weight: 600;
   color: var(--ion-color-medium);
+
+  &:first-of-type {
+    margin-top: 0;
+  }
 }
 
 .step {
@@ -246,10 +265,13 @@ ion-item ion-icon[slot='end'] {
       white-space: normal;
     }
 
-    a {
+    // [innerHTML] content doesn't get Angular's _ngcontent scoping attribute,
+    // so the emulated-encapsulation selector above never matched it -
+    // ::ng-deep is needed to reach the injected <a> tags.
+    ::ng-deep a {
       color: var(--ion-color-primary);
       font-weight: 600;
-      text-decoration: underline;
+      text-decoration: none;
     }
   }
 }

@@ -20,22 +20,16 @@
     <form [formGroup]="editForm" class="event-detail-container">
       <section class="section">
         <h2>{{ 'eventDetail.detailsSection' | translate }}</h2>
-        <ion-input
-          labelPlacement="stacked"
-          [label]="'eventDetail.titleLabel' | translate"
-          [placeholder]="'eventDetail.titlePlaceholder' | translate"
-          formControlName="title"
-        ></ion-input>
+        <p class="group-label">{{ 'eventDetail.titleLabel' | translate }}<span class="required-marker">*</span></p>
+        <ion-input [placeholder]="'eventDetail.titlePlaceholder' | translate" formControlName="title"></ion-input>
+        <p class="group-label">{{ 'eventDetail.descriptionLabel' | translate }}<span class="required-marker">*</span></p>
         <ion-textarea
-          labelPlacement="stacked"
-          [label]="'eventDetail.descriptionLabel' | translate"
           [placeholder]="'eventDetail.descriptionPlaceholder' | translate"
           [autoGrow]="true"
           formControlName="description"
         ></ion-textarea>
+        <p class="group-label">{{ 'eventDetail.additionalInfoLabel' | translate }}</p>
         <ion-textarea
-          labelPlacement="stacked"
-          [label]="'eventDetail.additionalInfoLabel' | translate"
           [placeholder]="'eventDetail.additionalInfoPlaceholder' | translate"
           [autoGrow]="true"
           formControlName="additionalInfo"
@@ -94,13 +88,13 @@
 
       <section class="section">
         <h2>{{ 'profile.preferencesSection' | translate }}</h2>
-        <p class="group-label">{{ 'eventDetail.eventTypeLabel' | translate }}</p>
+        <p class="group-label">{{ 'eventDetail.eventTypeLabel' | translate }}<span class="required-marker">*</span></p>
         <app-chip-grid [items]="editTypeChips()" (chipClick)="toggleEditType($event)"></app-chip-grid>
         @if (minSelectionWarning.isActive('eventTypes')) {
           <p class="min-selection-warning">{{ 'explorer.minSelectionWarning' | translate }}</p>
         }
 
-        <p class="group-label">{{ 'eventDetail.disciplineLabel' | translate }}</p>
+        <p class="group-label">{{ 'eventDetail.disciplineLabel' | translate }}<span class="required-marker">*</span></p>
         <app-chip-grid [items]="editDisciplineChips()" (chipClick)="toggleEditDiscipline($event)"></app-chip-grid>
         @if (minSelectionWarning.isActive('disciplines')) {
           <p class="min-selection-warning">{{ 'explorer.minSelectionWarning' | translate }}</p>
@@ -156,17 +150,16 @@
           <ion-toggle formControlName="isFree">{{ 'eventDetail.isFreeLabel' | translate }}</ion-toggle>
         </ion-item>
         @if (!editForm.controls.isFree.value) {
+          <p class="group-label">{{ 'eventDetail.priceLabel' | translate }}<span class="required-marker">*</span></p>
           <ion-input
             type="number"
-            labelPlacement="stacked"
-            [label]="'eventDetail.priceLabel' | translate"
             formControlName="price"
           ></ion-input>
         }
       </section>
 
       <section class="section">
-        <h2>{{ 'profile.locationSection' | translate }}</h2>
+        <h2>{{ 'profile.locationSection' | translate }}<span class="required-marker">*</span></h2>
         <ion-searchbar
           class="tgtg-searchbar"
           [placeholder]="'eventDetail.addressLabel' | translate"

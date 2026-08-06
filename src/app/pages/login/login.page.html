@@ -22,31 +22,26 @@
 
     @if (showEmailForm()) {
       <form class="email-form" [formGroup]="emailForm" (ngSubmit)="submitEmail()">
-        <ion-item>
-          <ion-input
-            type="email"
-            autocomplete="off"
-            [label]="'login.emailLabel' | translate"
-            labelPlacement="floating"
-            [placeholder]="'login.emailPlaceholder' | translate"
-            formControlName="email"
-          ></ion-input>
-        </ion-item>
-        <ion-item>
-          <ion-input
-            [type]="showPassword() ? 'text' : 'password'"
-            autocomplete="off"
-            [label]="'login.passwordLabel' | translate"
-            labelPlacement="floating"
-            [placeholder]="'login.passwordPlaceholder' | translate"
-            formControlName="password"
-          ></ion-input>
+        <p class="group-label">{{ 'login.emailLabel' | translate }}<span class="required-marker">*</span></p>
+        <ion-input
+          type="email"
+          autocomplete="off"
+          [placeholder]="'login.emailPlaceholder' | translate"
+          formControlName="email"
+        ></ion-input>
+        <p class="group-label">{{ 'login.passwordLabel' | translate }}<span class="required-marker">*</span></p>
+        <ion-input
+          [type]="showPassword() ? 'text' : 'password'"
+          autocomplete="off"
+          [placeholder]="'login.passwordPlaceholder' | translate"
+          formControlName="password"
+        >
           <ion-icon
             slot="end"
             [name]="showPassword() ? 'eye-off-outline' : 'eye-outline'"
             (click)="togglePasswordVisibility()"
           ></ion-icon>
-        </ion-item>
+        </ion-input>
 
         @if (errorMessage()) {
           <ion-text color="danger">

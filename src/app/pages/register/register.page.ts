@@ -240,10 +240,23 @@ export class RegisterPage implements OnInit {
 
   /** The Terms/Privacy links live inside ion-checkbox's own label, which
    * toggles the checkbox on any click within it - without this, tapping a
-   * link would also flip acceptedTerms instead of just opening the page. */
+   * link would also flip acceptedTerms instead of just opening the page.
+   * Also takes over the navigation itself: register.termsText's raw <a
+   * href="..." target="_blank"> (real anchor markup injected via innerHTML,
+   * so no routerLink can attach to it) did a hard reload at that URL instead
+   * of an Angular Router navigation, wiping the SPA's history - the back
+   * button then had nothing to return to and fell back to defaultHref
+   * ("/settings"), which the auth guard bounced to /login since this can
+   * happen before the account even exists yet. */
   onTermsTextClick(event: Event): void {
-    if ((event.target as HTMLElement).tagName === 'A') {
+    const target = event.target as HTMLElement;
+    if (target.tagName === 'A') {
       event.stopPropagation();
+      event.preventDefault();
+      const href = target.getAttribute('href');
+      if (href) {
+        this.router.navigateByUrl(href);
+      }
     }
   }
 
