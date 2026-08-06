@@ -14,37 +14,21 @@
       },
       "oauth_client": [
         {
-          "client_id": "92761252465-2gg7q163qjg8t7njcsgi3imt08ggihem.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
-      "api_key": [
-        {
-          "current_key": "AIzaSyDGQUZISLklDORhYZ_NdsAoHrv09SZXOfA"
+          "client_id": "92761252465-6jd7gbipfdgqscrfs0p0gq56f5fiob1g.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.dancemeet.app",
+            "certificate_hash": "de743cd2cde42c23a5c357daf184d89edc14a647"
+          }
         },
         {
-          "current_key": "AIzaSyCenByLDKEOul_3dHvW2ArCRvnkFYXTMbs"
-        }
-      ],
-      "services": {
-        "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "92761252465-2gg7q163qjg8t7njcsgi3imt08ggihem.apps.googleusercontent.com",
-              "client_type": 3
-            }
-          ]
-        }
-      }
-    },
-    {
-      "client_info": {
-        "mobilesdk_app_id": "1:92761252465:android:d3267c8a8b4a35aa8171d0",
-        "android_client_info": {
-          "package_name": "com.jordifermo.dancemeet"
-        }
-      },
-      "oauth_client": [
+          "client_id": "92761252465-nkakbpp7vg7riia6v3gmdqup2b24lfvp.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.dancemeet.app",
+            "certificate_hash": "1cd3f50d91a6a8418bee9e9b4cc4ab4da849ddd6"
+          }
+        },
         {
           "client_id": "92761252465-2gg7q163qjg8t7njcsgi3imt08ggihem.apps.googleusercontent.com",
           "client_type": 3
@@ -53,9 +37,6 @@
       "api_key": [
         {
           "current_key": "AIzaSyDGQUZISLklDORhYZ_NdsAoHrv09SZXOfA"
-        },
-        {
-          "current_key": "AIzaSyCenByLDKEOul_3dHvW2ArCRvnkFYXTMbs"
         }
       ],
       "services": {

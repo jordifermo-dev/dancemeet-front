@@ -742,12 +742,17 @@ export class EventDetailPage implements ComponentWithUnsavedChanges {
     });
   }
 
-  /** Skips the check entirely for your own event - only attendees (not
-   * organizers) get the Asistir button, see isOwnEvent() in the template. */
+  /** The organizer always attends their own event - the backend creates a
+   * Favorite record for the creator on createEvent(), so this is true
+   * without needing to ask, same as the heart on <app-event-card>. */
   private refreshAttendingState(event: EventWithCreatorName | null): void {
     const me = this.authService.currentUser();
-    if (!event || !me || event.creatorId === me.id) {
+    if (!event || !me) {
       this.isAttending.set(false);
+      return;
+    }
+    if (event.creatorId === me.id) {
+      this.isAttending.set(true);
       return;
     }
     this.favoriteService.isFavorited(me.id, event.id).subscribe({
@@ -842,7 +847,7 @@ export class EventDetailPage implements ComponentWithUnsavedChanges {
   toggleAttend(): void {
     const event = this.event();
     const me = this.authService.currentUser();
-    if (!event || !me || this.attendLoading() || this.isEventOver()) {
+    if (!event || !me || event.creatorId === me.id || this.attendLoading() || this.isEventOver()) {
       return;
     }
     this.attendLoading.set(true);

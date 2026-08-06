@@ -225,7 +225,13 @@ export class AuthService {
    * already rely on everywhere else in this service, so nothing past this
    * point needs to know native sign-in was involved at all. */
   private async loginWithGoogleNative(): Promise<void> {
-    const { credential } = await FirebaseAuthentication.signInWithGoogle();
+    // Android's Credential Manager API (the plugin's default since 7.2.0)
+    // only surfaces accounts that have already signed into this exact app
+    // before, so on a fresh install/device it finds none and throws
+    // NoCredentialException - confirmed via device logs ("No credentials
+    // available"), with the account picker never even appearing. The legacy
+    // Google Sign-In SDK has no such restriction.
+    const { credential } = await FirebaseAuthentication.signInWithGoogle({ useCredentialManager: false });
     if (!credential?.idToken) {
       throw new Error('Google sign-in was cancelled or returned no credential.');
     }

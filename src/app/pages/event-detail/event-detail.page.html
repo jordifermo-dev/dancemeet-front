@@ -230,18 +230,16 @@
             <span class="stat-count">{{ attendeesCount() }}</span>
             <span class="stat-label">{{ 'eventDetail.attendeesLabel' | translate }}</span>
           </div>
-          @if (!isOwnEvent()) {
-            <button
-              type="button"
-              class="attend-heart-btn"
-              [class.active]="isAttending()"
-              [disabled]="attendLoading() || isEventOver()"
-              [attr.aria-label]="(isAttending() ? 'eventDetail.unattendButton' : 'eventDetail.attendButton') | translate"
-              (click)="toggleAttend()"
-            >
-              <ion-icon [name]="attendFlash.active() ? 'checkmark-outline' : (isAttending() ? 'heart' : 'heart-outline')"></ion-icon>
-            </button>
-          }
+          <button
+            type="button"
+            class="attend-heart-btn"
+            [class.active]="isAttending()"
+            [disabled]="isOwnEvent() || attendLoading() || isEventOver()"
+            [attr.aria-label]="(isAttending() ? 'eventDetail.unattendButton' : 'eventDetail.attendButton') | translate"
+            (click)="toggleAttend()"
+          >
+            <ion-icon [name]="attendFlash.active() ? 'checkmark-outline' : (isAttending() ? 'heart' : 'heart-outline')"></ion-icon>
+          </button>
         </div>
       </div>
 
