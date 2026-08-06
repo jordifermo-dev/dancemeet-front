@@ -9,6 +9,21 @@
   border: 1px solid var(--ion-color-light-shade);
 }
 
+:host(.row-variant) {
+  display: block;
+
+  .user-card-row {
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    padding: 10px 14px;
+  }
+
+  &:not(:last-child) .user-card-row {
+    border-bottom: 1px solid var(--ion-color-light-shade);
+  }
+}
+
 .avatar {
   width: 44px;
   height: 44px;
@@ -67,6 +82,12 @@
   border-radius: 50%;
   object-fit: cover;
   flex: 0 0 auto;
+}
+
+.user-disciplines-empty {
+  font-size: 0.75rem;
+  color: var(--ion-color-medium);
+  font-style: italic;
 }
 
 .follow-btn {

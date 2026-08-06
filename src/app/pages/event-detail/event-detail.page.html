@@ -95,55 +95,19 @@
       <section class="section">
         <h2>{{ 'profile.preferencesSection' | translate }}</h2>
         <p class="group-label">{{ 'eventDetail.eventTypeLabel' | translate }}</p>
-        <div class="chip-grid">
-          @for (eventType of eventTypes(); track eventType.id) {
-            <button
-              type="button"
-              class="chip chip-with-icon"
-              [class.selected]="editTypeIds().includes(eventType.id)"
-              (click)="toggleEditType(eventType.id)"
-            >
-              <img class="chip-icon" [src]="eventTypeIconUrl(eventType.name)" [alt]="eventType.name" />
-              {{ eventType.name }}
-            </button>
-          }
-        </div>
+        <app-chip-grid [items]="editTypeChips()" (chipClick)="toggleEditType($event)"></app-chip-grid>
         @if (minSelectionWarning.isActive('eventTypes')) {
           <p class="min-selection-warning">{{ 'explorer.minSelectionWarning' | translate }}</p>
         }
 
         <p class="group-label">{{ 'eventDetail.disciplineLabel' | translate }}</p>
-        <div class="chip-grid">
-          @for (discipline of disciplines(); track discipline.id) {
-            <button
-              type="button"
-              class="chip chip-with-icon"
-              [class.selected]="editDisciplineIds().includes(discipline.id)"
-              (click)="toggleEditDiscipline(discipline.id)"
-            >
-              <img class="chip-icon" [src]="disciplineIconUrl(discipline)" [alt]="discipline.name" />
-              {{ discipline.name }}
-            </button>
-          }
-        </div>
+        <app-chip-grid [items]="editDisciplineChips()" (chipClick)="toggleEditDiscipline($event)"></app-chip-grid>
         @if (minSelectionWarning.isActive('disciplines')) {
           <p class="min-selection-warning">{{ 'explorer.minSelectionWarning' | translate }}</p>
         }
 
         <p class="group-label">{{ 'eventDetail.statusLabel' | translate }}</p>
-        <div class="chip-grid">
-          @for (option of editableStatusOptions; track option.id) {
-            <button
-              type="button"
-              class="chip chip-with-icon"
-              [class.selected]="editStatus() === option.id"
-              (click)="selectEditStatus(option.id)"
-            >
-              <img class="chip-icon" [src]="statusIconUrl(option.id)" [alt]="option.labelKey | translate" />
-              {{ option.labelKey | translate }}
-            </button>
-          }
-        </div>
+        <app-chip-grid [items]="editStatusChips()" (chipClick)="selectEditStatus($event)"></app-chip-grid>
       </section>
 
       <section class="section">
@@ -154,7 +118,9 @@
             <div class="date-value-row">
               <span class="date-value-group">
                 <ion-icon name="calendar-outline"></ion-icon>
-                <ion-datetime-button datetime="eventDetailDateFrom"></ion-datetime-button>
+                <button type="button" class="date-picker-trigger" (click)="showDateFromPicker.set(true)">
+                  {{ editDateFromLabel() }}
+                </button>
               </span>
               <span class="date-value-group">
                 <ion-icon name="time-outline"></ion-icon>
@@ -172,7 +138,9 @@
             <div class="date-value-row">
               <span class="date-value-group">
                 <ion-icon name="calendar-outline"></ion-icon>
-                <ion-datetime-button datetime="eventDetailDateTo"></ion-datetime-button>
+                <button type="button" class="date-picker-trigger" (click)="showDateToPicker.set(true)">
+                  {{ editDateToLabel() }}
+                </button>
               </span>
               <span class="date-value-group">
                 <ion-icon name="time-outline"></ion-icon>
@@ -242,14 +210,14 @@
         }
       </section>
 
-      <div class="filter-actions-row">
-        <ion-button expand="block" fill="outline" color="medium" (click)="cancelEdit()">
+      <app-filter-actions-row>
+        <ion-button expand="block" fill="outline" color="primary" (click)="cancelEdit()">
           {{ 'eventDetail.cancelButton' | translate }}
         </ion-button>
         <ion-button expand="block" [disabled]="saving()" (click)="onSaveClick()">
           {{ (savedFlash.active() ? 'eventDetail.savedButton' : 'eventDetail.saveButton') | translate }}
         </ion-button>
-      </div>
+      </app-filter-actions-row>
     </form>
   } @else {
     <div class="event-detail-container">
@@ -323,10 +291,17 @@
       </div>
 
       @if (isOwnEvent()) {
-        <ion-button expand="block" (click)="enterEditMode()">
-          <ion-icon slot="start" name="create-outline"></ion-icon>
-          {{ 'eventDetail.editButton' | translate }}
-        </ion-button>
+        @if (event()!.status === 'finished') {
+          <ion-button expand="block" (click)="reuseEvent()">
+            <ion-icon slot="start" name="refresh-outline"></ion-icon>
+            {{ 'eventDetail.reuseButton' | translate }}
+          </ion-button>
+        } @else {
+          <ion-button expand="block" (click)="enterEditMode()">
+            <ion-icon slot="start" name="create-outline"></ion-icon>
+            {{ 'eventDetail.editButton' | translate }}
+          </ion-button>
+        }
       }
 
       <section class="section">
@@ -400,9 +375,11 @@
           <li>{{ message | translate }}</li>
         }
       </ul>
-      <ion-button expand="block" (click)="closeValidationModal()">
-        {{ 'eventDetail.validationOk' | translate }}
-      </ion-button>
+      <app-filter-actions-row>
+        <ion-button expand="block" (click)="closeValidationModal()">
+          {{ 'eventDetail.validationOk' | translate }}
+        </ion-button>
+      </app-filter-actions-row>
     </div>
   </ng-template>
 </ion-modal>
@@ -416,14 +393,14 @@
   <ng-template>
     <div class="validation-warning-sheet">
       <p class="validation-warning-intro">{{ 'eventDetail.dateInvalidMessage' | translate }}</p>
-      <div class="filter-actions-row">
-        <ion-button expand="block" fill="outline" color="medium" (click)="discardDateInvalidChanges()">
+      <app-filter-actions-row>
+        <ion-button expand="block" fill="outline" color="primary" (click)="discardDateInvalidChanges()">
           {{ 'profile.discard' | translate }}
         </ion-button>
         <ion-button expand="block" (click)="dismissDateInvalidModal()">
           {{ 'eventDetail.fixDateButton' | translate }}
         </ion-button>
-      </div>
+      </app-filter-actions-row>
     </div>
   </ng-template>
 </ion-modal>
@@ -436,12 +413,7 @@
 >
   <ng-template>
     <div class="filter-sheet">
-      <div class="filter-sheet-header">
-        <h2>{{ 'profile.addSocialLinkTitle' | translate }}</h2>
-        <button type="button" class="close-button" (click)="closeAddSocialSheet()">
-          <ion-icon name="close"></ion-icon>
-        </button>
-      </div>
+      <app-filter-sheet-header titleKey="profile.addSocialLinkTitle" (closed)="closeAddSocialSheet()"></app-filter-sheet-header>
       <div class="social-picker-list">
         @for (key of availableSocialNetworks(); track key) {
           <button type="button" class="social-picker-option" (click)="addSocialNetwork(key)">
@@ -466,19 +438,23 @@
         <h2>{{ 'profile.unsavedChangesTitle' | translate }}</h2>
       </div>
       <p>{{ 'profile.unsavedChangesMessage' | translate }}</p>
-      <div class="filter-actions-row">
+      <app-filter-actions-row>
         <ion-button expand="block" fill="outline" color="primary" (click)="confirmDiscardChanges()">
           {{ 'profile.discard' | translate }}
         </ion-button>
         <ion-button expand="block" (click)="confirmApplyChanges()">
           {{ 'profile.apply' | translate }}
         </ion-button>
-      </div>
+      </app-filter-actions-row>
     </div>
   </ng-template>
 </ion-modal>
 
-<ion-modal [keepContentsMounted]="true">
+<ion-modal
+  [keepContentsMounted]="true"
+  [isOpen]="showDateFromPicker()"
+  (didDismiss)="showDateFromPicker.set(false)"
+>
   <ng-template>
     <ion-datetime
       #eventDetailDateFromPicker
@@ -487,7 +463,7 @@
       [value]="editDateFromIso()"
       (ionChange)="onDateFromChange($event)"
     ></ion-datetime>
-    <div class="filter-actions-row calendar-picker-actions">
+    <div class="calendar-picker-actions">
       <ion-button expand="block" fill="outline" color="primary" (click)="eventDetailDateFromPicker.cancel(true)">
         {{ 'explorer.calendarExit' | translate }}
       </ion-button>
@@ -497,7 +473,11 @@
     </div>
   </ng-template>
 </ion-modal>
-<ion-modal [keepContentsMounted]="true">
+<ion-modal
+  [keepContentsMounted]="true"
+  [isOpen]="showDateToPicker()"
+  (didDismiss)="showDateToPicker.set(false)"
+>
   <ng-template>
     <ion-datetime
       #eventDetailDateToPicker
@@ -506,7 +486,7 @@
       [value]="editDateToIso()"
       (ionChange)="onDateToChange($event)"
     ></ion-datetime>
-    <div class="filter-actions-row calendar-picker-actions">
+    <div class="calendar-picker-actions">
       <ion-button expand="block" fill="outline" color="primary" (click)="eventDetailDateToPicker.cancel(true)">
         {{ 'explorer.calendarExit' | translate }}
       </ion-button>

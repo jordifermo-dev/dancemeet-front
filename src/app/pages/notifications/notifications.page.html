@@ -16,14 +16,20 @@
         [debounce]="0"
         (ionInput)="onSearchChange($event.detail.value)"
       ></ion-searchbar>
-      <button type="button" class="icon-btn" (click)="openFilterModal()">
+      <button type="button" class="icon-btn filter-all-btn" (click)="openFilterModal()">
         <ion-icon name="options-outline"></ion-icon>
       </button>
-    </div>
-
-    <div class="top-row">
-      <button type="button" class="mark-all-link" (click)="markAllRead()">
-        {{ (markAllReadFlash.active() ? 'notifications.markAllReadDone' : 'notifications.markAllRead') | translate }}
+      <button
+        type="button"
+        class="icon-btn mark-all-read-btn"
+        [disabled]="!hasUnread()"
+        [attr.aria-label]="(markAllReadFlash.active() ? 'notifications.markAllReadDone' : 'notifications.markAllRead') | translate"
+        (click)="markAllRead()"
+      >
+        <ion-icon [name]="hasUnread() ? 'mail-unread-outline' : 'mail-outline'" [class.success-pulse]="markAllReadFlash.active()"></ion-icon>
+        @if (hasUnread()) {
+          <span class="mark-all-read-badge">{{ unreadCount() > 9 ? '9+' : unreadCount() }}</span>
+        }
       </button>
     </div>
 
@@ -93,12 +99,7 @@
 >
   <ng-template>
     <div class="filter-sheet">
-      <div class="filter-sheet-header">
-        <h2>{{ 'notifications.sortLabel' | translate }}</h2>
-        <button type="button" class="close-button" (click)="isSortModalOpen.set(false)">
-          <ion-icon name="close"></ion-icon>
-        </button>
-      </div>
+      <app-filter-sheet-header titleKey="notifications.sortLabel" (closed)="isSortModalOpen.set(false)"></app-filter-sheet-header>
       <div class="sort-options-list">
         @for (option of sortOptions; track option.id) {
           <button
@@ -111,11 +112,11 @@
           </button>
         }
       </div>
-      <div class="filter-actions-row">
+      <app-filter-actions-row>
         <ion-button expand="block" fill="outline" color="primary" (click)="isSortModalOpen.set(false)">
           {{ 'common.cancel' | translate }}
         </ion-button>
-      </div>
+      </app-filter-actions-row>
     </div>
   </ng-template>
 </ion-modal>
@@ -128,62 +129,33 @@
 >
   <ng-template>
     <div class="filter-sheet">
-      <div class="filter-sheet-header">
-        <h2>{{ 'notifications.filterTitle' | translate }}</h2>
-        <button type="button" class="close-button" (click)="isFilterModalOpen.set(false)">
-          <ion-icon name="close"></ion-icon>
-        </button>
-      </div>
+      <app-filter-sheet-header titleKey="explorer.filterAllTitle" (closed)="isFilterModalOpen.set(false)"></app-filter-sheet-header>
 
-      <p class="group-label">{{ 'notifications.filterTypeLabel' | translate }}</p>
-      <div class="chip-grid">
-        @for (type of allTypes; track type) {
-          <button
-            type="button"
-            class="chip chip-with-icon"
-            [class.selected]="draftTypes().includes(type)"
-            (click)="toggleDraftType(type)"
-          >
-            <ion-icon [name]="typeIcons[type]"></ion-icon>
-            {{ typeLabelKeys[type] | translate }}
-            @if (disabledTypes().has(type)) {
-              <span class="chip-disabled-badge">{{ 'notifications.disabledBadge' | translate }}</span>
-            }
-          </button>
+      <app-filter-section titleKey="notifications.filterTypeLabel">
+        <app-chip-grid [items]="typeChipItems()" (chipClick)="toggleDraftType($event)"></app-chip-grid>
+        @if (minSelectionWarning.isActive('notificationTypes')) {
+          <p class="min-selection-warning">{{ 'explorer.minSelectionWarning' | translate }}</p>
         }
-      </div>
-      @if (minSelectionWarning.isActive('notificationTypes')) {
-        <p class="min-selection-warning">{{ 'explorer.minSelectionWarning' | translate }}</p>
-      }
-      @if (disabledTypes().size > 0) {
-        <p class="disabled-types-hint">
-          {{ 'notifications.disabledTypesHint' | translate }}
-          <a routerLink="/settings">{{ 'notifications.manageLink' | translate }}</a>
-        </p>
-      }
-
-      <p class="group-label">{{ 'notifications.filterReadLabel' | translate }}</p>
-      <div class="chip-grid">
-        @for (option of readFilterOptions; track option.id) {
-          <button
-            type="button"
-            class="chip"
-            [class.selected]="draftReadFilter() === option.id"
-            (click)="selectDraftReadFilter(option.id)"
-          >
-            {{ option.labelKey | translate }}
-          </button>
+        @if (disabledTypes().size > 0) {
+          <p class="disabled-types-hint">
+            {{ 'notifications.disabledTypesHint' | translate }}
+            <a routerLink="/settings">{{ 'notifications.manageLink' | translate }}</a>
+          </p>
         }
-      </div>
+      </app-filter-section>
 
-      <div class="filter-actions-row">
-        <ion-button expand="block" fill="outline" color="medium" (click)="clearFilters()">
+      <app-filter-section titleKey="notifications.filterReadLabel">
+        <app-chip-grid [items]="readFilterChipItems()" (chipClick)="selectDraftReadFilter($event)"></app-chip-grid>
+      </app-filter-section>
+
+      <app-filter-actions-row>
+        <ion-button expand="block" fill="outline" color="primary" (click)="clearFilters()">
           {{ 'explorer.clearFilter' | translate }}
         </ion-button>
         <ion-button expand="block" (click)="applyFilters()">
           {{ (filtersApplyFlash.active() ? 'profile.applied' : 'profile.apply') | translate }}
         </ion-button>
-      </div>
+      </app-filter-actions-row>
     </div>
   </ng-template>
 </ion-modal>

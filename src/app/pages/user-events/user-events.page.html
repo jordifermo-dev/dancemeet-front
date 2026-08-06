@@ -70,7 +70,7 @@
       </div>
     } @else {
       @for (view of cardViews(); track view.id) {
-        <app-event-card [view]="view" (attendToggle)="onAttendToggle($event)"></app-event-card>
+        <app-event-card [view]="view" origin="/user-events" (attendToggle)="onAttendToggle($event)"></app-event-card>
       }
     }
   </div>
@@ -85,12 +85,7 @@
 >
   <ng-template>
     <div class="filter-sheet">
-      <div class="filter-sheet-header">
-        <h2>{{ 'eventSort.label' | translate }}</h2>
-        <button type="button" class="close-button" (click)="isSortModalOpen.set(false)">
-          <ion-icon name="close"></ion-icon>
-        </button>
-      </div>
+      <app-filter-sheet-header titleKey="eventSort.label" (closed)="isSortModalOpen.set(false)"></app-filter-sheet-header>
       <div class="sort-options-list">
         @for (option of sortOptions; track option.id) {
           <button
@@ -103,11 +98,11 @@
           </button>
         }
       </div>
-      <div class="filter-actions-row">
+      <app-filter-actions-row>
         <ion-button expand="block" fill="outline" color="primary" (click)="isSortModalOpen.set(false)">
           {{ 'common.cancel' | translate }}
         </ion-button>
-      </div>
+      </app-filter-actions-row>
     </div>
   </ng-template>
 </ion-modal>
@@ -120,193 +115,33 @@
   (didDismiss)="isGenericFilterModalOpen.set(false)"
 >
   <ng-template>
-    <div class="filter-sheet-header generic-filter-header">
-      <h2>{{ 'explorer.filterAllTitle' | translate }}</h2>
-      <button type="button" class="close-button" (click)="isGenericFilterModalOpen.set(false)">
-        <ion-icon name="close"></ion-icon>
-      </button>
-    </div>
+    <app-filter-sheet-header
+      class="generic-filter-header"
+      titleKey="explorer.filterAllTitle"
+      (closed)="isGenericFilterModalOpen.set(false)"
+    ></app-filter-sheet-header>
     <ion-content class="generic-filter-content">
       <div class="generic-filter-body">
-        <section class="filter-section">
-          <p class="group-label">{{ 'explorer.eventTypesFilterLabel' | translate }}</p>
-          <div class="chip-grid">
-            @for (eventType of eventTypes(); track eventType.id) {
-              <button
-                type="button"
-                class="chip chip-with-icon"
-                [class.selected]="draftEventTypeIds().includes(eventType.id)"
-                (click)="toggleDraftEventType(eventType.id)"
-              >
-                <img class="chip-icon" [src]="eventTypeIconUrl(eventType.name)" [alt]="eventType.name" />
-                {{ eventType.name }}
-              </button>
-            }
-          </div>
-          @if (minSelectionWarning.isActive('eventTypes')) {
-            <p class="min-selection-warning">{{ 'explorer.minSelectionWarning' | translate }}</p>
-          }
-        </section>
-
-        <section class="filter-section">
-          <p class="group-label">{{ 'explorer.disciplinesFilterLabel' | translate }}</p>
-          <div class="chip-grid">
-            @for (discipline of disciplines(); track discipline.id) {
-              <button
-                type="button"
-                class="chip chip-with-icon"
-                [class.selected]="draftDisciplineIds().includes(discipline.id)"
-                (click)="toggleDraftDiscipline(discipline.id)"
-              >
-                <img class="chip-icon" [src]="disciplineIconUrl(discipline)" [alt]="discipline.name" />
-                {{ discipline.name }}
-              </button>
-            }
-          </div>
-          @if (minSelectionWarning.isActive('disciplines')) {
-            <p class="min-selection-warning">{{ 'explorer.minSelectionWarning' | translate }}</p>
-          }
-        </section>
-
-        <section class="filter-section">
-          <p class="group-label">{{ 'explorer.statusFilterLabel' | translate }}</p>
-          <div class="chip-grid">
-            @for (option of statusOptions; track option.id) {
-              <button
-                type="button"
-                class="chip chip-with-icon"
-                [class.selected]="draftStatuses().includes(option.id)"
-                (click)="toggleDraftStatus(option.id)"
-              >
-                <img class="chip-icon" [src]="statusIconUrl(option.id)" [alt]="option.labelKey | translate" />
-                {{ option.labelKey | translate }}
-              </button>
-            }
-          </div>
-          @if (minSelectionWarning.isActive('statuses')) {
-            <p class="min-selection-warning">{{ 'explorer.minSelectionWarning' | translate }}</p>
-          }
-        </section>
-
-        <section class="filter-section">
-          <p class="group-label">{{ 'explorer.dateFilterLabel' | translate }}</p>
-          <div class="chip-grid">
-            <button
-              type="button"
-              class="chip"
-              [class.selected]="draftActiveQuickDate() === 'today'"
-              (click)="setDraftQuickDate('today')"
-            >
-              {{ 'explorer.today' | translate }}
-            </button>
-            <button
-              type="button"
-              class="chip"
-              [class.selected]="draftActiveQuickDate() === 'week'"
-              (click)="setDraftQuickDate('week')"
-            >
-              {{ 'explorer.thisWeek' | translate }}
-            </button>
-            <button
-              type="button"
-              class="chip"
-              [class.selected]="draftActiveQuickDate() === 'month'"
-              (click)="setDraftQuickDate('month')"
-            >
-              {{ 'explorer.thisMonth' | translate }}
-            </button>
-            <button
-              type="button"
-              class="chip"
-              [class.selected]="draftActiveQuickDate() === 'weekend'"
-              (click)="setDraftQuickDate('weekend')"
-            >
-              {{ 'explorer.thisWeekend' | translate }}
-            </button>
-            <button
-              type="button"
-              class="chip"
-              [class.selected]="draftActiveQuickDate() === 'next30days'"
-              (click)="setDraftQuickDate('next30days')"
-            >
-              {{ 'explorer.next30Days' | translate }}
-            </button>
-          </div>
-          <div class="date-range-row">
-            <div class="date-field">
-              <span class="date-field-label">{{ 'explorer.dateFrom' | translate }}</span>
-              <div class="date-value-row">
-                <ion-icon name="calendar-outline"></ion-icon>
-                <ion-datetime-button datetime="userEventsDateFrom"></ion-datetime-button>
-              </div>
-            </div>
-            <div class="date-field">
-              <span class="date-field-label">{{ 'explorer.dateTo' | translate }}</span>
-              <div class="date-value-row">
-                <ion-icon name="calendar-outline"></ion-icon>
-                <ion-datetime-button datetime="userEventsDateTo">
-                  @if (draftDateTo() === undefined) {
-                    <span slot="date-target">{{ 'explorer.noEndDate' | translate }}</span>
-                  }
-                </ion-datetime-button>
-              </div>
-              @if (draftDateTo() !== undefined) {
-                <button type="button" class="date-clear-link" (click)="clearDraftDateTo()">
-                  {{ 'explorer.noEndDate' | translate }}
-                </button>
-              }
-            </div>
-          </div>
-        </section>
-
-        <section class="filter-section">
-          <p class="group-label">{{ 'explorer.priceFilterLabel' | translate }}</p>
-          <div class="chip-grid">
-            @for (option of priceOptions; track option.id) {
-              <button
-                type="button"
-                class="chip"
-                [class.selected]="draftPriceOptions().includes(option.id)"
-                (click)="toggleDraftPriceOption(option.id)"
-              >
-                {{ option.labelKey | translate }}
-              </button>
-            }
-          </div>
-          @if (minSelectionWarning.isActive('priceOptions')) {
-            <p class="min-selection-warning">{{ 'explorer.minSelectionWarning' | translate }}</p>
-          }
-        </section>
-
-        <section class="filter-section">
-          <p class="group-label">{{ 'favorites.relationFilterLabel' | translate }}</p>
-          <div class="chip-grid">
-            @for (option of relationOptions; track option.id) {
-              <button
-                type="button"
-                class="chip"
-                [class.selected]="draftRelation().includes(option.id)"
-                (click)="toggleDraftRelation(option.id)"
-              >
-                {{ option.labelKey | translate }}
-              </button>
-            }
-          </div>
-          @if (minSelectionWarning.isActive('relation')) {
-            <p class="min-selection-warning">{{ 'explorer.minSelectionWarning' | translate }}</p>
-          }
-        </section>
+        <app-filter-all
+          [showRelation]="true"
+          [eventTypeChips]="eventTypeChips()"
+          [disciplineChips]="disciplineChips()"
+          [statusChips]="statusChips()"
+          [priceChips]="priceChips()"
+          [quickDateChips]="quickDateChips()"
+          [relationChips]="relationChips()"
+          dateFromId="userEventsDateFrom"
+          dateToId="userEventsDateTo"
+          [dateFromIsUnset]="draftDateFrom() === undefined"
+          [dateToIsUnset]="draftDateTo() === undefined"
+          [applied]="genericApplyFlash.active()"
+          (chipToggle)="onGenericFilterChipToggle($event)"
+          (clearDateTo)="clearDraftDateTo()"
+          (reset)="clearGenericFilter()"
+          (apply)="applyGenericFilter()"
+        ></app-filter-all>
       </div>
     </ion-content>
-
-    <div class="filter-actions-row generic-filter-actions">
-      <ion-button expand="block" fill="outline" color="primary" (click)="clearGenericFilter()">
-        {{ 'explorer.resetFilters' | translate }}
-      </ion-button>
-      <ion-button expand="block" (click)="applyGenericFilter()">
-        {{ (genericApplyFlash.active() ? 'profile.applied' : 'profile.apply') | translate }}
-      </ion-button>
-    </div>
   </ng-template>
 </ion-modal>
 
@@ -319,12 +154,10 @@
 >
   <ng-template>
     <div class="filter-sheet">
-      <div class="filter-sheet-header">
-        <h2>{{ 'explorer.locationModalTitle' | translate }}</h2>
-        <button type="button" class="close-button" (click)="isLocationModalOpen.set(false)">
-          <ion-icon name="close"></ion-icon>
-        </button>
-      </div>
+      <app-filter-sheet-header
+        titleKey="explorer.locationModalTitle"
+        (closed)="isLocationModalOpen.set(false)"
+      ></app-filter-sheet-header>
 
       <ion-searchbar
         class="tgtg-searchbar"
@@ -353,14 +186,14 @@
       <p class="range-label">{{ 'register.distanceLabel' | translate: { km: draftDistanceRange() } }}</p>
       <ion-range [min]="1" [max]="150" [value]="draftDistanceRange()" (ionChange)="onDistanceChange($event)"></ion-range>
 
-      <div class="filter-actions-row">
+      <app-filter-actions-row>
         <ion-button expand="block" fill="outline" color="primary" (click)="clearLocationFilter()">
           {{ 'explorer.resetFilters' | translate }}
         </ion-button>
         <ion-button expand="block" (click)="applyLocationFilter()">
           {{ (locationApplyFlash.active() ? 'profile.applied' : 'profile.apply') | translate }}
         </ion-button>
-      </div>
+      </app-filter-actions-row>
     </div>
   </ng-template>
 </ion-modal>
@@ -374,36 +207,22 @@
 >
   <ng-template>
     <div class="filter-sheet">
-      <div class="filter-sheet-header">
-        <h2>{{ 'explorer.eventTypesFilterLabel' | translate }}</h2>
-        <button type="button" class="close-button" (click)="isEventTypeModalOpen.set(false)">
-          <ion-icon name="close"></ion-icon>
-        </button>
-      </div>
-      <div class="chip-grid">
-        @for (eventType of eventTypes(); track eventType.id) {
-          <button
-            type="button"
-            class="chip chip-with-icon"
-            [class.selected]="draftEventTypeIds().includes(eventType.id)"
-            (click)="toggleDraftEventType(eventType.id)"
-          >
-            <img class="chip-icon" [src]="eventTypeIconUrl(eventType.name)" [alt]="eventType.name" />
-            {{ eventType.name }}
-          </button>
-        }
-      </div>
+      <app-filter-sheet-header
+        titleKey="explorer.eventTypesFilterLabel"
+        (closed)="isEventTypeModalOpen.set(false)"
+      ></app-filter-sheet-header>
+      <app-chip-grid [items]="eventTypeChips()" (chipClick)="toggleDraftEventType($event)"></app-chip-grid>
       @if (minSelectionWarning.isActive('eventTypes')) {
         <p class="min-selection-warning">{{ 'explorer.minSelectionWarning' | translate }}</p>
       }
-      <div class="filter-actions-row">
+      <app-filter-actions-row>
         <ion-button expand="block" fill="outline" color="primary" (click)="clearEventTypeFilter()">
           {{ 'explorer.resetFilters' | translate }}
         </ion-button>
         <ion-button expand="block" (click)="applyEventTypeFilter()">
           {{ (eventTypeApplyFlash.active() ? 'profile.applied' : 'profile.apply') | translate }}
         </ion-button>
-      </div>
+      </app-filter-actions-row>
     </div>
   </ng-template>
 </ion-modal>
@@ -417,36 +236,22 @@
 >
   <ng-template>
     <div class="filter-sheet">
-      <div class="filter-sheet-header">
-        <h2>{{ 'explorer.disciplinesFilterLabel' | translate }}</h2>
-        <button type="button" class="close-button" (click)="isDisciplineModalOpen.set(false)">
-          <ion-icon name="close"></ion-icon>
-        </button>
-      </div>
-      <div class="chip-grid">
-        @for (discipline of disciplines(); track discipline.id) {
-          <button
-            type="button"
-            class="chip chip-with-icon"
-            [class.selected]="draftDisciplineIds().includes(discipline.id)"
-            (click)="toggleDraftDiscipline(discipline.id)"
-          >
-            <img class="chip-icon" [src]="disciplineIconUrl(discipline)" [alt]="discipline.name" />
-            {{ discipline.name }}
-          </button>
-        }
-      </div>
+      <app-filter-sheet-header
+        titleKey="explorer.disciplinesFilterLabel"
+        (closed)="isDisciplineModalOpen.set(false)"
+      ></app-filter-sheet-header>
+      <app-chip-grid [items]="disciplineChips()" (chipClick)="toggleDraftDiscipline($event)"></app-chip-grid>
       @if (minSelectionWarning.isActive('disciplines')) {
         <p class="min-selection-warning">{{ 'explorer.minSelectionWarning' | translate }}</p>
       }
-      <div class="filter-actions-row">
+      <app-filter-actions-row>
         <ion-button expand="block" fill="outline" color="primary" (click)="clearDisciplineFilter()">
           {{ 'explorer.resetFilters' | translate }}
         </ion-button>
         <ion-button expand="block" (click)="applyDisciplineFilter()">
           {{ (disciplineApplyFlash.active() ? 'profile.applied' : 'profile.apply') | translate }}
         </ion-button>
-      </div>
+      </app-filter-actions-row>
     </div>
   </ng-template>
 </ion-modal>
@@ -460,36 +265,22 @@
 >
   <ng-template>
     <div class="filter-sheet">
-      <div class="filter-sheet-header">
-        <h2>{{ 'explorer.statusFilterLabel' | translate }}</h2>
-        <button type="button" class="close-button" (click)="isStatusModalOpen.set(false)">
-          <ion-icon name="close"></ion-icon>
-        </button>
-      </div>
-      <div class="chip-grid">
-        @for (option of statusOptions; track option.id) {
-          <button
-            type="button"
-            class="chip chip-with-icon"
-            [class.selected]="draftStatuses().includes(option.id)"
-            (click)="toggleDraftStatus(option.id)"
-          >
-            <img class="chip-icon" [src]="statusIconUrl(option.id)" [alt]="option.labelKey | translate" />
-            {{ option.labelKey | translate }}
-          </button>
-        }
-      </div>
+      <app-filter-sheet-header
+        titleKey="explorer.statusFilterLabel"
+        (closed)="isStatusModalOpen.set(false)"
+      ></app-filter-sheet-header>
+      <app-chip-grid [items]="statusChips()" (chipClick)="toggleDraftStatus($event)"></app-chip-grid>
       @if (minSelectionWarning.isActive('statuses')) {
         <p class="min-selection-warning">{{ 'explorer.minSelectionWarning' | translate }}</p>
       }
-      <div class="filter-actions-row">
+      <app-filter-actions-row>
         <ion-button expand="block" fill="outline" color="primary" (click)="clearStatusFilter()">
           {{ 'explorer.resetFilters' | translate }}
         </ion-button>
         <ion-button expand="block" (click)="applyStatusFilter()">
           {{ (statusApplyFlash.active() ? 'profile.applied' : 'profile.apply') | translate }}
         </ion-button>
-      </div>
+      </app-filter-actions-row>
     </div>
   </ng-template>
 </ion-modal>
@@ -503,35 +294,22 @@
 >
   <ng-template>
     <div class="filter-sheet">
-      <div class="filter-sheet-header">
-        <h2>{{ 'favorites.relationFilterLabel' | translate }}</h2>
-        <button type="button" class="close-button" (click)="isRelationModalOpen.set(false)">
-          <ion-icon name="close"></ion-icon>
-        </button>
-      </div>
-      <div class="chip-grid">
-        @for (option of relationOptions; track option.id) {
-          <button
-            type="button"
-            class="chip"
-            [class.selected]="draftRelation().includes(option.id)"
-            (click)="toggleDraftRelation(option.id)"
-          >
-            {{ option.labelKey | translate }}
-          </button>
-        }
-      </div>
+      <app-filter-sheet-header
+        titleKey="favorites.relationFilterLabel"
+        (closed)="isRelationModalOpen.set(false)"
+      ></app-filter-sheet-header>
+      <app-chip-grid [items]="relationChips()" (chipClick)="toggleDraftRelation($event)"></app-chip-grid>
       @if (minSelectionWarning.isActive('relation')) {
         <p class="min-selection-warning">{{ 'explorer.minSelectionWarning' | translate }}</p>
       }
-      <div class="filter-actions-row">
+      <app-filter-actions-row>
         <ion-button expand="block" fill="outline" color="primary" (click)="clearRelationFilter()">
           {{ 'explorer.resetFilters' | translate }}
         </ion-button>
         <ion-button expand="block" (click)="applyRelationFilter()">
           {{ (relationApplyFlash.active() ? 'profile.applied' : 'profile.apply') | translate }}
         </ion-button>
-      </div>
+      </app-filter-actions-row>
     </div>
   </ng-template>
 </ion-modal>
@@ -545,35 +323,22 @@
 >
   <ng-template>
     <div class="filter-sheet">
-      <div class="filter-sheet-header">
-        <h2>{{ 'explorer.priceFilterLabel' | translate }}</h2>
-        <button type="button" class="close-button" (click)="isPriceModalOpen.set(false)">
-          <ion-icon name="close"></ion-icon>
-        </button>
-      </div>
-      <div class="chip-grid">
-        @for (option of priceOptions; track option.id) {
-          <button
-            type="button"
-            class="chip"
-            [class.selected]="draftPriceOptions().includes(option.id)"
-            (click)="toggleDraftPriceOption(option.id)"
-          >
-            {{ option.labelKey | translate }}
-          </button>
-        }
-      </div>
+      <app-filter-sheet-header
+        titleKey="explorer.priceFilterLabel"
+        (closed)="isPriceModalOpen.set(false)"
+      ></app-filter-sheet-header>
+      <app-chip-grid [items]="priceChips()" (chipClick)="toggleDraftPriceOption($event)"></app-chip-grid>
       @if (minSelectionWarning.isActive('priceOptions')) {
         <p class="min-selection-warning">{{ 'explorer.minSelectionWarning' | translate }}</p>
       }
-      <div class="filter-actions-row">
+      <app-filter-actions-row>
         <ion-button expand="block" fill="outline" color="primary" (click)="clearPriceFilter()">
           {{ 'explorer.resetFilters' | translate }}
         </ion-button>
         <ion-button expand="block" (click)="applyPriceFilter()">
           {{ (priceApplyFlash.active() ? 'profile.applied' : 'profile.apply') | translate }}
         </ion-button>
-      </div>
+      </app-filter-actions-row>
     </div>
   </ng-template>
 </ion-modal>
@@ -587,61 +352,22 @@
 >
   <ng-template>
     <div class="filter-sheet">
-      <div class="filter-sheet-header">
-        <h2>{{ 'explorer.dateFilterLabel' | translate }}</h2>
-        <button type="button" class="close-button" (click)="isDateModalOpen.set(false)">
-          <ion-icon name="close"></ion-icon>
-        </button>
-      </div>
-      <div class="chip-grid">
-        <button
-          type="button"
-          class="chip"
-          [class.selected]="draftActiveQuickDate() === 'today'"
-          (click)="setDraftQuickDate('today')"
-        >
-          {{ 'explorer.today' | translate }}
-        </button>
-        <button
-          type="button"
-          class="chip"
-          [class.selected]="draftActiveQuickDate() === 'week'"
-          (click)="setDraftQuickDate('week')"
-        >
-          {{ 'explorer.thisWeek' | translate }}
-        </button>
-        <button
-          type="button"
-          class="chip"
-          [class.selected]="draftActiveQuickDate() === 'month'"
-          (click)="setDraftQuickDate('month')"
-        >
-          {{ 'explorer.thisMonth' | translate }}
-        </button>
-        <button
-          type="button"
-          class="chip"
-          [class.selected]="draftActiveQuickDate() === 'weekend'"
-          (click)="setDraftQuickDate('weekend')"
-        >
-          {{ 'explorer.thisWeekend' | translate }}
-        </button>
-        <button
-          type="button"
-          class="chip"
-          [class.selected]="draftActiveQuickDate() === 'next30days'"
-          (click)="setDraftQuickDate('next30days')"
-        >
-          {{ 'explorer.next30Days' | translate }}
-        </button>
-      </div>
+      <app-filter-sheet-header
+        titleKey="explorer.dateFilterLabel"
+        (closed)="isDateModalOpen.set(false)"
+      ></app-filter-sheet-header>
+      <app-chip-grid [items]="quickDateChips()" (chipClick)="setDraftQuickDate($event)"></app-chip-grid>
 
       <div class="date-range-row">
         <div class="date-field">
           <span class="date-field-label">{{ 'explorer.dateFrom' | translate }}</span>
           <div class="date-value-row">
             <ion-icon name="calendar-outline"></ion-icon>
-            <ion-datetime-button datetime="userEventsDateFrom"></ion-datetime-button>
+            <ion-datetime-button datetime="userEventsDateFrom">
+              @if (draftDateFrom() === undefined) {
+                <span slot="date-target">{{ 'explorer.noEndDate' | translate }}</span>
+              }
+            </ion-datetime-button>
           </div>
         </div>
         <div class="date-field">
@@ -662,14 +388,14 @@
         </div>
       </div>
 
-      <div class="filter-actions-row">
+      <app-filter-actions-row>
         <ion-button expand="block" fill="outline" color="primary" (click)="clearDateFilter()">
           {{ 'explorer.resetFilters' | translate }}
         </ion-button>
         <ion-button expand="block" (click)="applyDateFilter()">
           {{ (dateApplyFlash.active() ? 'profile.applied' : 'profile.apply') | translate }}
         </ion-button>
-      </div>
+      </app-filter-actions-row>
     </div>
   </ng-template>
 </ion-modal>
@@ -683,7 +409,7 @@
       [value]="draftDateFromIso()"
       (ionChange)="onDraftDateFromChange($event)"
     ></ion-datetime>
-    <div class="filter-actions-row calendar-picker-actions">
+    <div class="calendar-picker-actions">
       <ion-button expand="block" fill="outline" color="primary" (click)="userEventsDateFromPicker.cancel(true)">
         {{ 'explorer.calendarExit' | translate }}
       </ion-button>
@@ -702,7 +428,7 @@
       [value]="draftDateToIso()"
       (ionChange)="onDraftDateToChange($event)"
     ></ion-datetime>
-    <div class="filter-actions-row calendar-picker-actions">
+    <div class="calendar-picker-actions">
       <ion-button expand="block" fill="outline" color="primary" (click)="userEventsDateToPicker.cancel(true)">
         {{ 'explorer.calendarExit' | translate }}
       </ion-button>

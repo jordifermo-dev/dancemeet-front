@@ -23,7 +23,7 @@
 // Matches the notification bell next to it and the rest of the app's header
 // icons (app-text-strong) instead of ion-button's default primary color.
 .settings-button {
-  --color: var(--app-text-strong);
+  --color: var(--ion-color-primary);
 }
 
 .section {
@@ -150,11 +150,7 @@
 
 .visibility-icon {
   font-size: 1.15rem;
-  color: var(--ion-color-medium);
-
-  &.active {
-    color: var(--ion-color-primary);
-  }
+  color: var(--ion-color-primary);
 }
 
 .stats-row {
@@ -185,7 +181,7 @@
 
 .group-label {
   margin: 28px 0 8px;
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   font-weight: 600;
   color: var(--ion-color-medium);
 
@@ -194,51 +190,10 @@
   }
 }
 
-.chip-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
 .min-selection-warning {
   margin: 8px 0 0;
   font-size: 0.8rem;
   color: var(--ion-color-danger);
-}
-
-.chip {
-  appearance: none;
-  border: 1.5px solid var(--ion-color-light-shade);
-  border-radius: 999px;
-  padding: 6px 12px;
-  font-size: 0.7rem;
-  font-weight: 600;
-  background: var(--app-surface-card);
-  color: var(--app-text-strong);
-  cursor: pointer;
-  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
-
-  &.selected {
-    border-color: var(--ion-color-primary);
-    background: rgba(var(--ion-color-primary-rgb), 0.08);
-    color: var(--ion-color-primary);
-  }
-}
-
-.chip-with-icon {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding-left: 4px;
-}
-
-.chip-icon {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  object-fit: cover;
-  flex: 0 0 auto;
-  background: var(--app-surface-card);
 }
 
 .map-preview {
@@ -343,7 +298,7 @@
   appearance: none;
   border: none;
   background: transparent;
-  color: var(--app-text-strong);
+  color: var(--ion-color-primary);
   padding: 0;
   display: flex;
   align-items: center;
@@ -450,13 +405,14 @@
   padding: 0;
 }
 
-.filter-actions-row {
+.account-actions-row {
   display: flex;
   gap: 10px;
 
   ion-button {
     flex: 1;
     --box-shadow: none;
+    font-size: 0.85rem;
   }
 }
 
@@ -483,21 +439,3 @@
   }
 }
 
-.close-button {
-  appearance: none;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  border: none;
-  background: var(--ion-color-light-shade);
-  color: var(--app-text-strong);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  flex: 0 0 auto;
-
-  ion-icon {
-    font-size: 1.2rem;
-  }
-}

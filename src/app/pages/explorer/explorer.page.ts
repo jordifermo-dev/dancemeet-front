@@ -21,23 +21,33 @@ import { addIcons } from 'ionicons';
 import {
   optionsOutline,
   navigateOutline,
-  close,
   addOutline,
   removeOutline,
   calendarOutline,
+  addCircleOutline,
 } from 'ionicons/icons';
 import { DisciplineService } from '../../services/discipline.service';
 import { EventTypeService } from '../../services/event-type.service';
 import { EventService } from '../../services/event.service';
 import { GoogleMapsLoaderService } from '../../shared/google-maps-loader.service';
 import { Discipline, DISCIPLINE_NAMES, EventType, EVENT_TYPE_NAMES, EventStatus, EVENT_STATUSES, PriceOption, Event as DanceEvent } from '../../models';
-import { disciplineIconUrl, eventTypeIconUrl, statusIconUrl, sortByNameOrder, STATUS_LABEL_KEYS } from '../../shared/icon-catalog';
+import { disciplineIconUrl, sortByNameOrder, STATUS_LABEL_KEYS } from '../../shared/icon-catalog';
 import { LocationFilterButtonComponent } from '../../shared/location-filter-button/location-filter-button.component';
 import { NotificationBellComponent } from '../../shared/notification-bell/notification-bell.component';
+import { FilterSheetHeaderComponent } from '../../shared/filter-sheet-header/filter-sheet-header.component';
+import { FilterActionsRowComponent } from '../../shared/filter-actions-row/filter-actions-row.component';
+import { ChipGridComponent } from '../../shared/chip-grid/chip-grid.component';
+import {
+  disciplineChipItems,
+  eventTypeChipItems,
+  priceChipItems,
+  quickDateChipItems,
+  statusChipItems,
+} from '../../shared/chip-grid/chip-grid-presets';
 import { NIGHT_MAP_STYLES } from '../../shared/maps';
 import { createApplyFlash } from '../../shared/success-flash';
 import { ThemeService } from '../../services/theme.service';
-import { ExplorerFiltersService } from './explorer-filters.service';
+import { ExplorerFiltersService, DateQuickOption } from './explorer-filters.service';
 
 const STATUS_OPTIONS = EVENT_STATUSES.map((id) => ({ id, labelKey: STATUS_LABEL_KEYS[id] }));
 const PRICE_OPTIONS: { id: PriceOption; labelKey: string }[] = [
@@ -104,6 +114,9 @@ function buildDisciplineMarkerIcon(disciplines: Discipline[]): { url: string; si
     TranslatePipe,
     LocationFilterButtonComponent,
     NotificationBellComponent,
+    FilterSheetHeaderComponent,
+    FilterActionsRowComponent,
+    ChipGridComponent,
   ],
 })
 export class ExplorerPage implements OnInit, ViewWillEnter {
@@ -194,18 +207,20 @@ export class ExplorerPage implements OnInit, ViewWillEnter {
   readonly isPriceModalOpen = signal(false);
   readonly isDateModalOpen = signal(false);
 
-  readonly disciplineIconUrl = disciplineIconUrl;
-  readonly eventTypeIconUrl = eventTypeIconUrl;
-  readonly statusIconUrl = statusIconUrl;
+  readonly eventTypeChips = computed(() => eventTypeChipItems(this.eventTypes(), this.filters.draftEventTypeIds()));
+  readonly disciplineChips = computed(() => disciplineChipItems(this.disciplines(), this.filters.draftDisciplineIds()));
+  readonly statusChips = computed(() => statusChipItems(this.statusOptions, this.filters.draftStatuses()));
+  readonly priceChips = computed(() => priceChipItems(this.priceOptions, this.filters.draftPriceOptions()));
+  readonly quickDateChips = computed(() => quickDateChipItems(this.filters.draftActiveQuickDate()));
 
   constructor() {
     addIcons({
       optionsOutline,
       navigateOutline,
-      close,
       addOutline,
       removeOutline,
       calendarOutline,
+      addCircleOutline,
     });
 
     // Re-run the search whenever any applied filter, the location, the radius
@@ -287,11 +302,15 @@ export class ExplorerPage implements OnInit, ViewWillEnter {
   }
 
   goToEvent(eventId: string): void {
-    this.router.navigate(['/events', eventId]);
+    this.router.navigate(['/events', eventId], { queryParams: { origin: '/tabs/explorer' } });
   }
 
   goToFullFilters(): void {
     this.router.navigateByUrl('/explorer-filters');
+  }
+
+  goToCreateEvent(): void {
+    this.router.navigate(['/events/new'], { queryParams: { origin: '/tabs/explorer' } });
   }
 
   /** The floating "locate me" button on the map - an instant recenter, not
@@ -350,12 +369,16 @@ export class ExplorerPage implements OnInit, ViewWillEnter {
     this.filters.toggleDraftDisciplineId(id);
   }
 
-  toggleDraftStatus(id: EventStatus): void {
-    this.filters.toggleDraftStatusId(id);
+  toggleDraftStatus(id: string): void {
+    this.filters.toggleDraftStatusId(id as EventStatus);
   }
 
-  toggleDraftPriceOption(id: PriceOption): void {
-    this.filters.toggleDraftPriceOption(id);
+  toggleDraftPriceOption(id: string): void {
+    this.filters.toggleDraftPriceOption(id as PriceOption);
+  }
+
+  setDraftQuickDate(id: string): void {
+    this.filters.setDraftQuickDate(id as DateQuickOption);
   }
 
   onDraftDateFromChange(event: Event): void {

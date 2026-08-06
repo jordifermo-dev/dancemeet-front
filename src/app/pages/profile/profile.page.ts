@@ -30,7 +30,6 @@ import {
   settingsOutline,
   eyeOutline,
   eyeOffOutline,
-  close,
   trashOutline,
   addCircleOutline,
 } from 'ionicons/icons';
@@ -51,21 +50,25 @@ import {
   EVENT_TYPE_NAMES,
   EventStatus,
   EVENT_STATUSES,
+  PriceOption,
+  RelationOption,
   UpdateUserPayload,
   User,
 } from '../../models';
-import {
-  DISCIPLINE_ICON_FILES,
-  eventTypeIconUrl,
-  SocialIconKey,
-  socialIconUrl,
-  sortByNameOrder,
-  statusIconUrl,
-  STATUS_LABEL_KEYS,
-} from '../../shared/icon-catalog';
+import { DISCIPLINE_ICON_FILES, SocialIconKey, socialIconUrl, sortByNameOrder, STATUS_LABEL_KEYS } from '../../shared/icon-catalog';
 import { MapType, mapEmbedUrl as buildMapEmbedUrl } from '../../shared/maps';
 import { PhotoEditorComponent } from '../../shared/photo-editor/photo-editor.component';
 import { NotificationBellComponent } from '../../shared/notification-bell/notification-bell.component';
+import { FilterSheetHeaderComponent } from '../../shared/filter-sheet-header/filter-sheet-header.component';
+import { FilterActionsRowComponent } from '../../shared/filter-actions-row/filter-actions-row.component';
+import { ChipGridComponent, ChipGridItem } from '../../shared/chip-grid/chip-grid.component';
+import {
+  disciplineChipItems,
+  eventTypeChipItems,
+  optionChipItems,
+  priceChipItems,
+  statusChipItems,
+} from '../../shared/chip-grid/chip-grid-presets';
 import { SOCIAL_URL_PATTERNS } from '../../shared/social-link-patterns';
 import { createSuccessFlash } from '../../shared/success-flash';
 import {
@@ -93,6 +96,16 @@ const FALLBACK_EVENT_TYPES: EventType[] = EVENT_TYPE_NAMES.map((name) => ({
 }));
 
 const STATUS_OPTIONS = EVENT_STATUSES.map((id) => ({ id, labelKey: STATUS_LABEL_KEYS[id] }));
+
+const PRICE_OPTIONS: { id: PriceOption; labelKey: string }[] = [
+  { id: 'free', labelKey: 'explorer.priceFreeOption' },
+  { id: 'paid', labelKey: 'explorer.pricePaidOption' },
+];
+
+const RELATION_OPTIONS: { id: RelationOption; labelKey: string }[] = [
+  { id: 'attendee', labelKey: 'favorites.relationAttendee' },
+  { id: 'organizer', labelKey: 'favorites.relationOrganizer' },
+];
 
 // Shown in each language's own native form (as in Google Translate's picker), not translated.
 const LANGUAGE_NATIVE_NAMES: Record<AppLanguage, string> = {
@@ -128,6 +141,9 @@ const LANGUAGE_OPTIONS = SUPPORTED_LANGUAGES.map((code) => ({
     TranslatePipe,
     PhotoEditorComponent,
     NotificationBellComponent,
+    FilterSheetHeaderComponent,
+    FilterActionsRowComponent,
+    ChipGridComponent,
   ],
 })
 export class ProfilePage implements OnInit, ViewWillEnter, ComponentWithUnsavedChanges {
@@ -199,6 +215,25 @@ export class ProfilePage implements OnInit, ViewWillEnter, ComponentWithUnsavedC
   readonly statusOptions = STATUS_OPTIONS;
   readonly selectedStatusIds = signal<string[]>([]);
 
+  readonly priceOptions = PRICE_OPTIONS;
+  readonly selectedPriceOptions = signal<PriceOption[]>([]);
+
+  readonly relationOptions = RELATION_OPTIONS;
+  readonly selectedRelationTypes = signal<RelationOption[]>([]);
+
+  readonly eventTypeChips = computed(() => eventTypeChipItems(this.eventTypes(), this.selectedEventTypeIds()));
+  readonly disciplineChips = computed(() => disciplineChipItems(this.disciplines(), this.selectedDisciplineIds()));
+  readonly statusChips = computed(() => statusChipItems(this.statusOptions, this.selectedStatusIds() as EventStatus[]));
+  readonly priceChips = computed(() => priceChipItems(this.priceOptions, this.selectedPriceOptions()));
+  readonly relationChips = computed(() => optionChipItems(this.relationOptions, this.selectedRelationTypes()));
+  readonly languageChips = computed<ChipGridItem[]>(() =>
+    this.languageOptions.map((lang) => ({
+      id: lang.code,
+      label: lang.label,
+      selected: this.draftLanguage() === lang.code,
+    })),
+  );
+
   readonly showEmail = signal(false);
   readonly showPhone = signal(false);
   readonly showLocation = signal(false);
@@ -230,7 +265,6 @@ export class ProfilePage implements OnInit, ViewWillEnter, ComponentWithUnsavedC
       settingsOutline,
       eyeOutline,
       eyeOffOutline,
-      close,
       trashOutline,
       addCircleOutline,
     });
@@ -272,14 +306,6 @@ export class ProfilePage implements OnInit, ViewWillEnter, ComponentWithUnsavedC
         }
       },
     });
-  }
-
-  eventTypeIconUrl(name: string): string {
-    return eventTypeIconUrl(name);
-  }
-
-  statusIconUrl(id: EventStatus): string {
-    return statusIconUrl(id);
   }
 
   contactIconUrl(name: SocialIconKey): string {
@@ -338,6 +364,8 @@ export class ProfilePage implements OnInit, ViewWillEnter, ComponentWithUnsavedC
     this.selectedDisciplineIds.set([...(user.disciplineIds ?? [])]);
     this.selectedEventTypeIds.set([...(user.eventTypeIds ?? [])]);
     this.selectedStatusIds.set([...(user.statusIds ?? [])]);
+    this.selectedPriceOptions.set([...(user.priceOptions ?? [])]);
+    this.selectedRelationTypes.set([...(user.relationTypes ?? [])]);
     this.activeSocialNetworks.set(ALL_SOCIAL_NETWORKS.filter((key) => !!user.socialLinks?.[key]));
     this.showEmail.set(user.showEmail ?? false);
     this.showPhone.set(user.showPhone ?? false);
@@ -370,6 +398,8 @@ export class ProfilePage implements OnInit, ViewWillEnter, ComponentWithUnsavedC
     this.selectedDisciplineIds.set([]);
     this.selectedEventTypeIds.set([]);
     this.selectedStatusIds.set([]);
+    this.selectedPriceOptions.set([]);
+    this.selectedRelationTypes.set([]);
     this.activeSocialNetworks.set([]);
     this.showEmail.set(false);
     this.showPhone.set(false);
@@ -395,6 +425,8 @@ export class ProfilePage implements OnInit, ViewWillEnter, ComponentWithUnsavedC
       disciplineIds: [...this.selectedDisciplineIds()].sort(),
       eventTypeIds: [...this.selectedEventTypeIds()].sort(),
       statusIds: [...this.selectedStatusIds()].sort(),
+      priceOptions: [...this.selectedPriceOptions()].sort(),
+      relationTypes: [...this.selectedRelationTypes()].sort(),
       activeSocialNetworks: [...this.activeSocialNetworks()].sort(),
       language: this.draftLanguage(),
       showEmail: this.showEmail(),
@@ -480,6 +512,20 @@ export class ProfilePage implements OnInit, ViewWillEnter, ComponentWithUnsavedC
     );
   }
 
+  togglePriceOption(id: string): void {
+    const price = id as PriceOption;
+    this.selectedPriceOptions.update((ids) =>
+      toggleWithMinimum(ids, price, () => this.minSelectionWarning.flash('priceOptions')),
+    );
+  }
+
+  toggleRelation(id: string): void {
+    const relation = id as RelationOption;
+    this.selectedRelationTypes.update((ids) =>
+      toggleWithMinimum(ids, relation, () => this.minSelectionWarning.flash('relation')),
+    );
+  }
+
   /** Same reasoning as Explorer's clearDisciplines()/clearEventTypes(): an
    * empty selection means "match nothing" everywhere search is built from
    * these, so "Borrar filtros" selects everything instead of nothing. */
@@ -487,6 +533,8 @@ export class ProfilePage implements OnInit, ViewWillEnter, ComponentWithUnsavedC
     this.selectedDisciplineIds.set(this.disciplines().map((d) => d.id));
     this.selectedEventTypeIds.set(this.eventTypes().map((e) => e.id));
     this.selectedStatusIds.set([...EVENT_STATUSES]);
+    this.selectedPriceOptions.set(this.priceOptions.map((option) => option.id));
+    this.selectedRelationTypes.set(this.relationOptions.map((option) => option.id));
   }
 
   onDistanceChange(event: Event): void {
@@ -574,10 +622,10 @@ export class ProfilePage implements OnInit, ViewWillEnter, ComponentWithUnsavedC
     });
   }
 
-  setLanguage(lang: AppLanguage): void {
+  setLanguage(lang: string): void {
     // Only a draft choice until Aplicar is pressed - the app's active
     // language only switches once the change is actually persisted below.
-    this.draftLanguage.set(lang);
+    this.draftLanguage.set(lang as AppLanguage);
   }
 
   async save(): Promise<void> {
@@ -600,6 +648,8 @@ export class ProfilePage implements OnInit, ViewWillEnter, ComponentWithUnsavedC
       disciplineIds: this.selectedDisciplineIds(),
       eventTypeIds: this.selectedEventTypeIds(),
       statusIds: this.selectedStatusIds(),
+      priceOptions: this.selectedPriceOptions(),
+      relationTypes: this.selectedRelationTypes(),
       language: this.draftLanguage(),
       showEmail: this.showEmail(),
       showPhone: this.showPhone(),

@@ -1,4 +1,5 @@
 import { NotificationType } from './notification.model';
+import { PriceOption, RelationOption } from './event.model';
 
 export interface SocialLinks {
   instagram?: string;
@@ -37,6 +38,8 @@ export interface User {
   disciplineIds: string[];
   eventTypeIds: string[];
   statusIds: string[];
+  priceOptions: PriceOption[];
+  relationTypes: RelationOption[];
   language: string;
   showEmail: boolean;
   showPhone: boolean;
@@ -61,6 +64,8 @@ export interface CreateUserPayload {
   disciplineIds: string[];
   eventTypeIds: string[];
   statusIds: string[];
+  priceOptions?: PriceOption[];
+  relationTypes?: RelationOption[];
   language?: string;
 }
 

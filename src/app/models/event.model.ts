@@ -31,6 +31,8 @@ export type EventRelation = 'creator' | 'favorite';
 
 export type PriceOption = 'free' | 'paid';
 
+export type RelationOption = 'organizer' | 'attendee';
+
 /** An event hydrated with just its creator's name - the common shape shared
  * by every list that renders <app-event-card> without a lookup per event. */
 export interface EventWithCreatorName extends Event {

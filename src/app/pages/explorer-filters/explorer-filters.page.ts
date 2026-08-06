@@ -1,22 +1,23 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { Location } from '@angular/common';
-import {
-  IonContent,
-  IonIcon,
-  IonButton,
-  IonModal,
-  IonDatetime,
-  IonDatetimeButton,
-} from '@ionic/angular/standalone';
+import { IonContent, IonIcon, IonButton, IonModal, IonDatetime } from '@ionic/angular/standalone';
 import { TranslatePipe } from '@ngx-translate/core';
 import { addIcons } from 'ionicons';
 import { calendarOutline, close } from 'ionicons/icons';
 import { DisciplineService } from '../../services/discipline.service';
 import { EventTypeService } from '../../services/event-type.service';
 import { Discipline, DISCIPLINE_NAMES, EventType, EVENT_TYPE_NAMES, EventStatus, EVENT_STATUSES, PriceOption } from '../../models';
-import { disciplineIconUrl, eventTypeIconUrl, statusIconUrl, sortByNameOrder, STATUS_LABEL_KEYS } from '../../shared/icon-catalog';
-import { ExplorerFiltersService } from '../explorer/explorer-filters.service';
+import { sortByNameOrder, STATUS_LABEL_KEYS } from '../../shared/icon-catalog';
+import { ExplorerFiltersService, DateQuickOption } from '../explorer/explorer-filters.service';
 import { createApplyFlash } from '../../shared/success-flash';
+import { FilterAllChipEvent, FilterAllComponent } from '../../shared/filter-all/filter-all.component';
+import {
+  disciplineChipItems,
+  eventTypeChipItems,
+  priceChipItems,
+  quickDateChipItems,
+  statusChipItems,
+} from '../../shared/chip-grid/chip-grid-presets';
 
 const STATUS_OPTIONS = EVENT_STATUSES.map((id) => ({ id, labelKey: STATUS_LABEL_KEYS[id] }));
 const PRICE_OPTIONS: { id: PriceOption; labelKey: string }[] = [
@@ -29,7 +30,7 @@ const PRICE_OPTIONS: { id: PriceOption; labelKey: string }[] = [
   standalone: true,
   templateUrl: 'explorer-filters.page.html',
   styleUrls: ['explorer-filters.page.scss'],
-  imports: [IonContent, IonIcon, IonButton, IonModal, IonDatetime, IonDatetimeButton, TranslatePipe],
+  imports: [IonContent, IonIcon, IonButton, IonModal, IonDatetime, TranslatePipe, FilterAllComponent],
 })
 export class ExplorerFiltersPage implements OnInit {
   private readonly location = inject(Location);
@@ -42,9 +43,11 @@ export class ExplorerFiltersPage implements OnInit {
   readonly statusOptions = STATUS_OPTIONS;
   readonly priceOptions = PRICE_OPTIONS;
 
-  readonly disciplineIconUrl = disciplineIconUrl;
-  readonly eventTypeIconUrl = eventTypeIconUrl;
-  readonly statusIconUrl = statusIconUrl;
+  readonly eventTypeChips = computed(() => eventTypeChipItems(this.eventTypes(), this.filters.draftEventTypeIds()));
+  readonly disciplineChips = computed(() => disciplineChipItems(this.disciplines(), this.filters.draftDisciplineIds()));
+  readonly statusChips = computed(() => statusChipItems(this.statusOptions, this.filters.draftStatuses()));
+  readonly priceChips = computed(() => priceChipItems(this.priceOptions, this.filters.draftPriceOptions()));
+  readonly quickDateChips = computed(() => quickDateChipItems(this.filters.draftActiveQuickDate()));
 
   constructor() {
     addIcons({ calendarOutline, close });
@@ -75,20 +78,24 @@ export class ExplorerFiltersPage implements OnInit {
     this.location.back();
   }
 
-  toggleDraftEventType(id: string): void {
-    this.filters.toggleDraftEventTypeId(id);
-  }
-
-  toggleDraftDiscipline(id: string): void {
-    this.filters.toggleDraftDisciplineId(id);
-  }
-
-  toggleDraftStatus(id: EventStatus): void {
-    this.filters.toggleDraftStatusId(id);
-  }
-
-  toggleDraftPriceOption(id: PriceOption): void {
-    this.filters.toggleDraftPriceOption(id);
+  onChipToggle(event: FilterAllChipEvent): void {
+    switch (event.category) {
+      case 'eventTypes':
+        this.filters.toggleDraftEventTypeId(event.id);
+        break;
+      case 'disciplines':
+        this.filters.toggleDraftDisciplineId(event.id);
+        break;
+      case 'statuses':
+        this.filters.toggleDraftStatusId(event.id as EventStatus);
+        break;
+      case 'price':
+        this.filters.toggleDraftPriceOption(event.id as PriceOption);
+        break;
+      case 'quickDate':
+        this.filters.setDraftQuickDate(event.id as DateQuickOption);
+        break;
+    }
   }
 
   onDraftDateFromChange(event: Event): void {

@@ -131,16 +131,22 @@ export class ExplorerFiltersService {
     return `${y}-${m}-${day}`;
   }
 
-  /** Start of the given local date (00:00:00.000). */
+  /** Start of the given local date (00:00:00.000). Takes just the leading
+   * YYYY-MM-DD (ion-datetime's ionChange value is a bare date string in some
+   * environments but a full "2026-06-01T23:30:00" datetime string in others,
+   * e.g. this app's own Android WebView - splitting the latter on "-" without
+   * trimming first left the day component as "01T23:30:00", which Number()
+   * turns into NaN, silently breaking every date-range filter downstream). */
   startOfDayFromIso(iso: string): number {
-    const [y, m, d] = iso.split('-').map(Number);
+    const [y, m, d] = iso.slice(0, 10).split('-').map(Number);
     return new Date(y, m - 1, d).getTime();
   }
 
   /** End of the given local date (23:59:59.999), so a "to" date still
-   * includes events happening on that day. */
+   * includes events happening on that day. See startOfDayFromIso() above for
+   * why the input is trimmed to YYYY-MM-DD first. */
   endOfDayFromIso(iso: string): number {
-    const [y, m, d] = iso.split('-').map(Number);
+    const [y, m, d] = iso.slice(0, 10).split('-').map(Number);
     return new Date(y, m - 1, d, 23, 59, 59, 999).getTime();
   }
 

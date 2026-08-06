@@ -6,7 +6,7 @@
   border-radius: 50%;
   border: none;
   background: var(--app-surface-card);
-  color: var(--app-text-strong);
+  color: var(--ion-color-primary);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   display: flex;
   align-items: center;
@@ -32,38 +32,6 @@
 
 .filter-sheet {
   padding: 20px 20px 16px;
-}
-
-.filter-sheet-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 16px;
-
-  h2 {
-    font-size: 1.3rem;
-    font-weight: 800;
-    margin: 0;
-  }
-}
-
-.close-button {
-  appearance: none;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  border: none;
-  background: var(--ion-color-light-shade);
-  color: var(--app-text-strong);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  flex: 0 0 auto;
-
-  ion-icon {
-    font-size: 1.2rem;
-  }
 }
 
 .city-suggestions {
@@ -106,18 +74,3 @@
   font-weight: 600;
 }
 
-.filter-actions-row {
-  display: flex;
-  gap: 10px;
-  margin-top: 18px;
-  padding-top: 12px;
-
-  ion-button {
-    flex: 1;
-    --box-shadow: none;
-  }
-
-  &.secondary-row {
-    margin-top: 8px;
-  }
-}

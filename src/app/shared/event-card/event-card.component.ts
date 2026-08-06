@@ -18,6 +18,11 @@ import { EventCardView } from './event-card.model';
 })
 export class EventCardComponent {
   @Input({ required: true }) view!: EventCardView;
+  /** URL of the list/tab this card is rendered on, forwarded as a query param
+   * on the link to event-detail so "Reutilizar evento"/"Crear evento" can
+   * later navigate straight back here on save instead of landing on the new
+   * event's own detail page - see event-detail.page.ts's originUrl. */
+  @Input() origin?: string;
   /** The card itself stays a pure, presentational component with no service
    * dependencies of its own (see event-card.model.ts) - the page decides what
    * attending/unattending actually does (call FavoriteService, update its

@@ -32,7 +32,7 @@
   appearance: none;
   border: none;
   background: transparent;
-  color: var(--app-text-strong);
+  color: var(--ion-color-primary);
   padding: 0;
   display: flex;
   align-items: center;
@@ -255,8 +255,8 @@
 
   h2 {
     margin: 0 0 10px;
-    font-size: 1rem;
-    font-weight: 800;
+    font-size: 0.95rem;
+    font-weight: 700;
   }
 
   // Direct-child only: a descendant selector would also catch the social
@@ -457,8 +457,25 @@ a.info-row {
   }
 }
 
+.date-picker-trigger {
+  appearance: none;
+  border: none;
+  background: transparent;
+  font: inherit;
+  font-size: 0.95rem;
+  color: var(--ion-text-color);
+  padding: 2px 4px;
+  border-radius: 8px;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--ion-color-primary);
+    outline-offset: 2px;
+  }
+}
+
 .group-label {
-  margin: 20px 0 8px;
+  margin: 28px 0 8px;
   font-size: 0.78rem;
   font-weight: 600;
   color: var(--ion-color-medium);
@@ -468,52 +485,10 @@ a.info-row {
   }
 }
 
-.chip-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 4px;
-}
-
 .min-selection-warning {
   margin: 8px 0 0;
   font-size: 0.8rem;
   color: var(--ion-color-danger);
-}
-
-.chip {
-  appearance: none;
-  border: 1.5px solid var(--ion-color-light-shade);
-  border-radius: 999px;
-  padding: 10px 18px;
-  font-size: 0.9rem;
-  font-weight: 600;
-  background: var(--app-surface-card);
-  color: var(--app-text-strong);
-  cursor: pointer;
-  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
-
-  &.selected {
-    border-color: var(--ion-color-primary);
-    background: rgba(var(--ion-color-primary-rgb), 0.08);
-    color: var(--ion-color-primary);
-  }
-}
-
-.chip-with-icon {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding-left: 8px;
-}
-
-.chip-icon {
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  object-fit: cover;
-  flex: 0 0 auto;
-  background: var(--app-surface-card);
 }
 
 .tgtg-searchbar {
@@ -595,10 +570,6 @@ a.info-row {
 
 .validation-warning-sheet {
   padding: 12px 20px 24px;
-
-  ion-button {
-    margin-top: 16px;
-  }
 }
 
 .filter-sheet {
@@ -624,38 +595,14 @@ a.info-row {
   }
 }
 
-.close-button {
-  appearance: none;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  border: none;
-  background: var(--ion-color-light-shade);
-  color: var(--app-text-strong);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  flex: 0 0 auto;
-
-  ion-icon {
-    font-size: 1.2rem;
-  }
-}
-
-.filter-actions-row {
+.calendar-picker-actions {
   display: flex;
   gap: 10px;
-  margin-top: 16px;
-  padding-top: 12px;
+  padding: 8px 16px 0;
 
   ion-button {
     flex: 1;
     --box-shadow: none;
+    font-size: 0.85rem;
   }
-}
-
-.calendar-picker-actions {
-  padding-left: 16px;
-  padding-right: 16px;
 }

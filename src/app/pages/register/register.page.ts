@@ -41,8 +41,10 @@ import { LanguageService } from '../../services/language.service';
 import { CitySuggestion, GeocodingService } from '../../services/geocoding.service';
 import { CreateUserPayload, Discipline, DISCIPLINE_NAMES, EventType, EVENT_TYPE_NAMES } from '../../models';
 import { firebaseErrorMessage } from '../../shared/firebase-error-message';
-import { DISCIPLINE_ICON_FILES, disciplineIconUrl, eventTypeIconUrl, sortByNameOrder } from '../../shared/icon-catalog';
+import { DISCIPLINE_ICON_FILES, sortByNameOrder } from '../../shared/icon-catalog';
 import { MapType, mapEmbedUrl as buildMapEmbedUrl } from '../../shared/maps';
+import { ChipGridComponent } from '../../shared/chip-grid/chip-grid.component';
+import { disciplineChipItems, eventTypeChipItems } from '../../shared/chip-grid/chip-grid-presets';
 
 const MIN_ZOOM = 3;
 const MAX_ZOOM = 20;
@@ -86,6 +88,7 @@ function passwordsMatchValidator(control: AbstractControl): ValidationErrors | n
     IonRange,
     IonText,
     TranslatePipe,
+    ChipGridComponent,
   ],
 })
 export class RegisterPage implements OnInit {
@@ -154,15 +157,15 @@ export class RegisterPage implements OnInit {
   readonly eventTypes = signal<EventType[]>(FALLBACK_EVENT_TYPES);
   readonly selectedEventTypeIds = signal<string[]>([]);
 
+  readonly disciplineChips = computed(() => disciplineChipItems(this.disciplines(), this.selectedDisciplineIds()));
+  readonly eventTypeChips = computed(() => eventTypeChipItems(this.eventTypes(), this.selectedEventTypeIds()));
+
   readonly acceptedTerms = signal(false);
   readonly isSubmitting = signal(false);
   readonly errorMessage = signal<string | null>(null);
 
   readonly showPassword = signal(false);
   readonly showConfirmPassword = signal(false);
-
-  readonly disciplineIconUrl = disciplineIconUrl;
-  readonly eventTypeIconUrl = eventTypeIconUrl;
 
   constructor() {
     addIcons({
@@ -388,6 +391,12 @@ export class RegisterPage implements OnInit {
       // The status step was removed from registration - every new account starts
       // with only "Published" events visible, matching the previous default choice.
       statusIds: ['published'],
+      // No registration step for these either - start with everything selected
+      // (same "empty means match nothing" reasoning as the other preferences),
+      // so a fresh profile isn't silently filtering out free, paid, organized
+      // or attended events until the user visits Profile and picks something.
+      priceOptions: ['free', 'paid'],
+      relationTypes: ['organizer', 'attendee'],
       language: this.languageService.currentLang() ?? undefined,
     };
 

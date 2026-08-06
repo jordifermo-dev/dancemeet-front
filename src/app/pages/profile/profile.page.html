@@ -154,73 +154,38 @@
       <section class="section">
         <h2>{{ 'profile.preferencesSection' | translate }}</h2>
 
-        <p class="group-label">{{ 'register.eventTypesTitle' | translate }}</p>
-        <div class="chip-grid">
-          @for (eventType of eventTypes(); track eventType.id) {
-            <button
-              type="button"
-              class="chip chip-with-icon"
-              [class.selected]="selectedEventTypeIds().includes(eventType.id)"
-              (click)="toggleEventType(eventType.id)"
-            >
-              <img class="chip-icon" [src]="eventTypeIconUrl(eventType.name)" [alt]="eventType.name" />
-              {{ eventType.name }}
-            </button>
-          }
-        </div>
+        <p class="group-label">{{ 'explorer.eventTypesFilterLabel' | translate }}</p>
+        <app-chip-grid [items]="eventTypeChips()" (chipClick)="toggleEventType($event)"></app-chip-grid>
         @if (minSelectionWarning.isActive('eventTypes')) {
           <p class="min-selection-warning">{{ 'explorer.minSelectionWarning' | translate }}</p>
         }
 
-        <p class="group-label">{{ 'register.disciplinesTitle' | translate }}</p>
-        <div class="chip-grid">
-          @for (discipline of disciplines(); track discipline.id) {
-            <button
-              type="button"
-              class="chip chip-with-icon"
-              [class.selected]="selectedDisciplineIds().includes(discipline.id)"
-              (click)="toggleDiscipline(discipline.id)"
-            >
-              <img class="chip-icon" [src]="'/' + discipline.iconUrl" [alt]="discipline.name" />
-              {{ discipline.name }}
-            </button>
-          }
-        </div>
+        <p class="group-label">{{ 'explorer.disciplinesFilterLabel' | translate }}</p>
+        <app-chip-grid [items]="disciplineChips()" (chipClick)="toggleDiscipline($event)"></app-chip-grid>
         @if (minSelectionWarning.isActive('disciplines')) {
           <p class="min-selection-warning">{{ 'explorer.minSelectionWarning' | translate }}</p>
         }
 
-        <p class="group-label">{{ 'register.statusesTitle' | translate }}</p>
-        <div class="chip-grid">
-          @for (option of statusOptions; track option.id) {
-            <button
-              type="button"
-              class="chip chip-with-icon"
-              [class.selected]="selectedStatusIds().includes(option.id)"
-              (click)="toggleStatus(option.id)"
-            >
-              <img class="chip-icon" [src]="statusIconUrl(option.id)" [alt]="option.labelKey | translate" />
-              {{ option.labelKey | translate }}
-            </button>
-          }
-        </div>
+        <p class="group-label">{{ 'explorer.statusFilterLabel' | translate }}</p>
+        <app-chip-grid [items]="statusChips()" (chipClick)="toggleStatus($event)"></app-chip-grid>
         @if (minSelectionWarning.isActive('statuses')) {
           <p class="min-selection-warning">{{ 'explorer.minSelectionWarning' | translate }}</p>
         }
 
+        <p class="group-label">{{ 'explorer.priceFilterLabel' | translate }}</p>
+        <app-chip-grid [items]="priceChips()" (chipClick)="togglePriceOption($event)"></app-chip-grid>
+        @if (minSelectionWarning.isActive('priceOptions')) {
+          <p class="min-selection-warning">{{ 'explorer.minSelectionWarning' | translate }}</p>
+        }
+
+        <p class="group-label">{{ 'favorites.relationFilterLabel' | translate }}</p>
+        <app-chip-grid [items]="relationChips()" (chipClick)="toggleRelation($event)"></app-chip-grid>
+        @if (minSelectionWarning.isActive('relation')) {
+          <p class="min-selection-warning">{{ 'explorer.minSelectionWarning' | translate }}</p>
+        }
+
         <p class="group-label">{{ 'profile.language' | translate }}</p>
-        <div class="chip-grid">
-          @for (lang of languageOptions; track lang.code) {
-            <button
-              type="button"
-              class="chip"
-              [class.selected]="draftLanguage() === lang.code"
-              (click)="setLanguage(lang.code)"
-            >
-              {{ lang.label }}
-            </button>
-          }
-        </div>
+        <app-chip-grid [items]="languageChips()" (chipClick)="setLanguage($event)"></app-chip-grid>
       </section>
 
       <!-- Ubicación -->
@@ -310,7 +275,7 @@
         @if (accountForm.controls.socialLinks.invalid) {
           <p class="social-link-error social-link-error-summary">{{ 'profile.socialLinksErrorSummary' | translate }}</p>
         }
-        <div class="filter-actions-row">
+        <div class="account-actions-row">
           <ion-button expand="block" fill="outline" color="primary" (click)="clearAllSelections()">
             {{ 'explorer.clearFilter' | translate }}
           </ion-button>
@@ -335,14 +300,14 @@
         <h2>{{ 'profile.unsavedChangesTitle' | translate }}</h2>
       </div>
       <p>{{ 'profile.unsavedChangesMessage' | translate }}</p>
-      <div class="filter-actions-row">
+      <app-filter-actions-row>
         <ion-button expand="block" fill="outline" color="primary" (click)="confirmDiscardChanges()">
           {{ 'profile.discard' | translate }}
         </ion-button>
         <ion-button expand="block" (click)="confirmApplyChanges()">
           {{ 'profile.apply' | translate }}
         </ion-button>
-      </div>
+      </app-filter-actions-row>
     </div>
   </ng-template>
 </ion-modal>
@@ -355,12 +320,7 @@
 >
   <ng-template>
     <div class="filter-sheet">
-      <div class="filter-sheet-header">
-        <h2>{{ 'profile.addSocialLinkTitle' | translate }}</h2>
-        <button type="button" class="close-button" (click)="closeAddSocialSheet()">
-          <ion-icon name="close"></ion-icon>
-        </button>
-      </div>
+      <app-filter-sheet-header titleKey="profile.addSocialLinkTitle" (closed)="closeAddSocialSheet()"></app-filter-sheet-header>
       <div class="social-picker-list">
         @for (key of availableSocialNetworks(); track key) {
           <button type="button" class="social-picker-option" (click)="addSocialNetwork(key)">

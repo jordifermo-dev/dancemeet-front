@@ -1,5 +1,5 @@
 import { Component, computed, inject, signal } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { skip } from 'rxjs';
 import {
   IonHeader,
@@ -17,7 +17,7 @@ import {
 } from '@ionic/angular/standalone';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { addIcons } from 'ionicons';
-import { personOutline, optionsOutline, close, personAddOutline, chevronDownOutline, checkmarkOutline } from 'ionicons/icons';
+import { optionsOutline, chevronDownOutline } from 'ionicons/icons';
 import { AuthService } from '../../services/auth.service';
 import { FollowService } from '../../services/follow.service';
 import { FavoriteService } from '../../services/favorite.service';
@@ -26,6 +26,10 @@ import { FollowSortMode, SortPreferenceService } from '../../services/sort-prefe
 import { Discipline, DISCIPLINE_NAMES, FollowUser } from '../../models';
 import { sortByNameOrder } from '../../shared/icon-catalog';
 import { createApplyFlash } from '../../shared/success-flash';
+import { UserCardComponent } from '../../shared/user-card/user-card.component';
+import { FilterSheetHeaderComponent } from '../../shared/filter-sheet-header/filter-sheet-header.component';
+import { FilterActionsRowComponent } from '../../shared/filter-actions-row/filter-actions-row.component';
+import { ChipGridComponent, ChipGridItem } from '../../shared/chip-grid/chip-grid.component';
 
 type FollowListMode = 'followers' | 'following' | 'attendees';
 type SortMode = FollowSortMode;
@@ -55,11 +59,14 @@ const SORT_OPTIONS: { id: SortMode; labelKey: string }[] = [
     IonButton,
     IonModal,
     TranslatePipe,
+    UserCardComponent,
+    FilterSheetHeaderComponent,
+    FilterActionsRowComponent,
+    ChipGridComponent,
   ],
 })
 export class FollowListPage implements ViewWillEnter {
   private readonly route = inject(ActivatedRoute);
-  private readonly router = inject(Router);
   private readonly authService = inject(AuthService);
   private readonly followService = inject(FollowService);
   private readonly favoriteService = inject(FavoriteService);
@@ -67,7 +74,7 @@ export class FollowListPage implements ViewWillEnter {
   private readonly translate = inject(TranslateService);
   private readonly sortPreference = inject(SortPreferenceService);
 
-  private readonly disciplinesById = signal<Map<string, Discipline>>(new Map());
+  readonly disciplinesById = signal<Map<string, Discipline>>(new Map());
 
   readonly mode: FollowListMode = this.route.snapshot.data['mode'];
   readonly titleKey =
@@ -93,16 +100,14 @@ export class FollowListPage implements ViewWillEnter {
   readonly isFilterModalOpen = signal(false);
   readonly draftDisciplineFilterIds = signal<string[]>([]);
   readonly appliedDisciplineFilterIds = signal<string[]>([]);
-
-  // Per-row follow/unfollow (Instagram-style): overrides the server-derived
-  // relationship right after tapping the button, so it updates immediately
-  // instead of waiting for `currentUser()` to be resynced from the backend.
-  private readonly amFollowingOverrides = signal<Map<string, boolean>>(new Map());
-  private readonly followBusy = signal<Set<string>>(new Set());
-  /** Which row's follow/unfollow button should show the brief success-pulse
-   * right now - only one row can be mid-toggle at a time in practice. */
-  readonly justToggledFollowId = signal<string | null>(null);
-  private followPulseTimer: ReturnType<typeof setTimeout> | null = null;
+  readonly disciplineChipItems = computed<ChipGridItem[]>(() =>
+    this.disciplines().map((discipline) => ({
+      id: discipline.id,
+      label: discipline.name,
+      iconUrl: '/' + discipline.iconUrl,
+      selected: this.draftDisciplineFilterIds().includes(discipline.id),
+    })),
+  );
 
   readonly showConfirmModal = signal(false);
   readonly confirmTitleKey = signal('');
@@ -136,7 +141,7 @@ export class FollowListPage implements ViewWillEnter {
   });
 
   constructor() {
-    addIcons({ personOutline, optionsOutline, close, personAddOutline, chevronDownOutline, checkmarkOutline });
+    addIcons({ optionsOutline, chevronDownOutline });
 
     this.disciplineService.getAll().subscribe({
       next: (disciplines) => {
@@ -220,110 +225,11 @@ export class FollowListPage implements ViewWillEnter {
     this.isSortModalOpen.set(false);
   }
 
-  disciplinesFor(item: FollowUser): Discipline[] {
-    const byId = this.disciplinesById();
-    return item.disciplineIds.map((id) => byId.get(id)).filter((d): d is Discipline => d !== undefined);
-  }
-
-  /** True only if *I* (the logged-in user) actually follow this row right now -
-   * independent of whose followers/following list is being browsed. */
-  isFollowedByMe(item: FollowUser): boolean {
-    const override = this.amFollowingOverrides().get(item.id);
-    if (override !== undefined) {
-      return override;
-    }
-    const me = this.authService.currentUser();
-    return !!me && (me.followingId ?? []).includes(item.id);
-  }
-
-  isMe(item: FollowUser): boolean {
-    return this.authService.currentUser()?.id === item.id;
-  }
-
-  /** Guards follow/unfollow requests in flight per user id - a doubled tap on a
-   * touch device otherwise fires the handler twice before the first request's
-   * response updates amFollowingOverrides, sending a duplicate follow/unfollow
-   * call that the backend rejects with a "already follows" business error. */
-  isFollowBusy(item: FollowUser): boolean {
-    return this.followBusy().has(item.id);
-  }
-
-  private setFollowBusy(itemId: string, busy: boolean): void {
-    this.followBusy.update((set) => {
-      const next = new Set(set);
-      if (busy) {
-        next.add(itemId);
-      } else {
-        next.delete(itemId);
-      }
-      return next;
-    });
-  }
-
-  /** Flashes "Guardado ✓" on this row's button, then - after the same beat
-   * saveEdit()/toggleAttend() use - settles it into its real, permanent
-   * follow/unfollow state via applyOverride. */
-  private flashThenApply(itemId: string, applyOverride: () => void): void {
-    if (this.followPulseTimer) {
-      clearTimeout(this.followPulseTimer);
-    }
-    this.justToggledFollowId.set(itemId);
-    this.followPulseTimer = setTimeout(() => {
-      this.justToggledFollowId.set(null);
-    }, 2000);
-    setTimeout(() => {
-      applyOverride();
-      this.setFollowBusy(itemId, false);
-    }, 900);
-  }
-
-  follow(item: FollowUser, event: Event): void {
-    event.stopPropagation();
-    const me = this.authService.currentUser();
-    if (!me || this.isFollowBusy(item)) {
-      return;
-    }
-    this.setFollowBusy(item.id, true);
-    this.followService.follow(item.id, me.id).subscribe({
-      next: () => {
-        // Keeps the shared currentUser in sync so other views reading it (e.g. the
-        // Profile tab's "Seguint" count) reflect this without needing a full reload.
-        this.authService.syncProfile({ ...me, followingId: [...(me.followingId ?? []), item.id] });
-        this.flashThenApply(item.id, () => {
-          this.amFollowingOverrides.update((map) => new Map(map).set(item.id, true));
-        });
-      },
-      error: () => this.setFollowBusy(item.id, false),
-    });
-  }
-
-  async confirmUnfollow(item: FollowUser, event: Event): Promise<void> {
-    event.stopPropagation();
-    const me = this.authService.currentUser();
-    if (!me || this.isFollowBusy(item)) {
-      return;
-    }
-    const confirmed = await this.confirm(
-      'userDetail.confirmUnfollowTitle',
-      this.translate.instant('userDetail.confirmUnfollowMessage', { name: item.name }),
-    );
-    if (!confirmed) {
-      return;
-    }
-    this.setFollowBusy(item.id, true);
-    this.followService.unfollow(item.id, me.id).subscribe({
-      next: () => {
-        this.authService.syncProfile({
-          ...me,
-          followingId: (me.followingId ?? []).filter((id) => id !== item.id),
-        });
-        this.flashThenApply(item.id, () => {
-          this.amFollowingOverrides.update((map) => new Map(map).set(item.id, false));
-        });
-      },
-      error: () => this.setFollowBusy(item.id, false),
-    });
-  }
+  /** Passed to every row's <app-user-card> as its confirmUnfollow input -
+   * reuses this page's own generic confirm sheet instead of each row
+   * building its own. */
+  readonly confirmUnfollowUser = (user: FollowUser): Promise<boolean> =>
+    this.confirm('userDetail.confirmUnfollowTitle', this.translate.instant('userDetail.confirmUnfollowMessage', { name: user.name }));
 
   private async confirm(titleKey: string, message: string): Promise<boolean> {
     this.confirmTitleKey.set(titleKey);
@@ -377,9 +283,5 @@ export class FollowListPage implements ViewWillEnter {
     this.draftDisciplineFilterIds.set(allIds);
     this.appliedDisciplineFilterIds.set(allIds);
     this.isFilterModalOpen.set(false);
-  }
-
-  openUser(item: FollowUser): void {
-    this.router.navigate(['/users', item.id]);
   }
 }

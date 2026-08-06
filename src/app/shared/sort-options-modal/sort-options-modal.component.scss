@@ -1,0 +1,26 @@
+.filter-sheet {
+  padding: 20px 20px 16px;
+}
+
+.sort-options-list {
+  display: flex;
+  flex-direction: column;
+  margin-top: 4px;
+}
+
+.sort-option {
+  appearance: none;
+  border: none;
+  background: transparent;
+  text-align: left;
+  padding: 14px 4px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--app-text-strong);
+  cursor: pointer;
+
+  &.selected {
+    color: var(--ion-color-primary);
+    font-weight: 700;
+  }
+}

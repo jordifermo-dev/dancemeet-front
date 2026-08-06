@@ -20,7 +20,6 @@ import {
   IonTextarea,
   IonToggle,
   IonDatetime,
-  IonDatetimeButton,
   IonSearchbar,
 } from '@ionic/angular/standalone';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
@@ -42,7 +41,7 @@ import {
   trashOutline,
   heart,
   heartOutline,
-  close,
+  refreshOutline,
 } from 'ionicons/icons';
 import { AuthService } from '../../services/auth.service';
 import { EventService } from '../../services/event.service';
@@ -73,9 +72,13 @@ import {
   sortByNameOrder,
 } from '../../shared/icon-catalog';
 import { MapType, mapEmbedUrl as buildMapEmbedUrl } from '../../shared/maps';
-import { formatEventDateRange } from '../../shared/event-date-format';
+import { formatEventDateRange, formatEventDateOnly } from '../../shared/event-date-format';
 import { buildGoogleCalendarUrl, buildIcs, downloadIcs } from '../../shared/calendar-export';
 import { PhotoEditorComponent } from '../../shared/photo-editor/photo-editor.component';
+import { FilterSheetHeaderComponent } from '../../shared/filter-sheet-header/filter-sheet-header.component';
+import { FilterActionsRowComponent } from '../../shared/filter-actions-row/filter-actions-row.component';
+import { ChipGridComponent } from '../../shared/chip-grid/chip-grid.component';
+import { disciplineChipItems, eventTypeChipItems, statusChipItems } from '../../shared/chip-grid/chip-grid-presets';
 import { SOCIAL_URL_PATTERNS } from '../../shared/social-link-patterns';
 import {
   ALL_SOCIAL_NETWORKS,
@@ -163,10 +166,12 @@ function withTimePart(base: number, timeValue: string): number {
     IonTextarea,
     IonToggle,
     IonDatetime,
-    IonDatetimeButton,
     IonSearchbar,
     TranslatePipe,
     PhotoEditorComponent,
+    FilterSheetHeaderComponent,
+    FilterActionsRowComponent,
+    ChipGridComponent,
   ],
 })
 export class EventDetailPage implements ComponentWithUnsavedChanges {
@@ -221,8 +226,17 @@ export class EventDetailPage implements ComponentWithUnsavedChanges {
   readonly showAddSocialSheet = signal(false);
 
   readonly showUnsavedChangesModal = signal(false);
-  private pendingLeaveResolve: (() => void) | null = null;
+  private pendingLeaveResolve: ((shouldLeave: boolean) => void) | null = null;
   private pendingLeaveApplied = false;
+  /** URL of the list/tab this page instance was reached from - carried in via
+   * the `origin` query param (see event-card.component.ts and the various
+   * goToCreateEvent()/goToEvent() call sites), and forwarded again when
+   * "Reutilizar evento" opens the create form, so saveEdit()'s create-success
+   * handler can navigate straight back there instead of forward into either
+   * event's own detail page. A raw history.go(-N) was tried first, but Ionic
+   * only reliably re-fires ionViewWillEnter (which is what refreshes the
+   * list) on a normal forward navigation, not a multi-step history jump. */
+  private originUrl: string | null = null;
   /** Snapshot of the edit form the last time it was loaded/saved, used to
    * detect unsaved edits when navigating away - same pattern as Profile's
    * own baseline/buildSnapshot. Only meaningful while isEditMode() is true. */
@@ -301,9 +315,6 @@ export class EventDetailPage implements ComponentWithUnsavedChanges {
     return this.sanitizer.bypassSecurityTrustResourceUrl(url);
   });
 
-  readonly disciplineIconUrl = disciplineIconUrl;
-  readonly eventTypeIconUrl = eventTypeIconUrl;
-  readonly statusIconUrl = statusIconUrl;
   readonly socialIconUrl = socialIconUrl;
 
   socialNetworkLabelKey(key: SocialNetworkKey): string {
@@ -370,12 +381,42 @@ export class EventDetailPage implements ComponentWithUnsavedChanges {
     this.editBaseline = this.buildEditSnapshot();
   }
 
+  /** Whether the create-mode form still looks like its just-opened, blank
+   * state - ignores fields the page fills in on its own before the user has
+   * touched anything (auto-picked discipline/type, default isFree/price/
+   * dates), so those never register as "the user changed something". A plain
+   * baseline diff (like edit-existing-event uses below) is the wrong tool
+   * here: those auto-picks land asynchronously, and whether they've resolved
+   * yet by the time the baseline is captured isn't something worth hinging
+   * "did the user actually do anything?" on. */
+  private isCreateFormEmpty(): boolean {
+    const raw = this.editForm.getRawValue();
+    return (
+      !raw.title &&
+      !raw.description &&
+      !raw.additionalInfo &&
+      !raw.imageUrl &&
+      !raw.instagram &&
+      !raw.facebook &&
+      !raw.tiktok &&
+      !raw.youtube &&
+      !raw.website &&
+      !this.editAddress() &&
+      !this.editCity()
+    );
+  }
+
   private isEditDirty(): boolean {
+    if (this.isCreateMode()) {
+      return !this.isCreateFormEmpty();
+    }
     return this.editBaseline !== null && this.buildEditSnapshot() !== this.editBaseline;
   }
 
   /** Invoked by unsavedChangesGuard (see app.routes.ts) before navigating
-   * away from /events/new or /events/:id while mid-edit. */
+   * away from /events/new or /events/:id while mid-edit. Resolves to whether
+   * the guard should actually let the navigation proceed - false keeps the
+   * user on the form (see onUnsavedChangesModalDismiss's invalid-apply case). */
   async canLeave(): Promise<boolean> {
     if (!this.isEditMode() || !this.isEditDirty()) {
       return true;
@@ -384,10 +425,9 @@ export class EventDetailPage implements ComponentWithUnsavedChanges {
     this.showUnsavedChangesModal.set(true);
     // Waits for (didDismiss), not the button click itself - same reasoning
     // as Profile's own version of this modal.
-    await new Promise<void>((resolve) => {
+    return new Promise<boolean>((resolve) => {
       this.pendingLeaveResolve = resolve;
     });
-    return true;
   }
 
   confirmDiscardChanges(): void {
@@ -400,20 +440,26 @@ export class EventDetailPage implements ComponentWithUnsavedChanges {
     this.showUnsavedChangesModal.set(false);
   }
 
-  /** Fires once the sheet has fully closed. Applying re-runs saveEdit()
-   * (which itself no-ops silently if the form is invalid, same as the
-   * Guardar button's own guard) rather than blocking navigation on
-   * validity - losing an invalid in-progress edit on the way out is the
-   * same tradeoff Profile's own unsaved-changes modal makes. */
+  /** Fires once the sheet has fully closed. Applying an invalid form shows
+   * what's missing and keeps the user on it (blocks the pending navigation)
+   * instead of silently discarding the in-progress edit and leaving anyway -
+   * that used to be the tradeoff here, but it meant tapping "Aplicar" on an
+   * incomplete form quietly lost whatever had been typed with no feedback. */
   onUnsavedChangesModalDismiss(): void {
     if (this.pendingLeaveApplied) {
+      if (!this.editValid()) {
+        this.showValidationModal.set(true);
+        this.pendingLeaveResolve?.(false);
+        this.pendingLeaveResolve = null;
+        return;
+      }
       this.saveEdit();
     } else if (this.event()) {
       // Existing event: revert the form to the last-saved state. Nothing to
       // revert to in create mode - the page is being navigated away from anyway.
       this.enterEditMode();
     }
-    this.pendingLeaveResolve?.();
+    this.pendingLeaveResolve?.(true);
     this.pendingLeaveResolve = null;
   }
   readonly formatSocialUrl = formatSocialUrl;
@@ -439,8 +485,20 @@ export class EventDetailPage implements ComponentWithUnsavedChanges {
   readonly editTypeIds = signal<string[]>([]);
   readonly editDisciplineIds = signal<string[]>([]);
   readonly editStatus = signal<EventStatus>('published');
+
+  readonly editTypeChips = computed(() => eventTypeChipItems(this.eventTypes(), this.editTypeIds()));
+  readonly editDisciplineChips = computed(() => disciplineChipItems(this.disciplines(), this.editDisciplineIds()));
+  readonly editStatusChips = computed(() => statusChipItems(this.editableStatusOptions, [this.editStatus()]));
   readonly editDateFrom = signal(Date.now());
   readonly editDateTo = signal(Date.now() + DEFAULT_EVENT_DURATION_MS);
+  // <ion-datetime-button>'s own date-target slot stopped reflecting further
+  // value changes after the first render when that value was set
+  // programmatically (confirmed with device logging: the computed label was
+  // right, the actual DOM text stayed stuck on whatever first rendered) - so
+  // these drive a plain <button> instead, opening the calendar modal
+  // ourselves rather than relying on ion-datetime-button's built-in trigger.
+  readonly showDateFromPicker = signal(false);
+  readonly showDateToPicker = signal(false);
   readonly editAddress = signal('');
   readonly editCity = signal('');
   readonly editLatitude = signal(0);
@@ -451,6 +509,9 @@ export class EventDetailPage implements ComponentWithUnsavedChanges {
 
   readonly editDateFromIso = computed(() => new Date(this.editDateFrom()).toISOString());
   readonly editDateToIso = computed(() => new Date(this.editDateTo()).toISOString());
+  // Text for the plain-<button> date triggers above (see showDateFromPicker).
+  readonly editDateFromLabel = computed(() => formatEventDateOnly(this.editDateFrom(), this.languageService.currentLang()));
+  readonly editDateToLabel = computed(() => formatEventDateOnly(this.editDateTo(), this.languageService.currentLang()));
 
   // ion-datetime's wheel-style time picker is awkward with a mouse in Chrome,
   // so the time of day is entered through a plain native <input type="time">
@@ -556,7 +617,7 @@ export class EventDetailPage implements ComponentWithUnsavedChanges {
       trashOutline,
       heart,
       heartOutline,
-      close,
+      refreshOutline,
     });
 
     this.disciplineService.getAll().subscribe({
@@ -591,16 +652,69 @@ export class EventDetailPage implements ComponentWithUnsavedChanges {
       },
     });
 
+    this.originUrl = this.route.snapshot.queryParamMap.get('origin');
+
     const id = this.route.snapshot.paramMap.get('id');
     if (!id) {
-      // /events/new - no event to load, start straight in (create) edit mode.
-      this.isCreateMode.set(true);
-      this.isEditMode.set(true);
-      this.captureEditBaseline();
-      this.loading.set(false);
+      // /events/new?reuseFrom=<id> - "Reutilizar evento" on a finished event:
+      // prefill this blank create form from it instead of starting from zero.
+      // Stays on the loading spinner (isEditMode still false) until this
+      // resolves, so the form - and its date pickers - render for the very
+      // first time already showing the reused values. The pickers' buttons
+      // are plain <button>s driven by editDateFromLabel/editDateToLabel, not
+      // <ion-datetime-button> - see showDateFromPicker's comment for why.
+      const reuseFromId = this.route.snapshot.queryParamMap.get('reuseFrom');
+      if (reuseFromId) {
+        this.eventService.getById(reuseFromId).subscribe({
+          next: (source) => {
+            if (source) {
+              this.populateFormFromReuse(source);
+            }
+            this.finishEnteringCreateMode();
+          },
+          error: () => this.finishEnteringCreateMode(),
+        });
+        return;
+      }
+      // Plain /events/new - no event to load, start straight in (create) edit mode.
+      this.finishEnteringCreateMode();
       return;
     }
     this.loadEvent(id);
+  }
+
+  private finishEnteringCreateMode(): void {
+    this.isCreateMode.set(true);
+    this.isEditMode.set(true);
+    this.captureEditBaseline();
+    this.loading.set(false);
+  }
+
+  /** Copies over everything that's likely to repeat for the next edition of
+   * a recurring event (details, categories, price, location). The date/time
+   * fields copy the *old* (past) dates rather than defaulting to right now -
+   * a fresh "now" would look like an already-valid date and could slip
+   * through unnoticed, while the old one is obviously stale and, if left
+   * untouched, trips the existing "date must be in the future" check on
+   * Guardar - forcing the organizer to actually pick the next edition's date. */
+  private populateFormFromReuse(source: EventWithCreatorName): void {
+    this.editForm.patchValue({
+      title: source.title,
+      description: source.description,
+      additionalInfo: source.additionalInfo ?? '',
+      imageUrl: source.imageUrl,
+      isFree: source.isFree,
+      price: source.price,
+    });
+    this.editTypeIds.set([...source.typeIds]);
+    this.editDisciplineIds.set([...source.disciplineIds]);
+    this.editDateFrom.set(source.eventDateFrom);
+    this.editDateTo.set(source.eventDateTo);
+    this.editAddress.set(source.address);
+    this.editCity.set(source.city);
+    this.editLatitude.set(source.latitude);
+    this.editLongitude.set(source.longitude);
+    this.editCitySuggestions.set([]);
   }
 
   private loadEvent(id: string): void {
@@ -775,8 +889,8 @@ export class EventDetailPage implements ComponentWithUnsavedChanges {
     );
   }
 
-  selectEditStatus(id: EventStatus): void {
-    this.editStatus.set(id);
+  selectEditStatus(id: string): void {
+    this.editStatus.set(id as EventStatus);
   }
 
   // --- Edit mode: dates -----------------------------------------------------
@@ -890,6 +1004,19 @@ export class EventDetailPage implements ComponentWithUnsavedChanges {
 
   // --- Edit mode: enter/cancel/save ------------------------------------------
 
+  /** "Reutilizar evento" on a finished event - opens a blank create form
+   * (see populateFormFromReuse) instead of editing this now-past one in
+   * place, which would just fail validation on its stale date. */
+  reuseEvent(): void {
+    const event = this.event();
+    if (!event) {
+      return;
+    }
+    this.router.navigate(['/events/new'], {
+      queryParams: { reuseFrom: event.id, origin: this.originUrl },
+    });
+  }
+
   enterEditMode(): void {
     const event = this.event();
     if (!event) {
@@ -970,7 +1097,13 @@ export class EventDetailPage implements ComponentWithUnsavedChanges {
   }
 
   saveEdit(): void {
-    if (!this.editValid()) {
+    // Guards re-entrancy at the method itself, not just via the Guardar
+    // button's [disabled]="saving()" - saveEdit() has a second call site
+    // (onUnsavedChangesModalDismiss's "Aplicar" path), which bypasses that
+    // binding entirely. Two real duplicate events got created this way: tap
+    // Guardar, then - while that request is still in flight - navigate away
+    // and confirm "Aplicar" on the resulting unsaved-changes prompt.
+    if (this.saving() || !this.editValid()) {
       return;
     }
     const formValue = this.editForm.getRawValue();
@@ -1012,7 +1145,25 @@ export class EventDetailPage implements ComponentWithUnsavedChanges {
       this.eventService.createEvent(payload).subscribe({
         next: (created) => {
           this.saving.set(false);
-          this.router.navigate(['/events', created.id], { replaceUrl: true });
+          // Leaves isEditMode() true and the form still full of the content
+          // that was just saved - canLeave() (the CanDeactivate guard) reads
+          // that as "unsaved changes" and would otherwise pop its own
+          // "Cambios sin guardar" prompt right on top of *this* navigation.
+          // Tapping "Aplicar" there re-ran saveEdit() a second time, which is
+          // exactly how a "reused" event ended up created twice.
+          this.isEditMode.set(false);
+          // Returns to wherever this create flow actually started (the
+          // origin tab/screen - see originUrl) via a normal forward
+          // navigation, so Ionic's own view-cache/lifecycle handling stays
+          // intact and ionViewWillEnter re-fires there to refresh the list
+          // with the new event. Falls back to the new event's own detail
+          // page if no origin was carried through (e.g. opened from
+          // Notifications, which doesn't set one).
+          if (this.originUrl) {
+            this.router.navigateByUrl(this.originUrl, { replaceUrl: true });
+          } else {
+            this.router.navigate(['/events', created.id], { replaceUrl: true });
+          }
         },
         error: () => this.saving.set(false),
       });

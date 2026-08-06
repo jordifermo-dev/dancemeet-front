@@ -6,9 +6,7 @@
 >
   <ng-template>
     <div class="welcome-sheet">
-      <button type="button" class="welcome-close-button" (click)="close()">
-        <ion-icon name="close"></ion-icon>
-      </button>
+      <app-filter-sheet-header titleKey="welcome.title" (closed)="close()"></app-filter-sheet-header>
 
       <div class="welcome-scroll">
         @for (slide of slides; track slide.kind) {
@@ -128,7 +126,7 @@
 
       <div class="welcome-footer-nav">
         @if (currentSlide() > 0) {
-          <ion-button expand="block" fill="outline" (click)="goBack()">
+          <ion-button expand="block" fill="outline" color="primary" (click)="goBack()">
             {{ 'common.back' | translate }}
           </ion-button>
         }

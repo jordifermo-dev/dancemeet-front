@@ -3,10 +3,11 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { IonModal, IonIcon, IonButton } from '@ionic/angular/standalone';
 import { TranslatePipe } from '@ngx-translate/core';
 import { addIcons } from 'ionicons';
-import { close, checkmarkCircle, ellipseOutline, bulbOutline, cameraOutline } from 'ionicons/icons';
+import { checkmarkCircle, ellipseOutline, bulbOutline, cameraOutline } from 'ionicons/icons';
 import { OnboardingService } from '../../services/onboarding.service';
 import { LanguageService } from '../../services/language.service';
 import { EventCardComponent } from '../event-card/event-card.component';
+import { FilterSheetHeaderComponent } from '../filter-sheet-header/filter-sheet-header.component';
 import { EventCardView } from '../event-card/event-card.model';
 import { DISCIPLINE_ICON_FILES, EVENT_TYPE_ICON_FILES, STATUS_ICON_FILES, STATUS_LABEL_KEYS } from '../icon-catalog';
 import { mapEmbedUrl } from '../maps';
@@ -132,7 +133,7 @@ const PROFILE_STATUSES = EVENT_STATUSES.map((id) => ({
 // in profile.page.ts) - a language's own name doesn't translate, so someone who
 // switched language by mistake can still recognize their own.
 const PROFILE_LANGUAGE_LABELS: Record<string, string> = { es: 'Español', ca: 'Català', en: 'English' };
-const PROFILE_LANGUAGE_CODES = ['es', 'ca', 'en'];
+const PROFILE_LANGUAGE_CODES = ['ca', 'en', 'es'];
 
 /** Explorer's real map marks each event with its discipline icon (see
  * buildDisciplineMarkerIcon in explorer.page.ts) - these mimic that with a
@@ -156,7 +157,7 @@ const EXPLORER_MAP_PINS = (['Swing', 'Rock&Roll', 'Hip-Hop', 'Swing'] as const).
   standalone: true,
   templateUrl: './welcome-modal.component.html',
   styleUrl: './welcome-modal.component.scss',
-  imports: [IonModal, IonIcon, IonButton, TranslatePipe, EventCardComponent],
+  imports: [IonModal, IonIcon, IonButton, TranslatePipe, EventCardComponent, FilterSheetHeaderComponent],
 })
 export class WelcomeModalComponent {
   private readonly onboarding = inject(OnboardingService);
@@ -191,7 +192,7 @@ export class WelcomeModalComponent {
   readonly dontShowAgain = signal(false);
 
   constructor() {
-    addIcons({ close, checkmarkCircle, ellipseOutline, bulbOutline, cameraOutline });
+    addIcons({ checkmarkCircle, ellipseOutline, bulbOutline, cameraOutline });
     // Every fresh open starts at slide 1, unchecked - whether it's a new
     // login (maybeShowWelcome) or a manual replay from Profile (openWelcome).
     effect(() => {

@@ -1,0 +1,32 @@
+<div class="chip-grid">
+  @for (item of items; track item.id) {
+    @if (interactive) {
+      <button
+        type="button"
+        class="chip"
+        [class.chip-with-icon]="item.iconUrl || item.iconName"
+        [class.selected]="item.selected"
+        (click)="chipClick.emit(item.id)"
+      >
+        @if (item.iconUrl) {
+          <img class="chip-icon" [src]="item.iconUrl" [alt]="item.label ?? ''" />
+        } @else if (item.iconName) {
+          <ion-icon [name]="item.iconName"></ion-icon>
+        }
+        {{ item.label ?? (item.labelKey! | translate) }}
+        @if (item.disabled && item.disabledBadgeKey) {
+          <span class="chip-disabled-badge">{{ item.disabledBadgeKey | translate }}</span>
+        }
+      </button>
+    } @else {
+      <div class="chip chip-readonly" [class.chip-with-icon]="item.iconUrl || item.iconName" [class.selected]="item.selected">
+        @if (item.iconUrl) {
+          <img class="chip-icon" [src]="item.iconUrl" [alt]="item.label ?? ''" />
+        } @else if (item.iconName) {
+          <ion-icon [name]="item.iconName"></ion-icon>
+        }
+        {{ item.label ?? (item.labelKey! | translate) }}
+      </div>
+    }
+  }
+</div>

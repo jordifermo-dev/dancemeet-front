@@ -117,42 +117,21 @@
 
         <p class="group-label first">{{ 'userDetail.eventTypesLabel' | translate }}</p>
         @if (selectedEventTypes().length) {
-          <div class="chip-grid">
-            @for (eventType of selectedEventTypes(); track eventType.id) {
-              <div class="chip chip-with-icon">
-                <img class="chip-icon" [src]="eventTypeIconUrl(eventType.name)" [alt]="eventType.name" />
-                {{ eventType.name }}
-              </div>
-            }
-          </div>
+          <app-chip-grid [items]="eventTypeChips()" [interactive]="false"></app-chip-grid>
         } @else {
           <p class="empty-message">{{ 'userDetail.eventTypesEmpty' | translate }}</p>
         }
 
         <p class="group-label">{{ 'userDetail.disciplinesLabel' | translate }}</p>
         @if (selectedDisciplines().length) {
-          <div class="chip-grid">
-            @for (discipline of selectedDisciplines(); track discipline.id) {
-              <div class="chip chip-with-icon">
-                <img class="chip-icon" [src]="disciplineIconUrl(discipline)" [alt]="discipline.name" />
-                {{ discipline.name }}
-              </div>
-            }
-          </div>
+          <app-chip-grid [items]="disciplineChips()" [interactive]="false"></app-chip-grid>
         } @else {
           <p class="empty-message">{{ 'userDetail.disciplinesEmpty' | translate }}</p>
         }
 
         <p class="group-label">{{ 'userDetail.statusLabel' | translate }}</p>
         @if (selectedStatuses().length) {
-          <div class="chip-grid">
-            @for (option of selectedStatuses(); track option.id) {
-              <div class="chip chip-with-icon">
-                <img class="chip-icon" [src]="statusIconUrl(option.id)" [alt]="option.labelKey | translate" />
-                {{ option.labelKey | translate }}
-              </div>
-            }
-          </div>
+          <app-chip-grid [items]="statusChips()" [interactive]="false"></app-chip-grid>
         } @else {
           <p class="empty-message">{{ 'userDetail.statusEmpty' | translate }}</p>
         }
@@ -208,14 +187,14 @@
         <h2>{{ confirmTitleKey() | translate }}</h2>
       </div>
       <p>{{ confirmMessage() }}</p>
-      <div class="filter-actions-row">
+      <app-filter-actions-row>
         <ion-button expand="block" fill="outline" color="primary" (click)="confirmModalCancel()">
           {{ 'profile.discard' | translate }}
         </ion-button>
         <ion-button expand="block" (click)="confirmModalAccept()">
           {{ 'profile.apply' | translate }}
         </ion-button>
-      </div>
+      </app-filter-actions-row>
     </div>
   </ng-template>
 </ion-modal>

@@ -3,7 +3,7 @@ import { TranslateService } from '@ngx-translate/core';
 
 export type AppLanguage = 'es' | 'ca' | 'en';
 
-export const SUPPORTED_LANGUAGES: AppLanguage[] = ['es', 'ca', 'en'];
+export const SUPPORTED_LANGUAGES: AppLanguage[] = ['ca', 'en', 'es'];
 export const DEFAULT_LANGUAGE: AppLanguage = 'es';
 const LANGUAGE_STORAGE_KEY = 'dancemeet_lang';
 

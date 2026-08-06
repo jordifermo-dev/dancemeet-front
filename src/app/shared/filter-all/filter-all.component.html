@@ -1,0 +1,87 @@
+<app-filter-section titleKey="explorer.eventTypesFilterLabel">
+  <app-chip-grid [items]="eventTypeChips" (chipClick)="chipToggle.emit({ category: 'eventTypes', id: $event })"></app-chip-grid>
+  @if (minSelectionWarning.isActive('eventTypes')) {
+    <p class="min-selection-warning">{{ 'explorer.minSelectionWarning' | translate }}</p>
+  }
+</app-filter-section>
+
+<app-filter-section titleKey="explorer.disciplinesFilterLabel">
+  <app-chip-grid [items]="disciplineChips" (chipClick)="chipToggle.emit({ category: 'disciplines', id: $event })"></app-chip-grid>
+  @if (minSelectionWarning.isActive('disciplines')) {
+    <p class="min-selection-warning">{{ 'explorer.minSelectionWarning' | translate }}</p>
+  }
+</app-filter-section>
+
+<app-filter-section titleKey="explorer.statusFilterLabel">
+  <app-chip-grid [items]="statusChips" (chipClick)="chipToggle.emit({ category: 'statuses', id: $event })"></app-chip-grid>
+  @if (minSelectionWarning.isActive('statuses')) {
+    <p class="min-selection-warning">{{ 'explorer.minSelectionWarning' | translate }}</p>
+  }
+</app-filter-section>
+
+<app-filter-section titleKey="explorer.priceFilterLabel">
+  <app-chip-grid [items]="priceChips" (chipClick)="chipToggle.emit({ category: 'price', id: $event })"></app-chip-grid>
+  @if (minSelectionWarning.isActive('priceOptions')) {
+    <p class="min-selection-warning">{{ 'explorer.minSelectionWarning' | translate }}</p>
+  }
+</app-filter-section>
+
+@if (showRelation) {
+  <app-filter-section titleKey="favorites.relationFilterLabel">
+    <app-chip-grid [items]="relationChips" (chipClick)="chipToggle.emit({ category: 'relation', id: $event })"></app-chip-grid>
+    @if (minSelectionWarning.isActive('relation')) {
+      <p class="min-selection-warning">{{ 'explorer.minSelectionWarning' | translate }}</p>
+    }
+  </app-filter-section>
+}
+
+<app-filter-section titleKey="explorer.dateFilterLabel">
+  <app-chip-grid [items]="quickDateChips" (chipClick)="chipToggle.emit({ category: 'quickDate', id: $event })"></app-chip-grid>
+
+  <div class="date-range-row">
+    <div class="date-field">
+      <span class="date-field-label">{{ 'explorer.dateFrom' | translate }}</span>
+      <div class="date-value-row">
+        <ion-icon name="calendar-outline"></ion-icon>
+        <ion-datetime-button [datetime]="dateFromId">
+          @if (dateFromIsUnset) {
+            <span slot="date-target">{{ 'explorer.noEndDate' | translate }}</span>
+          }
+        </ion-datetime-button>
+      </div>
+    </div>
+    <div class="date-field">
+      <span class="date-field-label">{{ 'explorer.dateTo' | translate }}</span>
+      <div class="date-value-row">
+        <ion-icon name="calendar-outline"></ion-icon>
+        <ion-datetime-button [datetime]="dateToId">
+          @if (dateToIsUnset) {
+            <span slot="date-target">{{ 'explorer.noEndDate' | translate }}</span>
+          }
+        </ion-datetime-button>
+      </div>
+      @if (!dateToIsUnset) {
+        <button type="button" class="date-clear-link" (click)="clearDateTo.emit()">
+          {{ 'explorer.noEndDate' | translate }}
+        </button>
+      }
+    </div>
+  </div>
+</app-filter-section>
+
+@if (showSaveAsPreference) {
+  <app-filter-actions-row>
+    <ion-button expand="block" fill="outline" color="primary" (click)="saveAsPreference.emit()">
+      {{ 'explorer.saveFilters' | translate }}
+    </ion-button>
+  </app-filter-actions-row>
+}
+
+<app-filter-actions-row [secondary]="showSaveAsPreference">
+  <ion-button expand="block" fill="outline" color="primary" (click)="reset.emit()">
+    {{ 'explorer.resetFilters' | translate }}
+  </ion-button>
+  <ion-button expand="block" (click)="apply.emit()">
+    {{ (applied ? 'profile.applied' : 'profile.apply') | translate }}
+  </ion-button>
+</app-filter-actions-row>

@@ -1,0 +1,24 @@
+<ion-modal [isOpen]="isOpen" [initialBreakpoint]="0.45" [breakpoints]="[0, 0.45, 0.7]" (didDismiss)="closed.emit()">
+  <ng-template>
+    <div class="filter-sheet">
+      <app-filter-sheet-header [titleKey]="titleKey" (closed)="closed.emit()"></app-filter-sheet-header>
+      <div class="sort-options-list">
+        @for (option of options; track option.id) {
+          <button
+            type="button"
+            class="sort-option"
+            [class.selected]="selected === option.id"
+            (click)="optionSelected.emit(option.id)"
+          >
+            {{ option.labelKey | translate }}
+          </button>
+        }
+      </div>
+      <app-filter-actions-row>
+        <ion-button expand="block" fill="outline" color="primary" (click)="closed.emit()">
+          {{ 'common.cancel' | translate }}
+        </ion-button>
+      </app-filter-actions-row>
+    </div>
+  </ng-template>
+</ion-modal>

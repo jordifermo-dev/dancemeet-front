@@ -52,6 +52,10 @@ import {
   NOTIFICATION_TYPE_ICONS,
   NOTIFICATION_TYPE_LABEL_KEYS,
 } from '../../shared/notification-types';
+import { FilterSheetHeaderComponent } from '../../shared/filter-sheet-header/filter-sheet-header.component';
+import { FilterSectionComponent } from '../../shared/filter-section/filter-section.component';
+import { FilterActionsRowComponent } from '../../shared/filter-actions-row/filter-actions-row.component';
+import { ChipGridComponent, ChipGridItem } from '../../shared/chip-grid/chip-grid.component';
 
 const ALL_TYPES = ALL_NOTIFICATION_TYPES;
 const TYPE_ICONS = NOTIFICATION_TYPE_ICONS;
@@ -98,6 +102,10 @@ const SORT_OPTIONS: { id: SortMode; labelKey: string }[] = [
     TranslatePipe,
     EventCardComponent,
     UserCardComponent,
+    FilterSheetHeaderComponent,
+    FilterSectionComponent,
+    FilterActionsRowComponent,
+    ChipGridComponent,
   ],
 })
 export class NotificationsPage implements ViewWillEnter, AfterViewInit, OnDestroy {
@@ -120,6 +128,11 @@ export class NotificationsPage implements ViewWillEnter, AfterViewInit, OnDestro
   readonly listTopPadding = signal(110);
 
   readonly markAllReadFlash = createSuccessFlash();
+  /** Same shared signal app-notification-bell renders its badge from - reused
+   * here since the bell itself is gone once you're already on this page. */
+  readonly unreadCount = this.notificationService.unreadCount;
+  /** Drives the mark-all-read button's envelope icon (unread vs. read). */
+  readonly hasUnread = computed(() => this.unreadCount() > 0);
   /** Which row's envelope icon should show the brief success-pulse right now
    * - only one at a time, since toggleRead() is a single-row action. Cleared
    * on the same timer the pulse animation itself runs for. */
@@ -149,6 +162,25 @@ export class NotificationsPage implements ViewWillEnter, AfterViewInit, OnDestro
   readonly draftTypes = signal<NotificationType[]>([...ALL_TYPES]);
   readonly draftReadFilter = signal<ReadFilter>('all');
   readonly isFilterModalOpen = signal(false);
+
+  readonly typeChipItems = computed<ChipGridItem[]>(() =>
+    this.allTypes.map((type) => ({
+      id: type,
+      labelKey: this.typeLabelKeys[type],
+      iconName: this.typeIcons[type],
+      selected: this.draftTypes().includes(type),
+      disabled: this.disabledTypes().has(type),
+      disabledBadgeKey: 'notifications.disabledBadge',
+    })),
+  );
+
+  readonly readFilterChipItems = computed<ChipGridItem[]>(() =>
+    this.readFilterOptions.map((option) => ({
+      id: option.id,
+      labelKey: option.labelKey,
+      selected: this.draftReadFilter() === option.id,
+    })),
+  );
 
   readonly sortOptions = SORT_OPTIONS;
   // Shared across every tab's bell icon - Angular creates a fresh page
@@ -445,12 +477,15 @@ export class NotificationsPage implements ViewWillEnter, AfterViewInit, OnDestro
     this.isFilterModalOpen.set(true);
   }
 
-  toggleDraftType(type: NotificationType): void {
-    this.draftTypes.update((types) => toggleWithMinimum(types, type, () => this.minSelectionWarning.flash('notificationTypes')));
+  toggleDraftType(type: string): void {
+    const notificationType = type as NotificationType;
+    this.draftTypes.update((types) =>
+      toggleWithMinimum(types, notificationType, () => this.minSelectionWarning.flash('notificationTypes')),
+    );
   }
 
-  selectDraftReadFilter(value: ReadFilter): void {
-    this.draftReadFilter.set(value);
+  selectDraftReadFilter(value: string): void {
+    this.draftReadFilter.set(value as ReadFilter);
   }
 
   readonly filtersApplyFlash = createApplyFlash(() => this.isFilterModalOpen.set(false));

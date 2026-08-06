@@ -1,4 +1,4 @@
-import { Component, Input, computed, inject, signal } from '@angular/core';
+import { Component, HostBinding, Input, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { IonIcon } from '@ionic/angular/standalone';
 import { TranslatePipe } from '@ngx-translate/core';
@@ -28,6 +28,24 @@ export class UserCardComponent {
 
   @Input({ required: true }) user!: FollowUser;
   @Input() disciplinesById: Map<string, Discipline> = new Map();
+  /** Optional gate before actually unfollowing - e.g. Follow-list's own
+   * "¿Seguro que quieres dejar de seguir?" modal. Resolving false aborts the
+   * unfollow. Omit to unfollow immediately (Notifications' "new follower"
+   * rows, where a second confirmation would be redundant with the tap itself). */
+  @Input() confirmUnfollow?: (user: FollowUser) => Promise<boolean>;
+  /** Follow-list shows an explicit "sin disciplinas" message when a row has
+   * none; Notifications' compact "new follower" row just omits the block
+   * entirely, so this stays opt-in instead of changing that row too. */
+  @Input() showEmptyDisciplines = false;
+  /** 'card' (default): its own background/border/radius, for feeds like
+   * Notifications where each row is a distinct item. 'row': flat, with a
+   * bottom divider instead - for a single unified list like Follow-list,
+   * where the surrounding container already supplies the card look. */
+  @Input() variant: 'card' | 'row' = 'card';
+
+  @HostBinding('class.row-variant') get isRowVariant(): boolean {
+    return this.variant === 'row';
+  }
 
   private readonly followOverride = signal<boolean | undefined>(undefined);
   /** Guards against a doubled tap firing this twice before the first request's
@@ -61,11 +79,17 @@ export class UserCardComponent {
     this.router.navigate(['/users', this.user.id]);
   }
 
-  toggleFollow(event: Event): void {
+  async toggleFollow(event: Event): Promise<void> {
     event.stopPropagation();
     const me = this.authService.currentUser();
     if (!me || this.followBusy()) {
       return;
+    }
+    if (this.isFollowedByMe() && this.confirmUnfollow) {
+      const confirmed = await this.confirmUnfollow(this.user);
+      if (!confirmed) {
+        return;
+      }
     }
     this.followBusy.set(true);
     if (this.isFollowedByMe()) {

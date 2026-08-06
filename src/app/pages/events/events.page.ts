@@ -30,7 +30,7 @@ import {
 } from '@ionic/angular/standalone';
 import { TranslatePipe } from '@ngx-translate/core';
 import { addIcons } from 'ionicons';
-import { optionsOutline, close, calendarOutline, chevronDownOutline, addCircleOutline } from 'ionicons/icons';
+import { optionsOutline, calendarOutline, chevronDownOutline, addCircleOutline } from 'ionicons/icons';
 import { AuthService } from '../../services/auth.service';
 import { DisciplineService } from '../../services/discipline.service';
 import { EventTypeService } from '../../services/event-type.service';
@@ -47,16 +47,28 @@ import {
   PriceOption,
   EventWithCreatorName,
 } from '../../models';
-import { disciplineIconUrl, eventTypeIconUrl, statusIconUrl, sortByNameOrder, STATUS_LABEL_KEYS } from '../../shared/icon-catalog';
+import { sortByNameOrder, STATUS_LABEL_KEYS } from '../../shared/icon-catalog';
 import { LocationFilterButtonComponent } from '../../shared/location-filter-button/location-filter-button.component';
+import { ChipGridComponent } from '../../shared/chip-grid/chip-grid.component';
+import { SortRowComponent } from '../../shared/sort-row/sort-row.component';
+import { SortOptionsModalComponent } from '../../shared/sort-options-modal/sort-options-modal.component';
+import {
+  disciplineChipItems,
+  eventTypeChipItems,
+  priceChipItems,
+  quickDateChipItems,
+  statusChipItems,
+} from '../../shared/chip-grid/chip-grid-presets';
 import { NotificationBellComponent } from '../../shared/notification-bell/notification-bell.component';
+import { FilterSheetHeaderComponent } from '../../shared/filter-sheet-header/filter-sheet-header.component';
+import { FilterActionsRowComponent } from '../../shared/filter-actions-row/filter-actions-row.component';
 import { EventCardComponent } from '../../shared/event-card/event-card.component';
 import { EventCardView } from '../../shared/event-card/event-card.model';
 import { buildEventCardView } from '../../shared/event-card/build-event-card-view';
 import { recoverAttendState } from '../../shared/attend-toggle';
 import { EVENT_SORT_OPTIONS, EventSortMode, sortEvents } from '../../shared/event-sort';
 import { SortPreferenceService } from '../../services/sort-preference.service';
-import { ExplorerFiltersService } from '../explorer/explorer-filters.service';
+import { ExplorerFiltersService, DateQuickOption } from '../explorer/explorer-filters.service';
 import { createApplyFlash } from '../../shared/success-flash';
 
 const STATUS_OPTIONS = EVENT_STATUSES.map((id) => ({ id, labelKey: STATUS_LABEL_KEYS[id] }));
@@ -90,6 +102,11 @@ const PRICE_OPTIONS: { id: PriceOption; labelKey: string }[] = [
     LocationFilterButtonComponent,
     EventCardComponent,
     NotificationBellComponent,
+    FilterSheetHeaderComponent,
+    FilterActionsRowComponent,
+    ChipGridComponent,
+    SortRowComponent,
+    SortOptionsModalComponent,
   ],
 })
 export class EventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWillEnter {
@@ -140,9 +157,11 @@ export class EventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWillEnt
     () => this.sortOptions.find((option) => option.id === this.sortMode())?.labelKey ?? this.sortOptions[0].labelKey,
   );
 
-  readonly disciplineIconUrl = disciplineIconUrl;
-  readonly eventTypeIconUrl = eventTypeIconUrl;
-  readonly statusIconUrl = statusIconUrl;
+  readonly eventTypeChips = computed(() => eventTypeChipItems(this.eventTypes(), this.filters.draftEventTypeIds()));
+  readonly disciplineChips = computed(() => disciplineChipItems(this.disciplines(), this.filters.draftDisciplineIds()));
+  readonly statusChips = computed(() => statusChipItems(this.statusOptions, this.filters.draftStatuses()));
+  readonly priceChips = computed(() => priceChipItems(this.priceOptions, this.filters.draftPriceOptions()));
+  readonly quickDateChips = computed(() => quickDateChipItems(this.filters.draftActiveQuickDate()));
 
   /** An empty discipline or event-type selection filters down to zero events
    * (see explorer-filters.service.ts), so an empty result needs a distinct,
@@ -169,7 +188,7 @@ export class EventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWillEnt
   readonly isDateModalOpen = signal(false);
 
   constructor() {
-    addIcons({ optionsOutline, close, calendarOutline, chevronDownOutline, addCircleOutline });
+    addIcons({ optionsOutline, calendarOutline, chevronDownOutline, addCircleOutline });
 
     // Re-run the search whenever any applied filter, the location, the radius
     // or the search term changes - all in one effect so every trigger stays in sync.
@@ -342,12 +361,8 @@ export class EventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWillEnt
     this.searchInputTimer = setTimeout(() => this.searchTerm.set(term), 300);
   }
 
-  openSortModal(): void {
-    this.isSortModalOpen.set(true);
-  }
-
-  selectSort(value: EventSortMode): void {
-    this.sortMode.set(value);
+  selectSort(value: string): void {
+    this.sortMode.set(value as EventSortMode);
     this.isSortModalOpen.set(false);
   }
 
@@ -356,7 +371,7 @@ export class EventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWillEnt
   }
 
   goToCreateEvent(): void {
-    this.router.navigateByUrl('/events/new');
+    this.router.navigate(['/events/new'], { queryParams: { origin: '/tabs/events' } });
   }
 
   // --- Individual quick filter modals (mirrors Explorer's, same shared filter state) --
@@ -395,12 +410,16 @@ export class EventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWillEnt
     this.filters.toggleDraftDisciplineId(id);
   }
 
-  toggleDraftStatus(id: EventStatus): void {
-    this.filters.toggleDraftStatusId(id);
+  toggleDraftStatus(id: string): void {
+    this.filters.toggleDraftStatusId(id as EventStatus);
   }
 
-  toggleDraftPriceOption(id: PriceOption): void {
-    this.filters.toggleDraftPriceOption(id);
+  toggleDraftPriceOption(id: string): void {
+    this.filters.toggleDraftPriceOption(id as PriceOption);
+  }
+
+  setDraftQuickDate(id: string): void {
+    this.filters.setDraftQuickDate(id as DateQuickOption);
   }
 
   onDraftDateFromChange(event: Event): void {

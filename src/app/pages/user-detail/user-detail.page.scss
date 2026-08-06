@@ -82,10 +82,16 @@
   margin-bottom: 14px;
   border: 1px solid var(--ion-color-light-shade);
   font-size: 0.9rem;
+
+  h2 {
+    font-size: 0.95rem;
+    font-weight: 700;
+    margin: 0 0 12px;
+  }
 }
 
 .group-label {
-  margin: 20px 0 8px;
+  margin: 28px 0 8px;
   font-size: 0.78rem;
   font-weight: 600;
   color: var(--ion-color-medium);
@@ -135,36 +141,6 @@ a.info-row {
   margin: 0;
 }
 
-.chip-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 4px;
-}
-
-.chip {
-  border: 1.5px solid var(--ion-color-primary);
-  border-radius: 999px;
-  padding: 6px 12px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  background: rgba(var(--ion-color-primary-rgb), 0.08);
-  color: var(--ion-color-primary);
-}
-
-.chip-with-icon {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding-left: 6px;
-}
-
-.chip-icon {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  object-fit: cover;
-}
 
 .map-preview {
   // Google's embed silently disables drag-to-pan below roughly this size,
@@ -303,14 +279,3 @@ a.info-row {
   }
 }
 
-.filter-actions-row {
-  display: flex;
-  gap: 10px;
-  margin-top: 16px;
-  padding-top: 12px;
-
-  ion-button {
-    flex: 1;
-    --box-shadow: none;
-  }
-}

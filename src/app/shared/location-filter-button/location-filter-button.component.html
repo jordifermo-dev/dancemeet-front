@@ -10,12 +10,7 @@
 >
   <ng-template>
     <div class="filter-sheet">
-      <div class="filter-sheet-header">
-        <h2>{{ 'explorer.locationModalTitle' | translate }}</h2>
-        <button type="button" class="close-button" (click)="isOpen.set(false)">
-          <ion-icon name="close"></ion-icon>
-        </button>
-      </div>
+      <app-filter-sheet-header titleKey="explorer.locationModalTitle" (closed)="isOpen.set(false)"></app-filter-sheet-header>
 
       <ion-searchbar
         class="tgtg-searchbar"
@@ -49,19 +44,19 @@
         (ionChange)="onDistanceChange($event)"
       ></ion-range>
 
-      <div class="filter-actions-row">
-        <ion-button expand="block" (click)="saveLocationFilter()">
+      <app-filter-actions-row>
+        <ion-button expand="block" fill="outline" color="primary" (click)="saveLocationFilter()">
           {{ 'explorer.saveFilters' | translate }}
         </ion-button>
-      </div>
-      <div class="filter-actions-row secondary-row">
-        <ion-button expand="block" fill="outline" color="medium" (click)="resetLocationFilter()">
+      </app-filter-actions-row>
+      <app-filter-actions-row [secondary]="true">
+        <ion-button expand="block" fill="outline" color="primary" (click)="resetLocationFilter()">
           {{ 'explorer.resetFilters' | translate }}
         </ion-button>
         <ion-button expand="block" (click)="applyLocationFilter()">
           {{ (applyLocationFlash.active() ? 'profile.applied' : 'profile.apply') | translate }}
         </ion-button>
-      </div>
+      </app-filter-actions-row>
     </div>
   </ng-template>
 </ion-modal>

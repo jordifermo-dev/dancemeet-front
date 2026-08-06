@@ -2,10 +2,12 @@ import { Component, inject, signal } from '@angular/core';
 import { IonSearchbar, IonIcon, IonButton, IonModal, IonRange } from '@ionic/angular/standalone';
 import { TranslatePipe } from '@ngx-translate/core';
 import { addIcons } from 'ionicons';
-import { locationOutline, close, locateOutline } from 'ionicons/icons';
+import { locationOutline, locateOutline } from 'ionicons/icons';
 import { CitySuggestion, GeocodingService } from '../../services/geocoding.service';
 import { ExplorerFiltersService } from '../../pages/explorer/explorer-filters.service';
 import { createApplyFlash } from '../success-flash';
+import { FilterSheetHeaderComponent } from '../filter-sheet-header/filter-sheet-header.component';
+import { FilterActionsRowComponent } from '../filter-actions-row/filter-actions-row.component';
 
 /** The "Ubicación" icon button + bottom sheet (distance, city search, current
  * location) shared by every tab that filters by location - all bound to the
@@ -16,7 +18,16 @@ import { createApplyFlash } from '../success-flash';
   standalone: true,
   templateUrl: './location-filter-button.component.html',
   styleUrl: './location-filter-button.component.scss',
-  imports: [IonSearchbar, IonIcon, IonButton, IonModal, IonRange, TranslatePipe],
+  imports: [
+    IonSearchbar,
+    IonIcon,
+    IonButton,
+    IonModal,
+    IonRange,
+    TranslatePipe,
+    FilterSheetHeaderComponent,
+    FilterActionsRowComponent,
+  ],
 })
 export class LocationFilterButtonComponent {
   private readonly geocodingService = inject(GeocodingService);
@@ -28,7 +39,7 @@ export class LocationFilterButtonComponent {
   private cityInputTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor() {
-    addIcons({ locationOutline, close, locateOutline });
+    addIcons({ locationOutline, locateOutline });
   }
 
   open(): void {

@@ -34,18 +34,13 @@ import { FavoriteService } from '../../services/favorite.service';
 import { DisciplineService } from '../../services/discipline.service';
 import { EventTypeService } from '../../services/event-type.service';
 import { Discipline, EventType, EVENT_STATUSES, SocialLinks, User } from '../../models';
-import {
-  disciplineIconUrl,
-  eventTypeIconUrl,
-  formatSocialUrl,
-  SocialIconKey,
-  socialIconUrl,
-  statusIconUrl,
-  STATUS_LABEL_KEYS,
-} from '../../shared/icon-catalog';
+import { formatSocialUrl, SocialIconKey, socialIconUrl, STATUS_LABEL_KEYS } from '../../shared/icon-catalog';
 import { MapType, mapEmbedUrl as buildMapEmbedUrl } from '../../shared/maps';
 import { buildVCard, downloadVCard } from '../../shared/vcard';
 import { createSuccessFlash } from '../../shared/success-flash';
+import { FilterActionsRowComponent } from '../../shared/filter-actions-row/filter-actions-row.component';
+import { ChipGridComponent } from '../../shared/chip-grid/chip-grid.component';
+import { disciplineChipItems, eventTypeChipItems, statusChipItems } from '../../shared/chip-grid/chip-grid-presets';
 
 const MIN_ZOOM = 3;
 const MAX_ZOOM = 20;
@@ -76,6 +71,8 @@ const SOCIAL_LINK_ORDER: (keyof SocialLinks)[] = ['instagram', 'facebook', 'tikt
     IonSpinner,
     IonModal,
     TranslatePipe,
+    FilterActionsRowComponent,
+    ChipGridComponent,
   ],
 })
 export class UserDetailPage {
@@ -166,6 +163,22 @@ export class UserDetailPage {
     return STATUS_OPTIONS.filter((option) => ids.includes(option.id));
   });
 
+  // Read-only display: every chip shown here already IS one of the user's
+  // selections, so all of them render in the highlighted "selected" style
+  // (self-referential ids list) rather than the plain unselected one.
+  readonly eventTypeChips = computed(() => {
+    const eventTypes = this.selectedEventTypes();
+    return eventTypeChipItems(eventTypes, eventTypes.map((e) => e.id));
+  });
+  readonly disciplineChips = computed(() => {
+    const disciplines = this.selectedDisciplines();
+    return disciplineChipItems(disciplines, disciplines.map((d) => d.id));
+  });
+  readonly statusChips = computed(() => {
+    const statuses = this.selectedStatuses();
+    return statusChipItems(statuses, statuses.map((s) => s.id));
+  });
+
   readonly hasContactInfo = computed(() => {
     const user = this.user();
     return !!user && (user.showEmail || (user.showPhone && !!user.phone));
@@ -195,9 +208,6 @@ export class UserDetailPage {
     return this.sanitizer.bypassSecurityTrustResourceUrl(url);
   });
 
-  readonly disciplineIconUrl = disciplineIconUrl;
-  readonly eventTypeIconUrl = eventTypeIconUrl;
-  readonly statusIconUrl = statusIconUrl;
   readonly socialIconUrl = socialIconUrl;
   readonly formatSocialUrl = formatSocialUrl;
 

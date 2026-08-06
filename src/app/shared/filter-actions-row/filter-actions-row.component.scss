@@ -1,0 +1,20 @@
+// ViewEncapsulation.None (see the .ts file) - scoped by hand via this
+// specific class name instead of Angular's usual attribute scoping, since
+// the rule needs to reach the projected <ion-button>s inside <ng-content>.
+.filter-actions-row-inner {
+  display: flex;
+  gap: 10px;
+  margin-top: 18px;
+  padding-top: 12px;
+
+  ion-button {
+    flex: 1;
+    --box-shadow: none;
+    font-size: 0.85rem;
+  }
+
+  &.secondary-row {
+    margin-top: 8px;
+    padding-top: 0;
+  }
+}

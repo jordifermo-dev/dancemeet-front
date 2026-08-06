@@ -73,19 +73,7 @@
         <div class="step">
           <h2>{{ 'register.disciplinesTitle' | translate }}</h2>
           <p class="step-subtitle">{{ 'register.selectAllSubtitle' | translate }}</p>
-          <div class="chip-grid">
-            @for (discipline of disciplines(); track discipline.id) {
-              <button
-                type="button"
-                class="chip chip-with-icon"
-                [class.selected]="selectedDisciplineIds().includes(discipline.id)"
-                (click)="toggleDiscipline(discipline.id)"
-              >
-                <img class="chip-icon" [src]="disciplineIconUrl(discipline)" [alt]="discipline.name" />
-                {{ discipline.name }}
-              </button>
-            }
-          </div>
+          <app-chip-grid [items]="disciplineChips()" (chipClick)="toggleDiscipline($event)"></app-chip-grid>
         </div>
       }
 
@@ -93,19 +81,7 @@
         <div class="step">
           <h2>{{ 'register.eventTypesTitle' | translate }}</h2>
           <p class="step-subtitle">{{ 'register.selectAllSubtitle' | translate }}</p>
-          <div class="chip-grid">
-            @for (eventType of eventTypes(); track eventType.id) {
-              <button
-                type="button"
-                class="chip chip-with-icon"
-                [class.selected]="selectedEventTypeIds().includes(eventType.id)"
-                (click)="toggleEventType(eventType.id)"
-              >
-                <img class="chip-icon" [src]="eventTypeIconUrl(eventType.name)" [alt]="eventType.name" />
-                {{ eventType.name }}
-              </button>
-            }
-          </div>
+          <app-chip-grid [items]="eventTypeChips()" (chipClick)="toggleEventType($event)"></app-chip-grid>
         </div>
       }
 

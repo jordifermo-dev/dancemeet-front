@@ -1,12 +1,12 @@
 import { NotificationType } from '../models';
 
 export const ALL_NOTIFICATION_TYPES: NotificationType[] = [
-  'new_follower',
-  'event_attendee',
   'event_updated',
   'event_reminder_today',
   'following_new_event',
   'preference_new_event',
+  'event_attendee',
+  'new_follower',
 ];
 
 export const NOTIFICATION_TYPE_ICONS: Record<NotificationType, string> = {

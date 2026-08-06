@@ -45,54 +45,13 @@
     } @else {
       <div class="user-list">
         @for (item of filteredItems(); track item.id) {
-          <div class="user-row" (click)="openUser(item)">
-            @if (item.photoUrl) {
-              <img class="avatar" [src]="item.photoUrl" [alt]="item.name" />
-            } @else {
-              <div class="avatar avatar-placeholder">
-                <ion-icon name="person-outline"></ion-icon>
-              </div>
-            }
-            <div class="user-info">
-              <span class="user-name">{{ item.name }}</span>
-              @if (disciplinesFor(item); as userDisciplines) {
-                @if (userDisciplines.length) {
-                  <div class="user-disciplines">
-                    @for (discipline of userDisciplines; track discipline.id) {
-                      <span class="discipline-mini-chip">
-                        <img class="discipline-mini-icon" [src]="'/' + discipline.iconUrl" [alt]="discipline.name" />
-                        {{ discipline.name }}
-                      </span>
-                    }
-                  </div>
-                } @else {
-                  <span class="user-disciplines-empty">{{ 'followList.noDisciplines' | translate }}</span>
-                }
-              }
-            </div>
-            @if (!isMe(item)) {
-              @if (isFollowedByMe(item)) {
-                <button
-                  type="button"
-                  class="follow-btn follow-btn-following"
-                  [disabled]="isFollowBusy(item)"
-                  (click)="confirmUnfollow(item, $event)"
-                >
-                  {{ (justToggledFollowId() === item.id ? 'eventDetail.savedButton' : 'profile.following') | translate }}
-                </button>
-              } @else {
-                <button
-                  type="button"
-                  class="follow-btn follow-btn-follow"
-                  [disabled]="isFollowBusy(item)"
-                  (click)="follow(item, $event)"
-                >
-                  <ion-icon [name]="justToggledFollowId() === item.id ? 'checkmark-outline' : 'person-add-outline'"></ion-icon>
-                  {{ (justToggledFollowId() === item.id ? 'eventDetail.savedButton' : 'userDetail.followButton') | translate }}
-                </button>
-              }
-            }
-          </div>
+          <app-user-card
+            [user]="item"
+            [disciplinesById]="disciplinesById()"
+            [confirmUnfollow]="confirmUnfollowUser"
+            [showEmptyDisciplines]="true"
+            variant="row"
+          ></app-user-card>
         }
       </div>
     }
@@ -107,35 +66,18 @@
 >
   <ng-template>
     <div class="filter-sheet">
-      <div class="filter-sheet-header">
-        <h2>{{ 'followList.filterDisciplinesTitle' | translate }}</h2>
-        <button type="button" class="close-button" (click)="isFilterModalOpen.set(false)">
-          <ion-icon name="close"></ion-icon>
-        </button>
-      </div>
+      <app-filter-sheet-header titleKey="followList.filterDisciplinesTitle" (closed)="isFilterModalOpen.set(false)"></app-filter-sheet-header>
 
-      <div class="chip-grid">
-        @for (discipline of disciplines(); track discipline.id) {
-          <button
-            type="button"
-            class="chip chip-with-icon"
-            [class.selected]="draftDisciplineFilterIds().includes(discipline.id)"
-            (click)="toggleDraftDiscipline(discipline.id)"
-          >
-            <img class="chip-icon" [src]="'/' + discipline.iconUrl" [alt]="discipline.name" />
-            {{ discipline.name }}
-          </button>
-        }
-      </div>
+      <app-chip-grid [items]="disciplineChipItems()" (chipClick)="toggleDraftDiscipline($event)"></app-chip-grid>
 
-      <div class="filter-actions-row">
+      <app-filter-actions-row>
         <ion-button expand="block" fill="outline" color="primary" (click)="clearDisciplineFilter()">
           {{ 'explorer.clearFilter' | translate }}
         </ion-button>
         <ion-button expand="block" (click)="applyDisciplineFilter()">
           {{ (disciplineApplyFlash.active() ? 'profile.applied' : 'profile.apply') | translate }}
         </ion-button>
-      </div>
+      </app-filter-actions-row>
     </div>
   </ng-template>
 </ion-modal>
@@ -148,12 +90,7 @@
 >
   <ng-template>
     <div class="filter-sheet">
-      <div class="filter-sheet-header">
-        <h2>{{ 'followList.sortLabel' | translate }}</h2>
-        <button type="button" class="close-button" (click)="isSortModalOpen.set(false)">
-          <ion-icon name="close"></ion-icon>
-        </button>
-      </div>
+      <app-filter-sheet-header titleKey="followList.sortLabel" (closed)="isSortModalOpen.set(false)"></app-filter-sheet-header>
       <div class="sort-options-list">
         @for (option of sortOptions; track option.id) {
           <button
@@ -166,11 +103,11 @@
           </button>
         }
       </div>
-      <div class="filter-actions-row">
+      <app-filter-actions-row>
         <ion-button expand="block" fill="outline" color="primary" (click)="isSortModalOpen.set(false)">
           {{ 'common.cancel' | translate }}
         </ion-button>
-      </div>
+      </app-filter-actions-row>
     </div>
   </ng-template>
 </ion-modal>
@@ -187,14 +124,14 @@
         <h2>{{ confirmTitleKey() | translate }}</h2>
       </div>
       <p>{{ confirmMessage() }}</p>
-      <div class="filter-actions-row">
+      <app-filter-actions-row>
         <ion-button expand="block" fill="outline" color="primary" (click)="confirmModalCancel()">
           {{ 'profile.discard' | translate }}
         </ion-button>
         <ion-button expand="block" (click)="confirmModalAccept()">
           {{ 'profile.apply' | translate }}
         </ion-button>
-      </div>
+      </app-filter-actions-row>
     </div>
   </ng-template>
 </ion-modal>

@@ -1,4 +1,9 @@
-<div class="event-card" [class.faded]="view.isFaded" [routerLink]="['/events', view.id]">
+<div
+  class="event-card"
+  [class.faded]="view.isFaded"
+  [routerLink]="['/events', view.id]"
+  [queryParams]="origin ? { origin } : undefined"
+>
   <img class="event-card-image" [src]="view.imageUrl" [alt]="view.title" />
   <div class="event-card-body">
     <h3 class="event-card-title">{{ view.title }}</h3>

@@ -46,7 +46,7 @@ import {
   FavoritedEvent,
   PriceOption,
 } from '../../models';
-import { disciplineIconUrl, eventTypeIconUrl, statusIconUrl, sortByNameOrder, STATUS_LABEL_KEYS } from '../../shared/icon-catalog';
+import { sortByNameOrder, STATUS_LABEL_KEYS } from '../../shared/icon-catalog';
 import { haversineDistanceMeters } from '../../shared/maps';
 import { toggleWithMinimum } from '../../shared/min-selection';
 import { MinSelectionWarningService } from '../../shared/min-selection-warning.service';
@@ -58,11 +58,23 @@ import { DateQuickOption, ExplorerFiltersService } from '../explorer/explorer-fi
 import { createApplyFlash } from '../../shared/success-flash';
 import { EVENT_SORT_OPTIONS, EventSortMode, sortEvents } from '../../shared/event-sort';
 import { SortPreferenceService } from '../../services/sort-preference.service';
+import { FilterSheetHeaderComponent } from '../../shared/filter-sheet-header/filter-sheet-header.component';
+import { FilterActionsRowComponent } from '../../shared/filter-actions-row/filter-actions-row.component';
+import { ChipGridComponent } from '../../shared/chip-grid/chip-grid.component';
+import { FilterAllChipEvent, FilterAllComponent } from '../../shared/filter-all/filter-all.component';
+import {
+  disciplineChipItems,
+  eventTypeChipItems,
+  optionChipItems,
+  priceChipItems,
+  quickDateChipItems,
+  statusChipItems,
+} from '../../shared/chip-grid/chip-grid-presets';
 
 type RelationFilter = 'organizer' | 'attendee';
 const RELATION_OPTIONS: { id: RelationFilter; labelKey: string }[] = [
-  { id: 'organizer', labelKey: 'favorites.relationOrganizer' },
   { id: 'attendee', labelKey: 'favorites.relationAttendee' },
+  { id: 'organizer', labelKey: 'favorites.relationOrganizer' },
 ];
 const PRICE_OPTIONS: { id: PriceOption; labelKey: string }[] = [
   { id: 'free', labelKey: 'explorer.priceFreeOption' },
@@ -95,6 +107,10 @@ const PRICE_OPTIONS: { id: PriceOption; labelKey: string }[] = [
     IonDatetimeButton,
     TranslatePipe,
     EventCardComponent,
+    FilterSheetHeaderComponent,
+    FilterActionsRowComponent,
+    ChipGridComponent,
+    FilterAllComponent,
   ],
 })
 export class UserEventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWillEnter {
@@ -142,10 +158,6 @@ export class UserEventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWil
   readonly currentSortLabelKey = computed(
     () => this.sortOptions.find((option) => option.id === this.sortMode())?.labelKey ?? this.sortOptions[0].labelKey,
   );
-
-  readonly disciplineIconUrl = disciplineIconUrl;
-  readonly eventTypeIconUrl = eventTypeIconUrl;
-  readonly statusIconUrl = statusIconUrl;
 
   // --- Local filter state (independent from Explorer's/Favorites') --------
   readonly draftDisciplineIds = signal<string[]>([]);
@@ -201,6 +213,13 @@ export class UserEventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWil
     return to !== undefined ? this.dateUtils.toDateOnlyIso(to) : null;
   });
   readonly draftActiveQuickDate = computed(() => this.dateUtils.matchQuickDate(this.draftDateFrom(), this.draftDateTo()));
+
+  readonly disciplineChips = computed(() => disciplineChipItems(this.disciplines(), this.draftDisciplineIds()));
+  readonly eventTypeChips = computed(() => eventTypeChipItems(this.eventTypes(), this.draftEventTypeIds()));
+  readonly statusChips = computed(() => statusChipItems(this.statusOptions, this.draftStatuses()));
+  readonly relationChips = computed(() => optionChipItems(this.relationOptions, this.draftRelation()));
+  readonly priceChips = computed(() => priceChipItems(this.priceOptions, this.draftPriceOptions()));
+  readonly quickDateChips = computed(() => quickDateChipItems(this.draftActiveQuickDate()));
 
   private readonly disciplinesById = computed(() => new Map(this.disciplines().map((d) => [d.id, d])));
   private readonly eventTypesById = computed(() => new Map(this.eventTypes().map((e) => [e.id, e])));
@@ -511,8 +530,9 @@ export class UserEventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWil
     this.isStatusModalOpen.set(true);
   }
 
-  toggleDraftStatus(id: EventStatus): void {
-    this.draftStatuses.update((ids) => toggleWithMinimum(ids, id, () => this.minSelectionWarning.flash('statuses')));
+  toggleDraftStatus(id: string): void {
+    const status = id as EventStatus;
+    this.draftStatuses.update((ids) => toggleWithMinimum(ids, status, () => this.minSelectionWarning.flash('statuses')));
   }
 
   readonly statusApplyFlash = createApplyFlash(() => this.isStatusModalOpen.set(false));
@@ -536,8 +556,9 @@ export class UserEventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWil
     this.isRelationModalOpen.set(true);
   }
 
-  toggleDraftRelation(id: RelationFilter): void {
-    this.draftRelation.update((ids) => toggleWithMinimum(ids, id, () => this.minSelectionWarning.flash('relation')));
+  toggleDraftRelation(id: string): void {
+    const relation = id as RelationFilter;
+    this.draftRelation.update((ids) => toggleWithMinimum(ids, relation, () => this.minSelectionWarning.flash('relation')));
   }
 
   readonly relationApplyFlash = createApplyFlash(() => this.isRelationModalOpen.set(false));
@@ -561,8 +582,9 @@ export class UserEventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWil
     this.isPriceModalOpen.set(true);
   }
 
-  toggleDraftPriceOption(id: PriceOption): void {
-    this.draftPriceOptions.update((ids) => toggleWithMinimum(ids, id, () => this.minSelectionWarning.flash('priceOptions')));
+  toggleDraftPriceOption(id: string): void {
+    const price = id as PriceOption;
+    this.draftPriceOptions.update((ids) => toggleWithMinimum(ids, price, () => this.minSelectionWarning.flash('priceOptions')));
   }
 
   readonly priceApplyFlash = createApplyFlash(() => this.isPriceModalOpen.set(false));
@@ -587,8 +609,8 @@ export class UserEventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWil
     this.isDateModalOpen.set(true);
   }
 
-  setDraftQuickDate(option: DateQuickOption): void {
-    const { from, to } = this.dateUtils.quickDateRange(option);
+  setDraftQuickDate(option: string): void {
+    const { from, to } = this.dateUtils.quickDateRange(option as DateQuickOption);
     this.draftDateFrom.set(from);
     this.draftDateTo.set(to);
   }
@@ -761,6 +783,29 @@ export class UserEventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWil
     this.draftDateFrom.set(this.appliedDateFrom());
     this.draftDateTo.set(this.appliedDateTo());
     this.isGenericFilterModalOpen.set(true);
+  }
+
+  onGenericFilterChipToggle(event: FilterAllChipEvent): void {
+    switch (event.category) {
+      case 'eventTypes':
+        this.toggleDraftEventType(event.id);
+        break;
+      case 'disciplines':
+        this.toggleDraftDiscipline(event.id);
+        break;
+      case 'statuses':
+        this.toggleDraftStatus(event.id);
+        break;
+      case 'price':
+        this.toggleDraftPriceOption(event.id);
+        break;
+      case 'quickDate':
+        this.setDraftQuickDate(event.id);
+        break;
+      case 'relation':
+        this.toggleDraftRelation(event.id);
+        break;
+    }
   }
 
   readonly genericApplyFlash = createApplyFlash(() => this.isGenericFilterModalOpen.set(false));

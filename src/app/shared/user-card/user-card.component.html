@@ -17,6 +17,8 @@
           </span>
         }
       </div>
+    } @else if (showEmptyDisciplines) {
+      <span class="user-disciplines-empty">{{ 'followList.noDisciplines' | translate }}</span>
     }
   </div>
   @if (!isMe()) {
