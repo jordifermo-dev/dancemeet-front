@@ -133,11 +133,13 @@
           [priceChips]="priceChips()"
           [quickDateChips]="quickDateChips()"
           [relationChips]="relationChips()"
-          dateFromId="favoritesDateFrom"
-          dateToId="favoritesDateTo"
+          [dateFromValue]="draftDateFrom() ?? nowTimestamp"
+          [dateToValue]="draftDateTo() ?? draftDateFrom() ?? nowTimestamp"
           [dateToIsUnset]="draftDateTo() === undefined"
           [applied]="genericApplyFlash.active()"
           (chipToggle)="onGenericFilterChipToggle($event)"
+          (dateFromChange)="onDraftDateFromChange($event)"
+          (dateToChange)="onDraftDateToChange($event)"
           (clearDateTo)="clearDraftDateTo()"
           (reset)="clearGenericFilter()"
           (apply)="applyGenericFilter()"
@@ -150,8 +152,8 @@
 <!-- Location bottom sheet: distance, city search, current location -->
 <ion-modal
   [isOpen]="isLocationModalOpen()"
-  [initialBreakpoint]="0.7"
-  [breakpoints]="[0, 0.7, 0.9]"
+  [initialBreakpoint]="0.67"
+  [breakpoints]="[0, 0.67]"
   (didDismiss)="isLocationModalOpen.set(false)"
 >
   <ng-template>
@@ -203,8 +205,8 @@
 <!-- Event types filter -->
 <ion-modal
   [isOpen]="isEventTypeModalOpen()"
-  [initialBreakpoint]="0.6"
-  [breakpoints]="[0, 0.6, 0.9]"
+  [initialBreakpoint]="0.67"
+  [breakpoints]="[0, 0.67]"
   (didDismiss)="isEventTypeModalOpen.set(false)"
 >
   <ng-template>
@@ -232,8 +234,8 @@
 <!-- Disciplines filter -->
 <ion-modal
   [isOpen]="isDisciplineModalOpen()"
-  [initialBreakpoint]="0.6"
-  [breakpoints]="[0, 0.6, 0.9]"
+  [initialBreakpoint]="0.67"
+  [breakpoints]="[0, 0.67]"
   (didDismiss)="isDisciplineModalOpen.set(false)"
 >
   <ng-template>
@@ -261,8 +263,8 @@
 <!-- Status filter -->
 <ion-modal
   [isOpen]="isStatusModalOpen()"
-  [initialBreakpoint]="0.55"
-  [breakpoints]="[0, 0.55, 0.85]"
+  [initialBreakpoint]="0.67"
+  [breakpoints]="[0, 0.67]"
   (didDismiss)="isStatusModalOpen.set(false)"
 >
   <ng-template>
@@ -348,8 +350,8 @@
 <!-- Date filter -->
 <ion-modal
   [isOpen]="isDateModalOpen()"
-  [initialBreakpoint]="0.65"
-  [breakpoints]="[0, 0.65, 0.9]"
+  [initialBreakpoint]="0.67"
+  [breakpoints]="[0, 0.67]"
   (didDismiss)="isDateModalOpen.set(false)"
 >
   <ng-template>
@@ -365,18 +367,24 @@
           <span class="date-field-label">{{ 'explorer.dateFrom' | translate }}</span>
           <div class="date-value-row">
             <ion-icon name="calendar-outline"></ion-icon>
-            <ion-datetime-button datetime="favoritesDateFrom"></ion-datetime-button>
+            <app-date-picker-field
+              [value]="draftDateFrom() ?? nowTimestamp"
+              titleKey="explorer.dateFrom"
+              (dateChange)="onDraftDateFromChange($event)"
+            ></app-date-picker-field>
           </div>
         </div>
         <div class="date-field">
           <span class="date-field-label">{{ 'explorer.dateTo' | translate }}</span>
           <div class="date-value-row">
             <ion-icon name="calendar-outline"></ion-icon>
-            <ion-datetime-button datetime="favoritesDateTo">
-              @if (draftDateTo() === undefined) {
-                <span slot="date-target">{{ 'explorer.noEndDate' | translate }}</span>
-              }
-            </ion-datetime-button>
+            <app-date-picker-field
+              [value]="draftDateTo() ?? draftDateFrom() ?? nowTimestamp"
+              [isUnset]="draftDateTo() === undefined"
+              [unsetLabel]="'explorer.noEndDate' | translate"
+              titleKey="explorer.dateTo"
+              (dateChange)="onDraftDateToChange($event)"
+            ></app-date-picker-field>
           </div>
           @if (draftDateTo() !== undefined) {
             <button type="button" class="date-clear-link" (click)="clearDraftDateTo()">
@@ -394,45 +402,6 @@
           {{ (dateApplyFlash.active() ? 'profile.applied' : 'profile.apply') | translate }}
         </ion-button>
       </app-filter-actions-row>
-    </div>
-  </ng-template>
-</ion-modal>
-
-<ion-modal [keepContentsMounted]="true">
-  <ng-template>
-    <ion-datetime
-      #favoritesDateFromPicker
-      id="favoritesDateFrom"
-      presentation="date"
-      [value]="draftDateFromIso()"
-      (ionChange)="onDraftDateFromChange($event)"
-    ></ion-datetime>
-    <div class="calendar-picker-actions">
-      <ion-button expand="block" fill="outline" color="primary" (click)="favoritesDateFromPicker.cancel(true)">
-        {{ 'explorer.calendarExit' | translate }}
-      </ion-button>
-      <ion-button expand="block" color="primary" (click)="favoritesDateFromPicker.confirm(true)">
-        {{ 'explorer.calendarApply' | translate }}
-      </ion-button>
-    </div>
-  </ng-template>
-</ion-modal>
-<ion-modal [keepContentsMounted]="true">
-  <ng-template>
-    <ion-datetime
-      #favoritesDateToPicker
-      id="favoritesDateTo"
-      presentation="date"
-      [value]="draftDateToIso()"
-      (ionChange)="onDraftDateToChange($event)"
-    ></ion-datetime>
-    <div class="calendar-picker-actions">
-      <ion-button expand="block" fill="outline" color="primary" (click)="favoritesDateToPicker.cancel(true)">
-        {{ 'explorer.calendarExit' | translate }}
-      </ion-button>
-      <ion-button expand="block" color="primary" (click)="favoritesDateToPicker.confirm(true)">
-        {{ 'explorer.calendarApply' | translate }}
-      </ion-button>
     </div>
   </ng-template>
 </ion-modal>

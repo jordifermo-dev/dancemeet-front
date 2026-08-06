@@ -60,7 +60,10 @@ function demoEventCard(
 ): EventCardView {
   return {
     isOwnEvent: relationLabelKey === 'favorites.relationCreatorBadge',
-    isAttending: relationLabelKey === 'favorites.relationFavoriteBadge',
+    // Organizing an event means attending it too (the backend creates a real
+    // Favorite record for the creator on createEvent()), so the heart shows
+    // filled for both demo cards, not just the attendee one.
+    isAttending: relationLabelKey === 'favorites.relationCreatorBadge' || relationLabelKey === 'favorites.relationFavoriteBadge',
     id,
     imageUrl: `https://picsum.photos/1200/800?${photoId}`,
     title,
@@ -79,6 +82,17 @@ function demoEventCard(
     price,
     isFaded: false,
     relationLabelKey,
+    // Derived from relationLabelKey - this is what actually drives the
+    // badge's color (see event-card.component.scss's .tag-relation-* rules
+    // and EventCardView.relation's own doc comment); relationLabelKey alone
+    // only supplies the text, so without this the demo badges rendered
+    // colorless instead of matching the real event-card ones.
+    relation:
+      relationLabelKey === 'favorites.relationCreatorBadge'
+        ? 'creator'
+        : relationLabelKey === 'favorites.relationFavoriteBadge'
+          ? 'favorite'
+          : undefined,
   };
 }
 

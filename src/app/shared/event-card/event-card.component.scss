@@ -97,47 +97,29 @@
   margin: 2px 0;
 }
 
+// Same solid teal/white look as every other pill in the app (see chip-grid
+// .component.scss's .chip.selected) - a card's categories, price and
+// relation all state a plain fact about the event rather than toggling a
+// filter, so they render "always selected" rather than each getting its own
+// color (discipline/type/status used to be a lighter teal tint, free/paid
+// green/orange, creator/favorite teal/brown).
 .tag {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  background: var(--ion-color-light);
+  background: var(--ion-color-primary);
+  border: 1.5px solid var(--ion-color-primary);
   border-radius: 999px;
-  padding: 3px 8px 3px 4px;
+  padding: 2px 8px 2px 3px;
   font-size: 0.7rem;
   font-weight: 600;
-  color: var(--app-text-strong);
+  color: var(--ion-color-primary-contrast);
   white-space: nowrap;
 }
 
-.tag-relation {
-  padding: 3px 10px;
-  color: var(--ion-color-primary-contrast);
-}
-
-// Same two states as RELATION_BADGE_KEYS (build-event-card-view.ts) - both
-// used to render in the same teal, making "Organizas" and "Asistes" hard to
-// tell apart at a glance in a list.
-.tag-relation-creator {
-  background: var(--ion-color-primary);
-}
-
-.tag-relation-favorite {
-  background: #c97c3d;
-}
-
+.tag-relation,
 .tag-price {
   padding: 3px 10px;
-}
-
-.tag-free {
-  background: var(--ion-color-success);
-  color: var(--ion-color-success-contrast);
-}
-
-.tag-paid {
-  background: var(--ion-color-warning);
-  color: var(--ion-color-warning-contrast);
 }
 
 .tag-icon {

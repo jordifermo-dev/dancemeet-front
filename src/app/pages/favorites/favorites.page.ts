@@ -12,8 +12,6 @@ import {
   IonModal,
   IonRange,
   IonSpinner,
-  IonDatetime,
-  IonDatetimeButton,
   ViewWillEnter,
 } from '@ionic/angular/standalone';
 import { TranslatePipe } from '@ngx-translate/core';
@@ -62,6 +60,7 @@ import { FilterSheetHeaderComponent } from '../../shared/filter-sheet-header/fil
 import { FilterActionsRowComponent } from '../../shared/filter-actions-row/filter-actions-row.component';
 import { ChipGridComponent } from '../../shared/chip-grid/chip-grid.component';
 import { FilterAllChipEvent, FilterAllComponent } from '../../shared/filter-all/filter-all.component';
+import { DatePickerFieldComponent } from '../../shared/date-picker-field/date-picker-field.component';
 import {
   disciplineChipItems,
   eventTypeChipItems,
@@ -98,8 +97,6 @@ const PRICE_OPTIONS: { id: PriceOption; labelKey: string }[] = [
     IonModal,
     IonRange,
     IonSpinner,
-    IonDatetime,
-    IonDatetimeButton,
     TranslatePipe,
     EventCardComponent,
     NotificationBellComponent,
@@ -107,6 +104,7 @@ const PRICE_OPTIONS: { id: PriceOption; labelKey: string }[] = [
     FilterActionsRowComponent,
     ChipGridComponent,
     FilterAllComponent,
+    DatePickerFieldComponent,
   ],
 })
 export class FavoritesPage implements OnInit, AfterViewInit, OnDestroy, ViewWillEnter {
@@ -171,6 +169,10 @@ export class FavoritesPage implements OnInit, AfterViewInit, OnDestroy, ViewWill
   readonly appliedDateFrom = signal<number | undefined>(this.initialDateRange.from);
   readonly draftDateTo = signal<number | undefined>(this.initialDateRange.to);
   readonly appliedDateTo = signal<number | undefined>(this.initialDateRange.to);
+  /** Fallback seed for <app-date-picker-field>'s [value] when draftDateFrom/
+   * draftDateTo are unset - it always needs a real timestamp to open the
+   * calendar on, even though "unset" is a valid filter state. */
+  readonly nowTimestamp = Date.now();
 
   /** Distance/location default to whatever's saved on the user's profile
    * (see profile.page.ts's own distanceRange/city/lat/lng), same fallback

@@ -26,6 +26,12 @@
   --placeholder-color: var(--ion-color-medium);
   --icon-color: var(--ion-color-medium);
   --color: var(--app-text-strong);
+  // Plain border on the host itself (ion-searchbar has no --border-color
+  // custom property) - without it, the search box (--background) had no
+  // visible edge at all in dark mode, where it's nearly the same near-black
+  // as the page behind it.
+  border: 1.5px solid var(--ion-color-primary);
+  border-radius: 999px;
 }
 
 .filter-button {

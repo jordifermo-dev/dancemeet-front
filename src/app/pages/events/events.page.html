@@ -104,8 +104,8 @@
 <!-- Event types quick filter -->
 <ion-modal
   [isOpen]="isEventTypeModalOpen()"
-  [initialBreakpoint]="0.7"
-  [breakpoints]="[0, 0.7, 0.95]"
+  [initialBreakpoint]="0.67"
+  [breakpoints]="[0, 0.67]"
   (didDismiss)="isEventTypeModalOpen.set(false)"
 >
   <ng-template>
@@ -135,8 +135,8 @@
 <!-- Disciplines quick filter -->
 <ion-modal
   [isOpen]="isDisciplineModalOpen()"
-  [initialBreakpoint]="0.7"
-  [breakpoints]="[0, 0.7, 0.95]"
+  [initialBreakpoint]="0.67"
+  [breakpoints]="[0, 0.67]"
   (didDismiss)="isDisciplineModalOpen.set(false)"
 >
   <ng-template>
@@ -166,8 +166,8 @@
 <!-- Status quick filter -->
 <ion-modal
   [isOpen]="isStatusModalOpen()"
-  [initialBreakpoint]="0.65"
-  [breakpoints]="[0, 0.65, 0.9]"
+  [initialBreakpoint]="0.67"
+  [breakpoints]="[0, 0.67]"
   (didDismiss)="isStatusModalOpen.set(false)"
 >
   <ng-template>
@@ -223,8 +223,8 @@
 <!-- Date/schedule quick filter -->
 <ion-modal
   [isOpen]="isDateModalOpen()"
-  [initialBreakpoint]="0.75"
-  [breakpoints]="[0, 0.75, 0.95]"
+  [initialBreakpoint]="0.67"
+  [breakpoints]="[0, 0.67]"
   (didDismiss)="isDateModalOpen.set(false)"
 >
   <ng-template>
@@ -237,18 +237,24 @@
           <span class="date-field-label">{{ 'explorer.dateFrom' | translate }}</span>
           <div class="date-value-row">
             <ion-icon name="calendar-outline"></ion-icon>
-            <ion-datetime-button datetime="eventsDateFrom"></ion-datetime-button>
+            <app-date-picker-field
+              [value]="filters.draftDateFrom()"
+              titleKey="explorer.dateFrom"
+              (dateChange)="onDraftDateFromChange($event)"
+            ></app-date-picker-field>
           </div>
         </div>
         <div class="date-field">
           <span class="date-field-label">{{ 'explorer.dateTo' | translate }}</span>
           <div class="date-value-row">
             <ion-icon name="calendar-outline"></ion-icon>
-            <ion-datetime-button datetime="eventsDateTo">
-              @if (filters.draftDateTo() === undefined) {
-                <span slot="date-target">{{ 'explorer.noEndDate' | translate }}</span>
-              }
-            </ion-datetime-button>
+            <app-date-picker-field
+              [value]="filters.draftDateTo() ?? filters.draftDateFrom()"
+              [isUnset]="filters.draftDateTo() === undefined"
+              [unsetLabel]="'explorer.noEndDate' | translate"
+              titleKey="explorer.dateTo"
+              (dateChange)="onDraftDateToChange($event)"
+            ></app-date-picker-field>
           </div>
           @if (filters.draftDateTo() !== undefined) {
             <button type="button" class="date-clear-link" (click)="clearDraftDateTo()">
@@ -275,41 +281,3 @@
   </ng-template>
 </ion-modal>
 
-<ion-modal [keepContentsMounted]="true">
-  <ng-template>
-    <ion-datetime
-      #eventsDateFromPicker
-      id="eventsDateFrom"
-      presentation="date"
-      [value]="filters.draftDateFromIso()"
-      (ionChange)="onDraftDateFromChange($event)"
-    ></ion-datetime>
-    <div class="calendar-picker-actions">
-      <ion-button expand="block" fill="outline" color="primary" (click)="eventsDateFromPicker.cancel(true)">
-        {{ 'explorer.calendarExit' | translate }}
-      </ion-button>
-      <ion-button expand="block" color="primary" (click)="eventsDateFromPicker.confirm(true)">
-        {{ 'explorer.calendarApply' | translate }}
-      </ion-button>
-    </div>
-  </ng-template>
-</ion-modal>
-<ion-modal [keepContentsMounted]="true">
-  <ng-template>
-    <ion-datetime
-      #eventsDateToPicker
-      id="eventsDateTo"
-      presentation="date"
-      [value]="filters.draftDateToIso()"
-      (ionChange)="onDraftDateToChange($event)"
-    ></ion-datetime>
-    <div class="calendar-picker-actions">
-      <ion-button expand="block" fill="outline" color="primary" (click)="eventsDateToPicker.cancel(true)">
-        {{ 'explorer.calendarExit' | translate }}
-      </ion-button>
-      <ion-button expand="block" color="primary" (click)="eventsDateToPicker.confirm(true)">
-        {{ 'explorer.calendarApply' | translate }}
-      </ion-button>
-    </div>
-  </ng-template>
-</ion-modal>

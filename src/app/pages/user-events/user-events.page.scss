@@ -32,6 +32,12 @@
   --placeholder-color: var(--ion-color-medium);
   --icon-color: var(--ion-color-medium);
   --color: var(--app-text-strong);
+  // Plain border on the host itself (ion-searchbar has no --border-color
+  // custom property) - without it, the search box (--background) had no
+  // visible edge at all in dark mode, where it's nearly the same near-black
+  // as the page behind it.
+  border: 1.5px solid var(--ion-color-primary);
+  border-radius: 999px;
 }
 
 .icon-btn {
@@ -76,16 +82,21 @@
   }
 }
 
+// Same solid teal/white treatment as chip-grid.component.scss's
+// .chip-solid - white/black background with teal text and outline when
+// inactive, solid teal with white text when active, instead of a neutral
+// grey/dark pill that (especially in dark mode) barely stood out from the
+// page behind it.
 .pill {
   appearance: none;
   flex: 0 0 auto;
-  border: none;
+  border: 1.5px solid var(--ion-color-primary);
   border-radius: 999px;
   padding: 9px 16px;
   font-size: 0.85rem;
   font-weight: 600;
   background: var(--app-surface-card);
-  color: var(--app-text-strong);
+  color: var(--ion-color-primary);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   cursor: pointer;
   white-space: nowrap;

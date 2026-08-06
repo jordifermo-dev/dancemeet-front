@@ -43,22 +43,26 @@
       <span class="date-field-label">{{ 'explorer.dateFrom' | translate }}</span>
       <div class="date-value-row">
         <ion-icon name="calendar-outline"></ion-icon>
-        <ion-datetime-button [datetime]="dateFromId">
-          @if (dateFromIsUnset) {
-            <span slot="date-target">{{ 'explorer.noEndDate' | translate }}</span>
-          }
-        </ion-datetime-button>
+        <app-date-picker-field
+          [value]="dateFromValue"
+          [isUnset]="dateFromIsUnset"
+          [unsetLabel]="'explorer.noEndDate' | translate"
+          titleKey="explorer.dateFrom"
+          (dateChange)="dateFromChange.emit($event)"
+        ></app-date-picker-field>
       </div>
     </div>
     <div class="date-field">
       <span class="date-field-label">{{ 'explorer.dateTo' | translate }}</span>
       <div class="date-value-row">
         <ion-icon name="calendar-outline"></ion-icon>
-        <ion-datetime-button [datetime]="dateToId">
-          @if (dateToIsUnset) {
-            <span slot="date-target">{{ 'explorer.noEndDate' | translate }}</span>
-          }
-        </ion-datetime-button>
+        <app-date-picker-field
+          [value]="dateToValue"
+          [isUnset]="dateToIsUnset"
+          [unsetLabel]="'explorer.noEndDate' | translate"
+          titleKey="explorer.dateTo"
+          (dateChange)="dateToChange.emit($event)"
+        ></app-date-picker-field>
       </div>
       @if (!dateToIsUnset) {
         <button type="button" class="date-clear-link" (click)="clearDateTo.emit()">

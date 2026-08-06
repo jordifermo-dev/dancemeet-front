@@ -11,8 +11,6 @@ import {
   IonButton,
   IonModal,
   IonSpinner,
-  IonDatetime,
-  IonDatetimeButton,
   ViewWillEnter,
 } from '@ionic/angular/standalone';
 import { GoogleMap, MapMarker, MapCircle } from '@angular/google-maps';
@@ -38,6 +36,7 @@ import { NotificationBellComponent } from '../../shared/notification-bell/notifi
 import { FilterSheetHeaderComponent } from '../../shared/filter-sheet-header/filter-sheet-header.component';
 import { FilterActionsRowComponent } from '../../shared/filter-actions-row/filter-actions-row.component';
 import { ChipGridComponent } from '../../shared/chip-grid/chip-grid.component';
+import { DatePickerFieldComponent } from '../../shared/date-picker-field/date-picker-field.component';
 import {
   disciplineChipItems,
   eventTypeChipItems,
@@ -107,8 +106,6 @@ function buildDisciplineMarkerIcon(disciplines: Discipline[]): { url: string; si
     IonButton,
     IonModal,
     IonSpinner,
-    IonDatetime,
-    IonDatetimeButton,
     GoogleMap,
     MapMarker,
     MapCircle,
@@ -118,6 +115,7 @@ function buildDisciplineMarkerIcon(disciplines: Discipline[]): { url: string; si
     FilterSheetHeaderComponent,
     FilterActionsRowComponent,
     ChipGridComponent,
+    DatePickerFieldComponent,
   ],
 })
 export class ExplorerPage implements OnInit, ViewWillEnter {

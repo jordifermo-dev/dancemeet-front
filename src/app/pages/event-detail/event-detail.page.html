@@ -124,12 +124,9 @@
               </span>
               <span class="date-value-group">
                 <ion-icon name="time-outline"></ion-icon>
-                <input
-                  type="time"
-                  class="time-input"
-                  [value]="editTimeFromValue()"
-                  (change)="onTimeFromChange($event)"
-                />
+                <button type="button" class="date-picker-trigger" (click)="showTimeFromPicker.set(true)">
+                  {{ editTimeFromValue() }}
+                </button>
               </span>
             </div>
           </div>
@@ -144,12 +141,9 @@
               </span>
               <span class="date-value-group">
                 <ion-icon name="time-outline"></ion-icon>
-                <input
-                  type="time"
-                  class="time-input"
-                  [value]="editTimeToValue()"
-                  (change)="onTimeToChange($event)"
-                />
+                <button type="button" class="date-picker-trigger" (click)="showTimeToPicker.set(true)">
+                  {{ editTimeToValue() }}
+                </button>
               </span>
             </div>
           </div>
@@ -260,7 +254,7 @@
           <img class="tag-icon" [src]="statusIconSrc()" [alt]="statusLabelKey() | translate" />
           {{ statusLabelKey() | translate }}
         </span>
-        <span class="tag tag-price" [class.tag-free]="event()!.isFree" [class.tag-paid]="!event()!.isFree">
+        <span class="tag tag-price">
           @if (event()!.isFree) {
             {{ 'eventCard.free' | translate }}
           } @else {
@@ -449,48 +443,131 @@
 </ion-modal>
 
 <ion-modal
+  class="picker-modal"
   [keepContentsMounted]="true"
   [isOpen]="showDateFromPicker()"
+  [initialBreakpoint]="0.75"
+  [breakpoints]="[0, 0.75]"
   (didDismiss)="showDateFromPicker.set(false)"
 >
   <ng-template>
-    <ion-datetime
-      #eventDetailDateFromPicker
-      id="eventDetailDateFrom"
-      presentation="date"
-      [value]="editDateFromIso()"
-      (ionChange)="onDateFromChange($event)"
-    ></ion-datetime>
-    <div class="calendar-picker-actions">
-      <ion-button expand="block" fill="outline" color="primary" (click)="eventDetailDateFromPicker.cancel(true)">
-        {{ 'explorer.calendarExit' | translate }}
-      </ion-button>
-      <ion-button expand="block" color="primary" (click)="eventDetailDateFromPicker.confirm(true)">
-        {{ 'explorer.calendarApply' | translate }}
-      </ion-button>
+    <div class="filter-sheet">
+      <app-filter-sheet-header
+        titleKey="eventDetail.dateFromLabel"
+        (closed)="eventDetailDateFromPicker.cancel(true)"
+      ></app-filter-sheet-header>
+      <ion-datetime
+        #eventDetailDateFromPicker
+        id="eventDetailDateFrom"
+        presentation="date"
+        [value]="editDateFromIso()"
+        (ionChange)="onDateFromChange($event)"
+      ></ion-datetime>
+      <app-filter-actions-row>
+        <ion-button expand="block" fill="outline" color="primary" (click)="eventDetailDateFromPicker.cancel(true)">
+          {{ 'common.cancel' | translate }}
+        </ion-button>
+        <ion-button expand="block" color="primary" (click)="eventDetailDateFromPicker.confirm(true)">
+          {{ 'profile.apply' | translate }}
+        </ion-button>
+      </app-filter-actions-row>
     </div>
   </ng-template>
 </ion-modal>
 <ion-modal
+  class="picker-modal"
   [keepContentsMounted]="true"
   [isOpen]="showDateToPicker()"
+  [initialBreakpoint]="0.75"
+  [breakpoints]="[0, 0.75]"
   (didDismiss)="showDateToPicker.set(false)"
 >
   <ng-template>
-    <ion-datetime
-      #eventDetailDateToPicker
-      id="eventDetailDateTo"
-      presentation="date"
-      [value]="editDateToIso()"
-      (ionChange)="onDateToChange($event)"
-    ></ion-datetime>
-    <div class="calendar-picker-actions">
-      <ion-button expand="block" fill="outline" color="primary" (click)="eventDetailDateToPicker.cancel(true)">
-        {{ 'explorer.calendarExit' | translate }}
-      </ion-button>
-      <ion-button expand="block" color="primary" (click)="eventDetailDateToPicker.confirm(true)">
-        {{ 'explorer.calendarApply' | translate }}
-      </ion-button>
+    <div class="filter-sheet">
+      <app-filter-sheet-header
+        titleKey="eventDetail.dateToLabel"
+        (closed)="eventDetailDateToPicker.cancel(true)"
+      ></app-filter-sheet-header>
+      <ion-datetime
+        #eventDetailDateToPicker
+        id="eventDetailDateTo"
+        presentation="date"
+        [value]="editDateToIso()"
+        (ionChange)="onDateToChange($event)"
+      ></ion-datetime>
+      <app-filter-actions-row>
+        <ion-button expand="block" fill="outline" color="primary" (click)="eventDetailDateToPicker.cancel(true)">
+          {{ 'common.cancel' | translate }}
+        </ion-button>
+        <ion-button expand="block" color="primary" (click)="eventDetailDateToPicker.confirm(true)">
+          {{ 'profile.apply' | translate }}
+        </ion-button>
+      </app-filter-actions-row>
+    </div>
+  </ng-template>
+</ion-modal>
+
+<ion-modal
+  class="picker-modal"
+  [keepContentsMounted]="true"
+  [isOpen]="showTimeFromPicker()"
+  [initialBreakpoint]="0.75"
+  [breakpoints]="[0, 0.75]"
+  (didDismiss)="showTimeFromPicker.set(false)"
+>
+  <ng-template>
+    <div class="filter-sheet">
+      <app-filter-sheet-header
+        titleKey="eventDetail.dateFromLabel"
+        (closed)="eventDetailTimeFromPicker.cancel(true)"
+      ></app-filter-sheet-header>
+      <ion-datetime
+        #eventDetailTimeFromPicker
+        id="eventDetailTimeFrom"
+        presentation="time"
+        [value]="editTimeFromIso()"
+        (ionChange)="onTimeFromChange($event)"
+      ></ion-datetime>
+      <app-filter-actions-row>
+        <ion-button expand="block" fill="outline" color="primary" (click)="eventDetailTimeFromPicker.cancel(true)">
+          {{ 'common.cancel' | translate }}
+        </ion-button>
+        <ion-button expand="block" color="primary" (click)="eventDetailTimeFromPicker.confirm(true)">
+          {{ 'profile.apply' | translate }}
+        </ion-button>
+      </app-filter-actions-row>
+    </div>
+  </ng-template>
+</ion-modal>
+<ion-modal
+  class="picker-modal"
+  [keepContentsMounted]="true"
+  [isOpen]="showTimeToPicker()"
+  [initialBreakpoint]="0.75"
+  [breakpoints]="[0, 0.75]"
+  (didDismiss)="showTimeToPicker.set(false)"
+>
+  <ng-template>
+    <div class="filter-sheet">
+      <app-filter-sheet-header
+        titleKey="eventDetail.dateToLabel"
+        (closed)="eventDetailTimeToPicker.cancel(true)"
+      ></app-filter-sheet-header>
+      <ion-datetime
+        #eventDetailTimeToPicker
+        id="eventDetailTimeTo"
+        presentation="time"
+        [value]="editTimeToIso()"
+        (ionChange)="onTimeToChange($event)"
+      ></ion-datetime>
+      <app-filter-actions-row>
+        <ion-button expand="block" fill="outline" color="primary" (click)="eventDetailTimeToPicker.cancel(true)">
+          {{ 'common.cancel' | translate }}
+        </ion-button>
+        <ion-button expand="block" color="primary" (click)="eventDetailTimeToPicker.confirm(true)">
+          {{ 'profile.apply' | translate }}
+        </ion-button>
+      </app-filter-actions-row>
     </div>
   </ng-template>
 </ion-modal>

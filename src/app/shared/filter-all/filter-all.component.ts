@@ -1,10 +1,11 @@
 import { Component, EventEmitter, Input, Output, inject } from '@angular/core';
-import { IonButton, IonIcon, IonDatetimeButton } from '@ionic/angular/standalone';
+import { IonButton, IonIcon } from '@ionic/angular/standalone';
 import { TranslatePipe } from '@ngx-translate/core';
 import { MinSelectionWarningService } from '../min-selection-warning.service';
 import { FilterSectionComponent } from '../filter-section/filter-section.component';
 import { FilterActionsRowComponent } from '../filter-actions-row/filter-actions-row.component';
 import { ChipGridComponent, ChipGridItem } from '../chip-grid/chip-grid.component';
+import { DatePickerFieldComponent } from '../date-picker-field/date-picker-field.component';
 
 export type FilterAllCategory = 'eventTypes' | 'disciplines' | 'statuses' | 'price' | 'quickDate' | 'relation';
 
@@ -27,7 +28,7 @@ export interface FilterAllChipEvent {
   standalone: true,
   templateUrl: './filter-all.component.html',
   styleUrl: './filter-all.component.scss',
-  imports: [TranslatePipe, IonButton, IonIcon, IonDatetimeButton, FilterSectionComponent, FilterActionsRowComponent, ChipGridComponent],
+  imports: [TranslatePipe, IonButton, IonIcon, FilterSectionComponent, FilterActionsRowComponent, ChipGridComponent, DatePickerFieldComponent],
 })
 export class FilterAllComponent {
   readonly minSelectionWarning = inject(MinSelectionWarningService);
@@ -46,17 +47,17 @@ export class FilterAllComponent {
   @Input({ required: true }) quickDateChips: ChipGridItem[] = [];
   @Input() relationChips: ChipGridItem[] = [];
 
-  /** DOM ids linking each <ion-datetime-button> to its <ion-modal>/
-   * <ion-datetime> pair, which stays declared in the host page - those ids
-   * must be unique per page instance, so the host provides them. */
-  @Input({ required: true }) dateFromId!: string;
-  @Input({ required: true }) dateToId!: string;
+  /** Seed timestamps for the Desde/Hasta <app-date-picker-field>s - the host
+   * page still owns the actual draft signals and their onDraftDate*Change
+   * handlers, this just passes the current value through. */
+  @Input({ required: true }) dateFromValue!: number;
+  @Input({ required: true }) dateToValue!: number;
   /** User-events only - unlike everywhere else, its date range can genuinely
    * have no lower bound (defaults to showing every past+upcoming event), so
    * its "Desde" button needs the same "unset" placeholder Hasta already has -
-   * without it, an unbound <ion-datetime> just falls back to showing
-   * whatever today's date happens to be, which reads as a real applied
-   * filter value instead of "no filter". */
+   * without it, an unbound picker just falls back to showing whatever
+   * today's date happens to be, which reads as a real applied filter value
+   * instead of "no filter". */
   @Input() dateFromIsUnset = false;
   @Input() dateToIsUnset = false;
 
@@ -64,6 +65,8 @@ export class FilterAllComponent {
   @Input() applied = false;
 
   @Output() readonly chipToggle = new EventEmitter<FilterAllChipEvent>();
+  @Output() readonly dateFromChange = new EventEmitter<Event>();
+  @Output() readonly dateToChange = new EventEmitter<Event>();
   @Output() readonly clearDateTo = new EventEmitter<void>();
   @Output() readonly saveAsPreference = new EventEmitter<void>();
   @Output() readonly reset = new EventEmitter<void>();

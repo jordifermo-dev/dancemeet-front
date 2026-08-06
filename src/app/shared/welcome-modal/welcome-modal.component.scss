@@ -194,22 +194,28 @@
   gap: 6px;
 }
 
+// Same solid teal/white toggle as the real chip-grid component (see
+// chip-grid.component.scss's .chip.selected) - this mockup hand-draws
+// Profile's preference chips rather than rendering the real component, so
+// it has to be kept in sync by hand.
 .mockup-chip {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  border: 1.5px solid var(--ion-color-light-shade);
+  border: 1.5px solid var(--ion-color-primary);
   border-radius: 999px;
-  padding: 4px 10px 4px 4px;
+  // Symmetric, unlike the icon chips' own left-tight padding (the icon
+  // itself reads as "self-padded") - the language chips have no icon, so
+  // that same asymmetry just left the text looking off-center.
+  padding: 4px 10px;
   font-size: 0.66rem;
   font-weight: 600;
   background: var(--ion-background-color);
-  color: var(--app-text-strong);
+  color: var(--ion-color-primary);
 
   &.selected {
-    border-color: var(--ion-color-primary);
-    background: rgba(var(--ion-color-primary-rgb), 0.08);
-    color: var(--ion-color-primary);
+    background: var(--ion-color-primary);
+    color: var(--ion-color-primary-contrast);
   }
 }
 

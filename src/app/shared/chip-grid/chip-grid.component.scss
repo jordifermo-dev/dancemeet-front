@@ -8,22 +8,27 @@
   gap: 10px;
 }
 
+// One consistent look for every chip in the app, discipline/event-type/
+// status included - white/black background with a teal border and text when
+// unselected, solid teal with white text when selected. Used to differ (a
+// lighter teal-tinted look) for chips with their own icon, but that just
+// meant the exact same kind of toggle read as two different components
+// depending on where it showed up.
 .chip {
   appearance: none;
-  border: 1.5px solid var(--ion-color-light-shade);
+  border: 1.5px solid var(--ion-color-primary);
   border-radius: 999px;
   padding: 10px 18px;
   font-size: 0.9rem;
   font-weight: 600;
   background: var(--app-surface-card);
-  color: var(--app-text-strong);
+  color: var(--ion-color-primary);
   cursor: pointer;
   transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 
   &.selected {
-    border-color: var(--ion-color-primary);
-    background: rgba(var(--ion-color-primary-rgb), 0.08);
-    color: var(--ion-color-primary);
+    background: var(--ion-color-primary);
+    color: var(--ion-color-primary-contrast);
   }
 
   &.chip-readonly {

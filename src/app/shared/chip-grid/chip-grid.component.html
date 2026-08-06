@@ -19,7 +19,11 @@
         }
       </button>
     } @else {
-      <div class="chip chip-readonly" [class.chip-with-icon]="item.iconUrl || item.iconName" [class.selected]="item.selected">
+      <div
+        class="chip chip-readonly"
+        [class.chip-with-icon]="item.iconUrl || item.iconName"
+        [class.selected]="item.selected"
+      >
         @if (item.iconUrl) {
           <img class="chip-icon" [src]="item.iconUrl" [alt]="item.label ?? ''" />
         } @else if (item.iconName) {

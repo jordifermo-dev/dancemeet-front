@@ -14,54 +14,17 @@
       [statusChips]="statusChips()"
       [priceChips]="priceChips()"
       [quickDateChips]="quickDateChips()"
-      dateFromId="explorerFiltersDateFrom"
-      dateToId="explorerFiltersDateTo"
+      [dateFromValue]="filters.draftDateFrom()"
+      [dateToValue]="filters.draftDateTo() ?? filters.draftDateFrom()"
       [dateToIsUnset]="filters.draftDateTo() === undefined"
       [applied]="applyAllFlash.active()"
       (chipToggle)="onChipToggle($event)"
+      (dateFromChange)="onDraftDateFromChange($event)"
+      (dateToChange)="onDraftDateToChange($event)"
       (clearDateTo)="clearDraftDateTo()"
       (saveAsPreference)="saveAll()"
       (reset)="resetAll()"
       (apply)="applyAll()"
     ></app-filter-all>
-
-    <ion-modal [keepContentsMounted]="true">
-      <ng-template>
-        <ion-datetime
-          #explorerFiltersDateFromPicker
-          id="explorerFiltersDateFrom"
-          presentation="date"
-          [value]="filters.draftDateFromIso()"
-          (ionChange)="onDraftDateFromChange($event)"
-        ></ion-datetime>
-        <div class="calendar-picker-actions">
-          <ion-button expand="block" fill="outline" color="primary" (click)="explorerFiltersDateFromPicker.cancel(true)">
-            {{ 'explorer.calendarExit' | translate }}
-          </ion-button>
-          <ion-button expand="block" color="primary" (click)="explorerFiltersDateFromPicker.confirm(true)">
-            {{ 'explorer.calendarApply' | translate }}
-          </ion-button>
-        </div>
-      </ng-template>
-    </ion-modal>
-    <ion-modal [keepContentsMounted]="true">
-      <ng-template>
-        <ion-datetime
-          #explorerFiltersDateToPicker
-          id="explorerFiltersDateTo"
-          presentation="date"
-          [value]="filters.draftDateToIso()"
-          (ionChange)="onDraftDateToChange($event)"
-        ></ion-datetime>
-        <div class="calendar-picker-actions">
-          <ion-button expand="block" fill="outline" color="primary" (click)="explorerFiltersDateToPicker.cancel(true)">
-            {{ 'explorer.calendarExit' | translate }}
-          </ion-button>
-          <ion-button expand="block" color="primary" (click)="explorerFiltersDateToPicker.confirm(true)">
-            {{ 'explorer.calendarApply' | translate }}
-          </ion-button>
-        </div>
-      </ng-template>
-    </ion-modal>
   </div>
 </ion-content>

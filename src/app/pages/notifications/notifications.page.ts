@@ -1,6 +1,7 @@
 import { AfterViewInit, Component, ElementRef, NgZone, OnDestroy, ViewChild, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { forkJoin } from 'rxjs';
+import { forkJoin, of } from 'rxjs';
+import { catchError } from 'rxjs/operators';
 import {
   IonHeader,
   IonToolbar,
@@ -334,7 +335,12 @@ export class NotificationsPage implements ViewWillEnter, AfterViewInit, OnDestro
     ];
 
     if (eventIds.length) {
-      forkJoin(eventIds.map((id) => this.eventService.getById(id))).subscribe({
+      // catchError per id, not around the whole forkJoin - a single
+      // notification pointing at a since-deleted event (e.g. a duplicate
+      // cleaned up by hand) would otherwise 404 and fail the *entire*
+      // forkJoin, silently leaving eventCardById empty and hiding every
+      // event card in the list, not just the one for the missing event.
+      forkJoin(eventIds.map((id) => this.eventService.getById(id).pipe(catchError(() => of(null))))).subscribe({
         next: (events) => {
           const lang = this.languageService.currentLang();
           const currentUserId = this.authService.currentUser()?.id;
@@ -353,7 +359,9 @@ export class NotificationsPage implements ViewWillEnter, AfterViewInit, OnDestro
     }
 
     if (followerIds.length) {
-      forkJoin(followerIds.map((id) => this.userService.getById(id))).subscribe({
+      // Same reasoning as the events forkJoin above - one deleted account
+      // shouldn't blank out every follower notification.
+      forkJoin(followerIds.map((id) => this.userService.getById(id).pipe(catchError(() => of(null))))).subscribe({
         next: (users) => {
           const map = new Map<string, FollowUser>();
           users.forEach((user, index) => {

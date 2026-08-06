@@ -185,16 +185,22 @@
   margin-bottom: 12px;
 }
 
+// Same solid teal/white look as every other pill in the app (see chip-grid
+// .component.scss's .chip.selected and event-card.component.scss's
+// identical rule) - states a plain fact about the event (its categories, its
+// price) rather than toggling a filter, so it renders "always selected"
+// instead of each getting its own color.
 .tag {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  background: var(--ion-color-light);
+  background: var(--ion-color-primary);
+  border: 1.5px solid var(--ion-color-primary);
   border-radius: 999px;
-  padding: 4px 10px 4px 4px;
+  padding: 3px 10px 3px 3px;
   font-size: 0.78rem;
   font-weight: 600;
-  color: var(--app-text-strong);
+  color: var(--ion-color-primary-contrast);
   white-space: nowrap;
 }
 
@@ -208,16 +214,8 @@
 
 .tag-price {
   padding: 4px 12px;
-}
-
-.tag-free {
-  background: var(--ion-color-success);
-  color: var(--ion-color-success-contrast);
-}
-
-.tag-paid {
-  background: var(--ion-color-warning);
-  color: var(--ion-color-warning-contrast);
+  background: var(--ion-color-primary);
+  color: var(--ion-color-primary-contrast);
 }
 
 .event-detail-line {
@@ -435,28 +433,6 @@ a.info-row {
   }
 }
 
-.time-input {
-  border: none;
-  background: transparent;
-  font: inherit;
-  font-size: 0.95rem;
-  color: var(--ion-text-color);
-  padding: 2px 4px;
-  border-radius: 8px;
-  min-width: 0;
-
-  // Chromium/Android draw their own clock icon at the end of a time input -
-  // redundant now that our own clock icon sits to its left, so it's hidden.
-  &::-webkit-calendar-picker-indicator {
-    display: none;
-  }
-
-  &:focus-visible {
-    outline: 2px solid var(--ion-color-primary);
-    outline-offset: 2px;
-  }
-}
-
 .date-picker-trigger {
   appearance: none;
   border: none;
@@ -502,6 +478,12 @@ a.info-row {
   --placeholder-color: var(--ion-color-medium);
   --icon-color: var(--ion-color-medium);
   --color: var(--app-text-strong);
+  // Plain border on the host itself (ion-searchbar has no --border-color
+  // custom property) - without it, the search box (--background) had no
+  // visible edge at all in dark mode, where it's nearly the same near-black
+  // as the page behind it.
+  border: 1.5px solid var(--ion-color-primary);
+  border-radius: 999px;
 }
 
 .city-suggestions {
@@ -580,6 +562,13 @@ a.info-row {
     font-size: 0.9rem;
     margin: 0;
   }
+
+  // The date/time pickers below (see showDateFromPicker/showTimeFromPicker)
+  // are the only <ion-datetime>s inside a .filter-sheet - centers the
+  // calendar grid / hour-minute wheel instead of it hugging the left edge.
+  ion-datetime {
+    width: 100%;
+  }
 }
 
 .filter-sheet-header {
@@ -595,14 +584,3 @@ a.info-row {
   }
 }
 
-.calendar-picker-actions {
-  display: flex;
-  gap: 10px;
-  padding: 8px 16px 0;
-
-  ion-button {
-    flex: 1;
-    --box-shadow: none;
-    font-size: 0.85rem;
-  }
-}

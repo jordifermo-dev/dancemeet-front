@@ -1,7 +1,7 @@
 <ion-modal
   [isOpen]="isOpen()"
-  [initialBreakpoint]="0.75"
-  [breakpoints]="[0, 0.75, 0.95]"
+  [initialBreakpoint]="0.8"
+  [breakpoints]="[0, 0.8]"
   (didDismiss)="close()"
 >
   <ng-template>
@@ -107,6 +107,7 @@
                     <ul class="welcome-tips-list">
                       <li>{{ 'welcome.tipFollow' | translate }}</li>
                       <li>{{ 'welcome.tipAttend' | translate }}</li>
+                      <li>{{ 'welcome.tipReuse' | translate }}</li>
                       <li>{{ 'welcome.tipNotifications' | translate }}</li>
                       <li>{{ 'welcome.tipPreferences' | translate }}</li>
                     </ul>

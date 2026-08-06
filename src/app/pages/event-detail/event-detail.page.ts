@@ -501,6 +501,14 @@ export class EventDetailPage implements ComponentWithUnsavedChanges {
   // ourselves rather than relying on ion-datetime-button's built-in trigger.
   readonly showDateFromPicker = signal(false);
   readonly showDateToPicker = signal(false);
+  // Same reasoning as the date pickers above, plus a Chromium/Android-
+  // specific issue of its own: a native <input type="time">'s dropdown is
+  // drawn by the browser itself, not by our CSS, and can render clipped past
+  // the screen edge when the field sits near it or inside a scrolling
+  // container - confirmed on-device. A controlled ion-datetime in a modal
+  // keeps the picker fully within the app's own layout.
+  readonly showTimeFromPicker = signal(false);
+  readonly showTimeToPicker = signal(false);
   readonly editAddress = signal('');
   readonly editCity = signal('');
   readonly editLatitude = signal(0);
@@ -515,12 +523,16 @@ export class EventDetailPage implements ComponentWithUnsavedChanges {
   readonly editDateFromLabel = computed(() => formatEventDateOnly(this.editDateFrom(), this.languageService.currentLang()));
   readonly editDateToLabel = computed(() => formatEventDateOnly(this.editDateTo(), this.languageService.currentLang()));
 
-  // ion-datetime's wheel-style time picker is awkward with a mouse in Chrome,
-  // so the time of day is entered through a plain native <input type="time">
-  // instead (date stays on ion-datetime, which is fine as a calendar grid) -
-  // these two derive the "HH:mm" the native input needs from the timestamp.
+  // Text for the plain-<button> time triggers (see showTimeFromPicker above).
   readonly editTimeFromValue = computed(() => formatTimeInputValue(this.editDateFrom()));
   readonly editTimeToValue = computed(() => formatTimeInputValue(this.editDateTo()));
+  // ion-datetime's value for presentation="time" is still a full ISO string -
+  // the date part is irrelevant (only hours/minutes are picked/read back) so
+  // it's fixed to an arbitrary day, kept purely local (no "Z"/offset) so
+  // onTimeFromChange/onTimeToChange can read the hours/minutes back with
+  // plain getHours()/getMinutes() and get exactly what was picked.
+  readonly editTimeFromIso = computed(() => `1970-01-01T${this.editTimeFromValue()}:00`);
+  readonly editTimeToIso = computed(() => `1970-01-01T${this.editTimeToValue()}:00`);
 
   readonly editMapEmbedUrl = computed<SafeResourceUrl | null>(() => {
     const latitude = this.editLatitude();
@@ -813,10 +825,14 @@ export class EventDetailPage implements ComponentWithUnsavedChanges {
     if (!event) {
       return;
     }
-    // environment.appUrl (not window.location.href) - inside the native app
-    // the WebView's own origin is the internal https://localhost, which is
-    // meaningless to whoever receives the link.
-    const url = `${environment.appUrl}${window.location.pathname}`;
+    // Points at the backend's own /share/events/:id (not the app URL
+    // directly) - link-preview crawlers (WhatsApp, Telegram, LinkedIn...)
+    // fetch the shared URL server-side and read its <meta property="og:...">
+    // tags without ever running JavaScript, so the SPA's own client-rendered
+    // page (no per-event meta tags) always previewed as a bare link. This
+    // endpoint serves real event title/description/image in its meta tags,
+    // then redirects actual visitors on to the app - see ShareController.
+    const url = `${environment.apiUrl}/share/events/${event.id}`;
     const text = this.translate.instant('eventDetail.shareText', {
       title: event.title,
       creator: event.creatorName,
@@ -930,17 +946,19 @@ export class EventDetailPage implements ComponentWithUnsavedChanges {
   }
 
   onTimeFromChange(ev: Event): void {
-    const value = (ev.target as HTMLInputElement).value;
-    if (value) {
-      this.editDateFrom.update((current) => withTimePart(current, value));
+    const value = (ev as CustomEvent<{ value: string | string[] | null }>).detail.value;
+    const iso = Array.isArray(value) ? value[0] : value;
+    if (iso) {
+      this.editDateFrom.update((current) => withTimePart(current, formatTimeInputValue(new Date(iso).getTime())));
       this.ensureDateOrder();
     }
   }
 
   onTimeToChange(ev: Event): void {
-    const value = (ev.target as HTMLInputElement).value;
-    if (value) {
-      this.editDateTo.update((current) => withTimePart(current, value));
+    const value = (ev as CustomEvent<{ value: string | string[] | null }>).detail.value;
+    const iso = Array.isArray(value) ? value[0] : value;
+    if (iso) {
+      this.editDateTo.update((current) => withTimePart(current, formatTimeInputValue(new Date(iso).getTime())));
       this.ensureDateOrder();
     }
   }

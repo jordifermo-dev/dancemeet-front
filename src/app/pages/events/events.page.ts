@@ -24,8 +24,6 @@ import {
   IonButton,
   IonModal,
   IonSpinner,
-  IonDatetime,
-  IonDatetimeButton,
   ViewWillEnter,
 } from '@ionic/angular/standalone';
 import { TranslatePipe } from '@ngx-translate/core';
@@ -53,6 +51,7 @@ import { LocationFilterButtonComponent } from '../../shared/location-filter-butt
 import { ChipGridComponent } from '../../shared/chip-grid/chip-grid.component';
 import { SortRowComponent } from '../../shared/sort-row/sort-row.component';
 import { SortOptionsModalComponent } from '../../shared/sort-options-modal/sort-options-modal.component';
+import { DatePickerFieldComponent } from '../../shared/date-picker-field/date-picker-field.component';
 import {
   disciplineChipItems,
   eventTypeChipItems,
@@ -97,8 +96,6 @@ const PRICE_OPTIONS: { id: PriceOption; labelKey: string }[] = [
     IonButton,
     IonModal,
     IonSpinner,
-    IonDatetime,
-    IonDatetimeButton,
     TranslatePipe,
     LocationFilterButtonComponent,
     EventCardComponent,
@@ -108,6 +105,7 @@ const PRICE_OPTIONS: { id: PriceOption; labelKey: string }[] = [
     ChipGridComponent,
     SortRowComponent,
     SortOptionsModalComponent,
+    DatePickerFieldComponent,
   ],
 })
 export class EventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWillEnter {

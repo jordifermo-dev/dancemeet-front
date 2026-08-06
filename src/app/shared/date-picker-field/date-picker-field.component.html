@@ -1,0 +1,31 @@
+<button type="button" class="date-picker-trigger" (click)="isOpen.set(true)">
+  {{ isUnset ? unsetLabel : label() }}
+</button>
+
+<ion-modal
+  [keepContentsMounted]="true"
+  [isOpen]="isOpen()"
+  [initialBreakpoint]="0.75"
+  [breakpoints]="[0, 0.75]"
+  (didDismiss)="isOpen.set(false)"
+>
+  <ng-template>
+    <div class="date-picker-sheet">
+      <app-filter-sheet-header [titleKey]="titleKey" (closed)="picker.cancel(true)"></app-filter-sheet-header>
+      <ion-datetime
+        #picker
+        presentation="date"
+        [value]="valueIso()"
+        (ionChange)="onChange($event)"
+      ></ion-datetime>
+      <app-filter-actions-row>
+        <ion-button expand="block" fill="outline" color="primary" (click)="picker.cancel(true)">
+          {{ 'common.cancel' | translate }}
+        </ion-button>
+        <ion-button expand="block" color="primary" (click)="picker.confirm(true)">
+          {{ 'profile.apply' | translate }}
+        </ion-button>
+      </app-filter-actions-row>
+    </div>
+  </ng-template>
+</ion-modal>

@@ -1,6 +1,6 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { Location } from '@angular/common';
-import { IonContent, IonIcon, IonButton, IonModal, IonDatetime } from '@ionic/angular/standalone';
+import { IonContent, IonIcon, IonButton } from '@ionic/angular/standalone';
 import { TranslatePipe } from '@ngx-translate/core';
 import { addIcons } from 'ionicons';
 import { calendarOutline, close } from 'ionicons/icons';
@@ -30,7 +30,7 @@ const PRICE_OPTIONS: { id: PriceOption; labelKey: string }[] = [
   standalone: true,
   templateUrl: 'explorer-filters.page.html',
   styleUrls: ['explorer-filters.page.scss'],
-  imports: [IonContent, IonIcon, IonButton, IonModal, IonDatetime, TranslatePipe, FilterAllComponent],
+  imports: [IonContent, IonIcon, TranslatePipe, FilterAllComponent],
 })
 export class ExplorerFiltersPage implements OnInit {
   private readonly location = inject(Location);

@@ -114,8 +114,11 @@
   color: var(--ion-color-primary-contrast);
 }
 
+// Same solid teal/white toggle as the rest of the app's pills (see
+// chip-grid.component.scss's .chip.selected) - "Seguir" above is the
+// selected/solid state, this is the unselected/outline one.
 .follow-btn-following {
-  border: 1.5px solid var(--ion-color-light-shade);
+  border: 1.5px solid var(--ion-color-primary);
   background: var(--app-surface-card);
-  color: var(--app-text-strong);
+  color: var(--ion-color-primary);
 }

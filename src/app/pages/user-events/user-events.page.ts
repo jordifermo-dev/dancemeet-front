@@ -25,8 +25,6 @@ import {
   IonModal,
   IonRange,
   IonSpinner,
-  IonDatetime,
-  IonDatetimeButton,
   ViewWillEnter,
 } from '@ionic/angular/standalone';
 import { TranslatePipe } from '@ngx-translate/core';
@@ -65,6 +63,7 @@ import { FilterSheetHeaderComponent } from '../../shared/filter-sheet-header/fil
 import { FilterActionsRowComponent } from '../../shared/filter-actions-row/filter-actions-row.component';
 import { ChipGridComponent } from '../../shared/chip-grid/chip-grid.component';
 import { FilterAllChipEvent, FilterAllComponent } from '../../shared/filter-all/filter-all.component';
+import { DatePickerFieldComponent } from '../../shared/date-picker-field/date-picker-field.component';
 import {
   disciplineChipItems,
   eventTypeChipItems,
@@ -106,14 +105,13 @@ const PRICE_OPTIONS: { id: PriceOption; labelKey: string }[] = [
     IonModal,
     IonRange,
     IonSpinner,
-    IonDatetime,
-    IonDatetimeButton,
     TranslatePipe,
     EventCardComponent,
     FilterSheetHeaderComponent,
     FilterActionsRowComponent,
     ChipGridComponent,
     FilterAllComponent,
+    DatePickerFieldComponent,
   ],
 })
 export class UserEventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWillEnter {
@@ -181,6 +179,10 @@ export class UserEventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWil
   readonly appliedDateFrom = signal<number | undefined>(undefined);
   readonly draftDateTo = signal<number | undefined>(undefined);
   readonly appliedDateTo = signal<number | undefined>(undefined);
+  /** Fallback seed for <app-date-picker-field>'s [value] when draftDateFrom/
+   * draftDateTo are unset - it always needs a real timestamp to open the
+   * calendar on, even though "unset" is a valid filter state here. */
+  readonly nowTimestamp = Date.now();
 
   /** Distance/location default to whatever's saved on the logged-in user's
    * own profile (see profile.page.ts's distanceRange/city/lat/lng) - even
