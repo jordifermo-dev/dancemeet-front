@@ -6,8 +6,10 @@ import {
   OnInit,
   ViewChild,
   computed,
+  effect,
   inject,
   signal,
+  untracked,
 } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import {
@@ -32,6 +34,7 @@ import { addIcons } from 'ionicons';
 import { locationOutline, close, locateOutline, calendarOutline, optionsOutline, chevronDownOutline } from 'ionicons/icons';
 import { AuthService } from '../../services/auth.service';
 import { FavoriteService } from '../../services/favorite.service';
+import { EventListRefreshService } from '../../services/event-list-refresh.service';
 import { DisciplineService } from '../../services/discipline.service';
 import { EventTypeService } from '../../services/event-type.service';
 import { CitySuggestion, GeocodingService } from '../../services/geocoding.service';
@@ -117,6 +120,7 @@ export class UserEventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWil
   private readonly route = inject(ActivatedRoute);
   private readonly authService = inject(AuthService);
   private readonly favoriteService = inject(FavoriteService);
+  private readonly refreshNotifier = inject(EventListRefreshService);
   private readonly disciplineService = inject(DisciplineService);
   private readonly eventTypeService = inject(EventTypeService);
   private readonly geocodingService = inject(GeocodingService);
@@ -279,6 +283,14 @@ export class UserEventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWil
     // and again whenever ?userId changes without recreating this component -
     // e.g. browsing from one user's events into another's.
     this.route.queryParamMap.subscribe(() => this.loadEvents());
+
+    // A just-created/reused event shows up here without waiting for
+    // ionViewWillEnter, which doesn't reliably re-fire on the forward
+    // navigation saveEdit() uses to return here (see EventListRefreshService).
+    effect(() => {
+      this.refreshNotifier.version();
+      untracked(() => this.loadEvents());
+    });
   }
 
   ngOnInit(): void {

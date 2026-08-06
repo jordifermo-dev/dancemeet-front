@@ -46,6 +46,7 @@ import {
 import { AuthService } from '../../services/auth.service';
 import { EventService } from '../../services/event.service';
 import { FavoriteService } from '../../services/favorite.service';
+import { EventListRefreshService } from '../../services/event-list-refresh.service';
 import { DisciplineService } from '../../services/discipline.service';
 import { EventTypeService } from '../../services/event-type.service';
 import { LanguageService } from '../../services/language.service';
@@ -183,6 +184,7 @@ export class EventDetailPage implements ComponentWithUnsavedChanges {
   private readonly authService = inject(AuthService);
   private readonly eventService = inject(EventService);
   private readonly favoriteService = inject(FavoriteService);
+  private readonly refreshNotifier = inject(EventListRefreshService);
   private readonly disciplineService = inject(DisciplineService);
   private readonly eventTypeService = inject(EventTypeService);
   private readonly languageService = inject(LanguageService);
@@ -1152,6 +1154,11 @@ export class EventDetailPage implements ComponentWithUnsavedChanges {
           // Tapping "Aplicar" there re-ran saveEdit() a second time, which is
           // exactly how a "reused" event ended up created twice.
           this.isEditMode.set(false);
+          // Ionic's tab pages don't reliably re-fire ionViewWillEnter on the
+          // forward navigation below (see EventListRefreshService), so the
+          // origin list is told directly instead of relying on it noticing
+          // the new event on its own.
+          this.refreshNotifier.notifyEventCreated();
           // Returns to wherever this create flow actually started (the
           // origin tab/screen - see originUrl) via a normal forward
           // navigation, so Ionic's own view-cache/lifecycle handling stays

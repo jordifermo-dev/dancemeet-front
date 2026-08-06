@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, ElementRef, NgZone, OnDestroy, OnInit, ViewChild, computed, inject, signal } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, NgZone, OnDestroy, OnInit, ViewChild, computed, effect, inject, signal, untracked } from '@angular/core';
 import { Router } from '@angular/router';
 import {
   IonHeader,
@@ -29,6 +29,7 @@ import {
 } from 'ionicons/icons';
 import { AuthService } from '../../services/auth.service';
 import { FavoriteService } from '../../services/favorite.service';
+import { EventListRefreshService } from '../../services/event-list-refresh.service';
 import { DisciplineService } from '../../services/discipline.service';
 import { EventTypeService } from '../../services/event-type.service';
 import { CitySuggestion, GeocodingService } from '../../services/geocoding.service';
@@ -112,6 +113,7 @@ export class FavoritesPage implements OnInit, AfterViewInit, OnDestroy, ViewWill
   private readonly router = inject(Router);
   private readonly authService = inject(AuthService);
   private readonly favoriteService = inject(FavoriteService);
+  private readonly refreshNotifier = inject(EventListRefreshService);
   private readonly disciplineService = inject(DisciplineService);
   private readonly eventTypeService = inject(EventTypeService);
   private readonly geocodingService = inject(GeocodingService);
@@ -274,6 +276,14 @@ export class FavoritesPage implements OnInit, AfterViewInit, OnDestroy, ViewWill
       optionsOutline,
       chevronDownOutline,
       addCircleOutline,
+    });
+
+    // A just-created/reused event shows up here without waiting for
+    // ionViewWillEnter, which doesn't reliably re-fire on the forward
+    // navigation saveEdit() uses to return here (see EventListRefreshService).
+    effect(() => {
+      this.refreshNotifier.version();
+      untracked(() => this.loadFavorites());
     });
   }
 

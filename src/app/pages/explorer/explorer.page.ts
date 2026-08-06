@@ -29,6 +29,7 @@ import {
 import { DisciplineService } from '../../services/discipline.service';
 import { EventTypeService } from '../../services/event-type.service';
 import { EventService } from '../../services/event.service';
+import { EventListRefreshService } from '../../services/event-list-refresh.service';
 import { GoogleMapsLoaderService } from '../../shared/google-maps-loader.service';
 import { Discipline, DISCIPLINE_NAMES, EventType, EVENT_TYPE_NAMES, EventStatus, EVENT_STATUSES, PriceOption, Event as DanceEvent } from '../../models';
 import { disciplineIconUrl, sortByNameOrder, STATUS_LABEL_KEYS } from '../../shared/icon-catalog';
@@ -123,6 +124,7 @@ export class ExplorerPage implements OnInit, ViewWillEnter {
   private readonly disciplineService = inject(DisciplineService);
   private readonly eventTypeService = inject(EventTypeService);
   private readonly eventService = inject(EventService);
+  private readonly refreshNotifier = inject(EventListRefreshService);
   private readonly mapsLoader = inject(GoogleMapsLoaderService);
   private readonly themeService = inject(ThemeService);
   private readonly router = inject(Router);
@@ -225,6 +227,10 @@ export class ExplorerPage implements OnInit, ViewWillEnter {
 
     // Re-run the search whenever any applied filter, the location, the radius
     // or the search term changes - all in one effect so every trigger stays in sync.
+    // Also tracks refreshNotifier.version() so a just-created/reused event
+    // shows up here without waiting for ionViewWillEnter, which doesn't
+    // reliably re-fire on the forward navigation saveEdit() uses to return
+    // here (see EventListRefreshService).
     effect(() => {
       this.filters.appliedDisciplineIds();
       this.filters.appliedEventTypeIds();
@@ -235,6 +241,7 @@ export class ExplorerPage implements OnInit, ViewWillEnter {
       this.filters.appliedDistanceRange();
       this.filters.appliedLatitude();
       this.filters.appliedLongitude();
+      this.refreshNotifier.version();
       const term = this.searchTerm();
       untracked(() => this.loadEvents(term));
     });
