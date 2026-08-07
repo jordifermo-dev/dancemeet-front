@@ -266,7 +266,7 @@
           <ion-icon slot="start" [name]="calendarFlash.active() ? 'checkmark-outline' : 'download-outline'"></ion-icon>
           {{ (calendarFlash.active() ? 'eventDetail.calendarAdded' : 'eventDetail.calendarButton') | translate }}
         </ion-button>
-        <ion-button expand="block" fill="outline" (click)="share()">
+        <ion-button expand="block" fill="outline" (click)="openSharePreview()">
           <ion-icon slot="start" [name]="shareFlash.active() ? 'checkmark-outline' : 'share-social-outline'"></ion-icon>
           {{
             (shareFlash.active() ? (shareFeedback() === 'copied' ? 'eventDetail.linkCopied' : 'eventDetail.shared') : 'eventDetail.shareButton')
@@ -559,6 +559,42 @@
         </ion-button>
         <ion-button expand="block" color="primary" (click)="eventDetailTimeToPicker.confirm(true)">
           {{ 'profile.apply' | translate }}
+        </ion-button>
+      </app-filter-actions-row>
+    </div>
+  </ng-template>
+</ion-modal>
+
+<ion-modal
+  [isOpen]="showSharePreviewModal()"
+  [initialBreakpoint]="0.95"
+  [breakpoints]="[0, 0.95]"
+  (didDismiss)="closeSharePreview()"
+>
+  <ng-template>
+    <div class="filter-sheet share-preview-sheet">
+      <app-filter-sheet-header titleKey="eventDetail.sharePreviewTitle" (closed)="closeSharePreview()"></app-filter-sheet-header>
+      @if (event(); as previewEvent) {
+        <img class="share-preview-image" [src]="previewEvent.imageUrl" [alt]="previewEvent.title" />
+        @if (shareTextLoading()) {
+          <div class="share-preview-loading">
+            <ion-spinner name="crescent"></ion-spinner>
+          </div>
+        } @else {
+          <p class="share-preview-text">{{ shareText() }}</p>
+        }
+      }
+      <button type="button" class="share-preview-copy" [disabled]="shareTextLoading()" (click)="copyShareText()">
+        <ion-icon [name]="shareFlash.active() && shareFeedback() === 'copied' ? 'checkmark-outline' : 'copy-outline'"></ion-icon>
+        {{ (shareFlash.active() && shareFeedback() === 'copied' ? 'eventDetail.textCopied' : 'eventDetail.copyTextButton') | translate }}
+      </button>
+      <p class="share-preview-hint">{{ 'eventDetail.sharePreviewHint' | translate }}</p>
+      <app-filter-actions-row>
+        <ion-button expand="block" fill="outline" color="primary" (click)="closeSharePreview()">
+          {{ 'common.cancel' | translate }}
+        </ion-button>
+        <ion-button expand="block" color="primary" [disabled]="shareTextLoading()" (click)="confirmShare()">
+          {{ 'eventDetail.shareButton' | translate }}
         </ion-button>
       </app-filter-actions-row>
     </div>

@@ -1,6 +1,8 @@
 import { Location } from '@angular/common';
+import { HttpClient } from '@angular/common/http';
 import { Component, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
+import { firstValueFrom } from 'rxjs';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -42,6 +44,7 @@ import {
   heart,
   heartOutline,
   refreshOutline,
+  copyOutline,
 } from 'ionicons/icons';
 import { AuthService } from '../../services/auth.service';
 import { EventService } from '../../services/event.service';
@@ -101,6 +104,31 @@ const STATUS_OPTIONS = EVENT_STATUSES.map((id) => ({ id, labelKey: STATUS_LABEL_
 // has already passed, not something the organizer picks when creating/editing.
 const EDITABLE_STATUS_OPTIONS = STATUS_OPTIONS.filter((option) => option.id !== 'finished');
 const DEFAULT_EVENT_DURATION_MS = 2 * 60 * 60 * 1000;
+const SHARE_INTRO_KEYS: Record<EventStatus, string> = {
+  published: 'eventDetail.shareIntroPublished',
+  cancelled: 'eventDetail.shareIntroCancelled',
+  finished: 'eventDetail.shareIntroFinished',
+};
+
+// *asterisk* markdown only renders as real bold on WhatsApp/Telegram -
+// everywhere else (Instagram, Facebook, SMS...) it shows the literal
+// asterisks. Swapping each character for its Mathematical Sans-Serif Bold
+// Unicode codepoint instead is real bold text everywhere, since it's just
+// different characters rather than formatting any app has to opt into -
+// sans-serif specifically to match these apps' own UI font instead of the
+// serif look of the plain "Mathematical Bold" block. Accented letters (á,
+// ñ...) have no bold codepoint and are left as-is.
+function bold(text: string): string {
+  return Array.from(text)
+    .map((char) => {
+      const code = char.codePointAt(0)!;
+      if (code >= 65 && code <= 90) return String.fromCodePoint(0x1d5d4 + (code - 65)); // A-Z
+      if (code >= 97 && code <= 122) return String.fromCodePoint(0x1d5ee + (code - 97)); // a-z
+      if (code >= 48 && code <= 57) return String.fromCodePoint(0x1d7ec + (code - 48)); // 0-9
+      return char;
+    })
+    .join('');
+}
 
 interface SocialLinkRow {
   key: keyof SocialLinks;
@@ -189,6 +217,7 @@ export class EventDetailPage implements ComponentWithUnsavedChanges {
   private readonly eventTypeService = inject(EventTypeService);
   private readonly languageService = inject(LanguageService);
   private readonly geocodingService = inject(GeocodingService);
+  private readonly http = inject(HttpClient);
   private readonly translate = inject(TranslateService);
   readonly minSelectionWarning = inject(MinSelectionWarningService);
 
@@ -214,6 +243,7 @@ export class EventDetailPage implements ComponentWithUnsavedChanges {
   readonly attendeesCount = signal(0);
   readonly shareFlash = createSuccessFlash();
   readonly shareFeedback = signal<'shared' | 'copied'>('shared');
+  readonly showSharePreviewModal = signal(false);
   readonly directionsFlash = createSuccessFlash();
   readonly calendarFlash = createSuccessFlash();
 
@@ -632,6 +662,7 @@ export class EventDetailPage implements ComponentWithUnsavedChanges {
       heart,
       heartOutline,
       refreshOutline,
+      copyOutline,
     });
 
     this.disciplineService.getAll().subscribe({
@@ -820,39 +851,126 @@ export class EventDetailPage implements ComponentWithUnsavedChanges {
 
   // --- Share ----------------------------------------------------------------
 
-  async share(): Promise<void> {
+  readonly shareText = signal('');
+  readonly shareTextLoading = signal(false);
+
+  // Some share targets only keep one of {image, text} (see confirmShare's own
+  // comment) - embedding the event/maps links straight into the text means
+  // whichever one survives on its own still carries a working link, instead
+  // of the link only existing in the `url` field Share.share() drops on
+  // those targets.
+  async openSharePreview(): Promise<void> {
     const event = this.event();
     if (!event) {
       return;
     }
-    // Points at the backend's own /share/events/:id (not the app URL
-    // directly) - link-preview crawlers (WhatsApp, Telegram, LinkedIn...)
-    // fetch the shared URL server-side and read its <meta property="og:...">
-    // tags without ever running JavaScript, so the SPA's own client-rendered
-    // page (no per-event meta tags) always previewed as a bare link. This
-    // endpoint serves real event title/description/image in its meta tags,
-    // then redirects actual visitors on to the app - see ShareController.
-    const url = `${environment.apiUrl}/share/events/${event.id}`;
-    const text = this.translate.instant('eventDetail.shareText', {
-      title: event.title,
-      creator: event.creatorName,
-    });
+    this.showSharePreviewModal.set(true);
+    this.shareTextLoading.set(true);
+    this.shareText.set(await this.buildShareText(event));
+    this.shareTextLoading.set(false);
+  }
+
+  closeSharePreview(): void {
+    this.showSharePreviewModal.set(false);
+  }
+
+  // Not every target the native share sheet offers actually combines the
+  // image and text together (see confirmShare's own comment) - a dedicated
+  // copy button lets the user grab the text on its own to paste by hand
+  // wherever the image alone ended up (a WhatsApp Status, an Instagram
+  // Story...).
+  async copyShareText(): Promise<void> {
+    if (!navigator.clipboard) {
+      return;
+    }
+    await navigator.clipboard.writeText(this.shareText());
+    this.shareFeedback.set('copied');
+    this.shareFlash.trigger();
+  }
+
+  async confirmShare(): Promise<void> {
+    // No separate `url` field - the event's own link already lives inside
+    // the text (see buildShareText), and Capacitor's Share plugin just
+    // concatenates text+url into one string on Android anyway, so passing
+    // both would only duplicate the link in the final message.
+    const text = this.shareText();
     this.shareFeedback.set('shared');
     this.shareFlash.trigger();
     try {
       // Capacitor's Share plugin falls back to the Web Share API on web
       // builds by itself, so this one call covers both native and browser.
-      await Share.share({ title: 'DanceMeet', text, url });
+      await Share.share({ title: 'DanceMeet', text });
     } catch {
       // User cancelled the native share sheet, or neither share mechanism is
-      // available - fall back to copying the link. Re-triggers the flash
+      // available - fall back to copying the text. Re-triggers the flash
       // (resetting its timer) with the more accurate "copied" wording.
       if (navigator.clipboard) {
-        await navigator.clipboard.writeText(url);
+        await navigator.clipboard.writeText(text);
         this.shareFeedback.set('copied');
         this.shareFlash.trigger();
       }
     }
+    this.showSharePreviewModal.set(false);
+  }
+
+  // TinyURL has no auth/API key and can be called anonymously - routed
+  // through our own backend (ShareController's /share/shorten) purely to
+  // avoid a cross-origin request to a third-party domain from the WebView.
+  // Falls back to the original (long) URL on any failure - a down/blocked
+  // shortener should degrade the share text, never break it.
+  private async shortenUrl(url: string): Promise<string> {
+    try {
+      const response = await firstValueFrom(
+        this.http.get<{ shortUrl: string }>(`${environment.apiUrl}/share/shorten`, { params: { url } }),
+      );
+      return response.shortUrl;
+    } catch {
+      return url;
+    }
+  }
+
+  /** Not every share target renders the link-preview card built from
+   * ShareController's meta tags (Facebook's composer, Instagram Stories,
+   * X/Twitter...) - so the event's own details need to travel as plain text
+   * too, not just live behind a link only some apps bother to unfurl. */
+  private async buildShareText(event: EventWithCreatorName): Promise<string> {
+    const intro = this.translate.instant(SHARE_INTRO_KEYS[event.status], { creator: bold(event.creatorName) });
+    const preferences = [
+      ...this.eventTypeTags().map((tag) => tag.name),
+      ...this.disciplineTags().map((tag) => tag.name),
+      event.isFree ? this.translate.instant('eventCard.free') : `${event.price} €`,
+    ].join(' - ');
+    const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${event.latitude},${event.longitude}`;
+    // Points at the backend's own /share/events/:id (not the app URL
+    // directly) - link-preview crawlers (WhatsApp, Telegram, LinkedIn...)
+    // fetch this URL server-side and read its <meta property="og:..."> tags
+    // without ever running JavaScript, so the SPA's own client-rendered page
+    // (no per-event meta tags) always previewed as a bare link. This
+    // endpoint serves real event title/description/image in its meta tags,
+    // then redirects actual visitors on to the app - see ShareController.
+    const [shortEventUrl, shortMapsUrl] = await Promise.all([
+      this.shortenUrl(`${environment.apiUrl}/share/events/${event.id}`),
+      this.shortenUrl(mapsUrl),
+    ]);
+
+    // Emoji instead of translated word labels (🎉 title, 📝 description...) -
+    // unlike text they need no i18n and read the same in every language.
+    const lines = [bold('DanceMeet'), intro, `🎉 ${bold(event.title)}`];
+    if (event.description) {
+      lines.push(`📝 ${bold(event.description)}`);
+    }
+    if (event.additionalInfo) {
+      lines.push(`ℹ️ ${bold(event.additionalInfo)}`);
+    }
+    lines.push(`🏷️ ${bold(preferences)}`);
+    lines.push(`📅 ${this.dateLabel()}`);
+    // The event link goes before the maps link - platforms that build a
+    // link-preview card out of shared plain text (WhatsApp in particular)
+    // unfurl whichever URL appears *first* in the message, and the event's
+    // own card (photo, title...) is what should win that slot, not Maps'.
+    lines.push(`🔗 ${shortEventUrl}`);
+    lines.push(`📍 ${event.address}, ${event.city} - ${shortMapsUrl}`);
+    return lines.join('\n');
   }
 
   // --- Attend (favorite as attendee) ---------------------------------------
