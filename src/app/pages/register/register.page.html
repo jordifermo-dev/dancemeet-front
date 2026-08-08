@@ -165,8 +165,12 @@
           }
 
           <div class="footer-nav">
-            <ion-button fill="outline" (click)="goBack()">{{ 'common.back' | translate }}</ion-button>
-            <ion-button [disabled]="!acceptedTerms() || isSubmitting()" (click)="submit()">
+            <ion-button fill="outline" (click)="goBack()">
+              <ion-icon slot="start" name="chevron-back-outline"></ion-icon>
+              {{ 'common.back' | translate }}
+            </ion-button>
+            <ion-button class="btn-fill" [disabled]="!acceptedTerms() || isSubmitting()" (click)="submit()">
+              <ion-icon slot="start" name="checkmark-outline"></ion-icon>
               {{ 'register.submitButton' | translate }}
             </ion-button>
           </div>
@@ -182,8 +186,14 @@
 
     @if (currentStep() < totalSteps - 1) {
       <div class="footer-nav">
-        <ion-button fill="outline" (click)="goBack()">{{ 'common.back' | translate }}</ion-button>
-        <ion-button [disabled]="!canGoNext" (click)="goNext()">{{ 'common.next' | translate }}</ion-button>
+        <ion-button fill="outline" (click)="goBack()">
+          <ion-icon slot="start" name="chevron-back-outline"></ion-icon>
+          {{ 'common.back' | translate }}
+        </ion-button>
+        <ion-button class="btn-fill" [disabled]="!canGoNext" (click)="goNext()">
+          <ion-icon slot="start" name="chevron-forward-outline"></ion-icon>
+          {{ 'common.next' | translate }}
+        </ion-button>
       </div>
     }
   </div>

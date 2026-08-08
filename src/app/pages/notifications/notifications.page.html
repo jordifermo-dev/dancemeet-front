@@ -114,6 +114,7 @@
       </div>
       <app-filter-actions-row>
         <ion-button expand="block" fill="outline" color="primary" (click)="isSortModalOpen.set(false)">
+          <ion-icon slot="start" name="close-outline"></ion-icon>
           {{ 'common.cancel' | translate }}
         </ion-button>
       </app-filter-actions-row>
@@ -150,9 +151,11 @@
 
       <app-filter-actions-row>
         <ion-button expand="block" fill="outline" color="primary" (click)="clearFilters()">
+          <ion-icon slot="start" name="refresh-outline"></ion-icon>
           {{ 'explorer.clearFilter' | translate }}
         </ion-button>
-        <ion-button expand="block" (click)="applyFilters()">
+        <ion-button expand="block" class="btn-fill" (click)="applyFilters()">
+          <ion-icon slot="start" name="checkmark-outline"></ion-icon>
           {{ (filtersApplyFlash.active() ? 'profile.applied' : 'profile.apply') | translate }}
         </ion-button>
       </app-filter-actions-row>

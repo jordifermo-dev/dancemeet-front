@@ -12,6 +12,12 @@
   --ion-color-primary-contrast-rgb: 255, 255, 255;
   --ion-color-primary-shade: #0e5b5e;
   --ion-color-primary-tint: #287477;
+
+  // Lighter, softer teal used ONLY for solid fills (selected chips/pills,
+  // solid ion-buttons) - borders, outline buttons and unselected text all
+  // stay on the darker --ion-color-primary above, which read as too heavy
+  // once it filled a whole button/pill rather than just outlining one.
+  --ion-color-primary-fill: #5c9294;
 }
 
 .ion-color-primary {

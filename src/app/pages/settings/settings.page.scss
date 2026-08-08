@@ -45,7 +45,7 @@
   cursor: pointer;
 
   &.active {
-    background: var(--ion-color-primary);
+    background: var(--ion-color-primary-fill);
     color: var(--ion-color-primary-contrast);
   }
 }
@@ -80,7 +80,7 @@
   }
 
   &.active {
-    background: var(--ion-color-primary);
+    background: var(--ion-color-primary-fill);
     color: var(--ion-color-primary-contrast);
   }
 }
@@ -127,4 +127,28 @@
 
 .welcome-guide-button {
   margin-top: 28px;
+}
+
+// Same confirmation-sheet look as profile.page.scss's identical rule.
+.filter-sheet {
+  padding: 20px 20px 16px;
+
+  p {
+    color: var(--ion-color-medium);
+    font-size: 0.9rem;
+    margin: 0;
+  }
+}
+
+.filter-sheet-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+
+  h2 {
+    font-size: 1.3rem;
+    font-weight: 800;
+    margin: 0;
+  }
 }

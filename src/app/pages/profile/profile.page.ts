@@ -32,6 +32,8 @@ import {
   eyeOffOutline,
   trashOutline,
   addCircleOutline,
+  refreshOutline,
+  checkmarkOutline,
 } from 'ionicons/icons';
 import { AuthService } from '../../services/auth.service';
 import { UserService } from '../../services/user.service';
@@ -267,6 +269,8 @@ export class ProfilePage implements OnInit, ViewWillEnter, ComponentWithUnsavedC
       eyeOffOutline,
       trashOutline,
       addCircleOutline,
+      refreshOutline,
+      checkmarkOutline,
     });
 
     // The draft must always track *whoever is currently authenticated*, not

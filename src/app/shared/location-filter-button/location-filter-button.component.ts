@@ -2,7 +2,7 @@ import { Component, inject, signal } from '@angular/core';
 import { IonSearchbar, IonIcon, IonButton, IonModal, IonRange } from '@ionic/angular/standalone';
 import { TranslatePipe } from '@ngx-translate/core';
 import { addIcons } from 'ionicons';
-import { locationOutline, locateOutline } from 'ionicons/icons';
+import { locationOutline, locateOutline, bookmarkOutline, refreshOutline, checkmarkOutline } from 'ionicons/icons';
 import { CitySuggestion, GeocodingService } from '../../services/geocoding.service';
 import { ExplorerFiltersService } from '../../pages/explorer/explorer-filters.service';
 import { createApplyFlash } from '../success-flash';
@@ -39,7 +39,7 @@ export class LocationFilterButtonComponent {
   private cityInputTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor() {
-    addIcons({ locationOutline, locateOutline });
+    addIcons({ locationOutline, locateOutline, bookmarkOutline, refreshOutline, checkmarkOutline });
   }
 
   open(): void {

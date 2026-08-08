@@ -14,7 +14,7 @@
 
       <!-- Apple/Microsoft sign-in not implemented yet - re-enable once they are. -->
 
-      <ion-button expand="block" color="primary" (click)="toggleEmailForm()">
+      <ion-button expand="block" class="btn-fill" color="primary" (click)="toggleEmailForm()">
         <ion-icon slot="start" name="mail-outline"></ion-icon>
         {{ 'login.continueWithEmail' | translate }}
       </ion-button>
@@ -51,9 +51,11 @@
 
         <ion-button
           expand="block"
+          class="btn-fill"
           type="submit"
           [disabled]="emailForm.invalid || isSubmitting()"
         >
+          <ion-icon slot="start" name="log-in-outline"></ion-icon>
           {{ 'login.submit' | translate }}
         </ion-button>
       </form>

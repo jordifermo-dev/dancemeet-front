@@ -20,7 +20,9 @@
     "privacyPolicyLink": "Política de privacidad",
     "termsOfUseLink": "Términos de uso",
     "shareHintReset": "Volver a mostrar el aviso de compartir eventos",
-    "shareHintResetDone": "Hecho ✓"
+    "shareHintResetDone": "Hecho ✓",
+    "logoutConfirmTitle": "¿Cerrar sesión?",
+    "logoutConfirmMessage": "Tendrás que volver a iniciar sesión para acceder a tu cuenta."
   },
   "welcome": {
     "title": "Tour de bienvenida",

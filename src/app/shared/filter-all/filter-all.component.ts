@@ -1,6 +1,8 @@
 import { Component, EventEmitter, Input, Output, inject } from '@angular/core';
 import { IonButton, IonIcon } from '@ionic/angular/standalone';
 import { TranslatePipe } from '@ngx-translate/core';
+import { addIcons } from 'ionicons';
+import { closeOutline, bookmarkOutline, refreshOutline, checkmarkOutline } from 'ionicons/icons';
 import { MinSelectionWarningService } from '../min-selection-warning.service';
 import { FilterSectionComponent } from '../filter-section/filter-section.component';
 import { FilterActionsRowComponent } from '../filter-actions-row/filter-actions-row.component';
@@ -32,6 +34,10 @@ export interface FilterAllChipEvent {
 })
 export class FilterAllComponent {
   readonly minSelectionWarning = inject(MinSelectionWarningService);
+
+  constructor() {
+    addIcons({ closeOutline, bookmarkOutline, refreshOutline, checkmarkOutline });
+  }
 
   /** Explorer/Events only - lets the current selection be saved as the
    * user's profile preferences, not just applied to this session. */

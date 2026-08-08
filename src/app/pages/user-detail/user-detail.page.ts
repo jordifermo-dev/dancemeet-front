@@ -26,6 +26,8 @@ import {
   downloadOutline,
   locationOutline,
   checkmarkOutline,
+  trashOutline,
+  personRemoveOutline,
 } from 'ionicons/icons';
 import { AuthService } from '../../services/auth.service';
 import { UserService } from '../../services/user.service';
@@ -228,6 +230,8 @@ export class UserDetailPage {
       downloadOutline,
       locationOutline,
       checkmarkOutline,
+      trashOutline,
+      personRemoveOutline,
     });
 
     this.disciplineService.getAll().subscribe({

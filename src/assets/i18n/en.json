@@ -20,7 +20,9 @@
     "privacyPolicyLink": "Privacy policy",
     "termsOfUseLink": "Terms of use",
     "shareHintReset": "Show the events share hint again",
-    "shareHintResetDone": "Done ✓"
+    "shareHintResetDone": "Done ✓",
+    "logoutConfirmTitle": "Log out?",
+    "logoutConfirmMessage": "You'll need to sign in again to access your account."
   },
   "welcome": {
     "title": "Welcome tour",

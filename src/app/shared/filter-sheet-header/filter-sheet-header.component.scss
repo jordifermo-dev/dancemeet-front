@@ -17,14 +17,17 @@
   }
 }
 
+// Same bare icon look as the header's other icon-only buttons (create-event,
+// settings) - no background/circle behind it, just the icon in the theme
+// color, which also fixes it being nearly invisible in dark mode against a
+// light-shade badge that didn't adapt for dark backgrounds.
 .close-button {
   appearance: none;
   width: 36px;
   height: 36px;
-  border-radius: 50%;
   border: none;
-  background: var(--ion-color-light-shade);
-  color: var(--app-text-strong);
+  background: transparent;
+  color: var(--ion-color-primary);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -32,6 +35,6 @@
   flex: 0 0 auto;
 
   ion-icon {
-    font-size: 1.2rem;
+    font-size: 1.4rem;
   }
 }

@@ -10,38 +10,6 @@
   margin: 0 auto;
 }
 
-.top-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 24px;
-
-  h1 {
-    font-size: 1.4rem;
-    font-weight: 800;
-    margin: 0;
-  }
-}
-
-.close-button {
-  appearance: none;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  border: none;
-  background: var(--ion-color-light-shade);
-  color: var(--app-text-strong);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  flex: 0 0 auto;
-
-  ion-icon {
-    font-size: 1.2rem;
-  }
-}
-
 // The Salir/Aplica row below the calendar - rendered as a normal sibling of
 // <ion-datetime> (not inside its slot="buttons"), because that slot is
 // hard-coded by Ionic to shrink-wrap and right-align its content with no way

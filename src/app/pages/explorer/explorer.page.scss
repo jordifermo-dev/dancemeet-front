@@ -135,7 +135,7 @@
   white-space: nowrap;
 
   &.active {
-    background: var(--ion-color-primary);
+    background: var(--ion-color-primary-fill);
     color: var(--ion-color-primary-contrast);
   }
 }

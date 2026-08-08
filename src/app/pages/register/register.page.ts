@@ -31,6 +31,9 @@ import {
   addOutline,
   removeOutline,
   layersOutline,
+  checkmarkOutline,
+  chevronBackOutline,
+  chevronForwardOutline,
 } from 'ionicons/icons';
 import { AuthService } from '../../services/auth.service';
 import { OnboardingService } from '../../services/onboarding.service';
@@ -177,6 +180,9 @@ export class RegisterPage implements OnInit {
       addOutline,
       removeOutline,
       layersOutline,
+      checkmarkOutline,
+      chevronBackOutline,
+      chevronForwardOutline,
     });
   }
 

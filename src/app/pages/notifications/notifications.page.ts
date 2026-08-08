@@ -31,6 +31,9 @@ import {
   mailUnreadOutline,
   mailOutline,
   chevronDownOutline,
+  refreshOutline,
+  checkmarkOutline,
+  closeOutline,
 } from 'ionicons/icons';
 import { AuthService } from '../../services/auth.service';
 import { NotificationService } from '../../services/notification.service';
@@ -250,6 +253,9 @@ export class NotificationsPage implements ViewWillEnter, AfterViewInit, OnDestro
       mailUnreadOutline,
       mailOutline,
       chevronDownOutline,
+      refreshOutline,
+      checkmarkOutline,
+      closeOutline,
     });
     this.disciplineService.getAll().subscribe({
       next: (disciplines) => (this.disciplinesById = new Map(disciplines.map((d) => [d.id, d]))),

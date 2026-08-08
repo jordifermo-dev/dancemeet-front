@@ -130,14 +130,17 @@
       }
       <app-filter-actions-row>
         <ion-button expand="block" fill="outline" color="primary" (click)="saveEventTypeFilter()">
+          <ion-icon slot="start" name="bookmark-outline"></ion-icon>
           {{ 'explorer.saveFilters' | translate }}
         </ion-button>
       </app-filter-actions-row>
       <app-filter-actions-row [secondary]="true">
         <ion-button expand="block" fill="outline" color="primary" (click)="resetEventTypeFilter()">
+          <ion-icon slot="start" name="refresh-outline"></ion-icon>
           {{ 'explorer.resetFilters' | translate }}
         </ion-button>
-        <ion-button expand="block" (click)="applyEventTypeFilter()">
+        <ion-button expand="block" class="btn-fill" (click)="applyEventTypeFilter()">
+          <ion-icon slot="start" name="checkmark-outline"></ion-icon>
           {{ (eventTypeApplyFlash.active() ? 'profile.applied' : 'profile.apply') | translate }}
         </ion-button>
       </app-filter-actions-row>
@@ -161,14 +164,17 @@
       }
       <app-filter-actions-row>
         <ion-button expand="block" fill="outline" color="primary" (click)="saveDisciplineFilter()">
+          <ion-icon slot="start" name="bookmark-outline"></ion-icon>
           {{ 'explorer.saveFilters' | translate }}
         </ion-button>
       </app-filter-actions-row>
       <app-filter-actions-row [secondary]="true">
         <ion-button expand="block" fill="outline" color="primary" (click)="resetDisciplineFilter()">
+          <ion-icon slot="start" name="refresh-outline"></ion-icon>
           {{ 'explorer.resetFilters' | translate }}
         </ion-button>
-        <ion-button expand="block" (click)="applyDisciplineFilter()">
+        <ion-button expand="block" class="btn-fill" (click)="applyDisciplineFilter()">
+          <ion-icon slot="start" name="checkmark-outline"></ion-icon>
           {{ (disciplineApplyFlash.active() ? 'profile.applied' : 'profile.apply') | translate }}
         </ion-button>
       </app-filter-actions-row>
@@ -192,14 +198,17 @@
       }
       <app-filter-actions-row>
         <ion-button expand="block" fill="outline" color="primary" (click)="saveStatusFilter()">
+          <ion-icon slot="start" name="bookmark-outline"></ion-icon>
           {{ 'explorer.saveFilters' | translate }}
         </ion-button>
       </app-filter-actions-row>
       <app-filter-actions-row [secondary]="true">
         <ion-button expand="block" fill="outline" color="primary" (click)="resetStatusFilter()">
+          <ion-icon slot="start" name="refresh-outline"></ion-icon>
           {{ 'explorer.resetFilters' | translate }}
         </ion-button>
-        <ion-button expand="block" (click)="applyStatusFilter()">
+        <ion-button expand="block" class="btn-fill" (click)="applyStatusFilter()">
+          <ion-icon slot="start" name="checkmark-outline"></ion-icon>
           {{ (statusApplyFlash.active() ? 'profile.applied' : 'profile.apply') | translate }}
         </ion-button>
       </app-filter-actions-row>
@@ -223,9 +232,11 @@
       }
       <app-filter-actions-row>
         <ion-button expand="block" fill="outline" color="primary" (click)="clearPriceFilter()">
+          <ion-icon slot="start" name="refresh-outline"></ion-icon>
           {{ 'explorer.clearFilter' | translate }}
         </ion-button>
-        <ion-button expand="block" (click)="applyPriceFilter()">
+        <ion-button expand="block" class="btn-fill" (click)="applyPriceFilter()">
+          <ion-icon slot="start" name="checkmark-outline"></ion-icon>
           {{ (priceApplyFlash.active() ? 'profile.applied' : 'profile.apply') | translate }}
         </ion-button>
       </app-filter-actions-row>
@@ -271,6 +282,7 @@
           </div>
           @if (filters.draftDateTo() !== undefined) {
             <button type="button" class="date-clear-link" (click)="clearDraftDateTo()">
+              <ion-icon name="close-outline"></ion-icon>
               {{ 'explorer.noEndDate' | translate }}
             </button>
           }
@@ -279,14 +291,17 @@
 
       <app-filter-actions-row>
         <ion-button expand="block" fill="outline" color="primary" (click)="saveDateFilter()">
+          <ion-icon slot="start" name="bookmark-outline"></ion-icon>
           {{ 'explorer.saveFilters' | translate }}
         </ion-button>
       </app-filter-actions-row>
       <app-filter-actions-row [secondary]="true">
         <ion-button expand="block" fill="outline" color="primary" (click)="resetDateFilter()">
+          <ion-icon slot="start" name="refresh-outline"></ion-icon>
           {{ 'explorer.resetFilters' | translate }}
         </ion-button>
-        <ion-button expand="block" (click)="applyDateFilter()">
+        <ion-button expand="block" class="btn-fill" (click)="applyDateFilter()">
+          <ion-icon slot="start" name="checkmark-outline"></ion-icon>
           {{ (dateApplyFlash.active() ? 'profile.applied' : 'profile.apply') | translate }}
         </ion-button>
       </app-filter-actions-row>

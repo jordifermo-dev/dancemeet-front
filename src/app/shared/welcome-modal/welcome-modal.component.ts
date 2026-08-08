@@ -3,7 +3,15 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { IonModal, IonIcon, IonButton } from '@ionic/angular/standalone';
 import { TranslatePipe } from '@ngx-translate/core';
 import { addIcons } from 'ionicons';
-import { checkmarkCircle, ellipseOutline, bulbOutline, cameraOutline } from 'ionicons/icons';
+import {
+  checkmarkCircle,
+  ellipseOutline,
+  bulbOutline,
+  cameraOutline,
+  chevronBackOutline,
+  chevronForwardOutline,
+  checkmarkOutline,
+} from 'ionicons/icons';
 import { OnboardingService } from '../../services/onboarding.service';
 import { LanguageService } from '../../services/language.service';
 import { EventCardComponent } from '../event-card/event-card.component';
@@ -206,7 +214,15 @@ export class WelcomeModalComponent {
   readonly dontShowAgain = signal(false);
 
   constructor() {
-    addIcons({ checkmarkCircle, ellipseOutline, bulbOutline, cameraOutline });
+    addIcons({
+      checkmarkCircle,
+      ellipseOutline,
+      bulbOutline,
+      cameraOutline,
+      chevronBackOutline,
+      chevronForwardOutline,
+      checkmarkOutline,
+    });
     // Every fresh open starts at slide 1, unchecked - whether it's a new
     // login (maybeShowWelcome) or a manual replay from Profile (openWelcome).
     effect(() => {

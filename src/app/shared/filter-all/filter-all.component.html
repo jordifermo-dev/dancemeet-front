@@ -66,6 +66,7 @@
       </div>
       @if (!dateToIsUnset) {
         <button type="button" class="date-clear-link" (click)="clearDateTo.emit()">
+          <ion-icon name="close-outline"></ion-icon>
           {{ 'explorer.noEndDate' | translate }}
         </button>
       }
@@ -76,6 +77,7 @@
 @if (showSaveAsPreference) {
   <app-filter-actions-row>
     <ion-button expand="block" fill="outline" color="primary" (click)="saveAsPreference.emit()">
+      <ion-icon slot="start" name="bookmark-outline"></ion-icon>
       {{ 'explorer.saveFilters' | translate }}
     </ion-button>
   </app-filter-actions-row>
@@ -83,9 +85,11 @@
 
 <app-filter-actions-row [secondary]="showSaveAsPreference">
   <ion-button expand="block" fill="outline" color="primary" (click)="reset.emit()">
+    <ion-icon slot="start" name="refresh-outline"></ion-icon>
     {{ 'explorer.resetFilters' | translate }}
   </ion-button>
-  <ion-button expand="block" (click)="apply.emit()">
+  <ion-button expand="block" class="btn-fill" (click)="apply.emit()">
+    <ion-icon slot="start" name="checkmark-outline"></ion-icon>
     {{ (applied ? 'profile.applied' : 'profile.apply') | translate }}
   </ion-button>
 </app-filter-actions-row>

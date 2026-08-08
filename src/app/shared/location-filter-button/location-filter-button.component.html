@@ -46,14 +46,17 @@
 
       <app-filter-actions-row>
         <ion-button expand="block" fill="outline" color="primary" (click)="saveLocationFilter()">
+          <ion-icon slot="start" name="bookmark-outline"></ion-icon>
           {{ 'explorer.saveFilters' | translate }}
         </ion-button>
       </app-filter-actions-row>
       <app-filter-actions-row [secondary]="true">
         <ion-button expand="block" fill="outline" color="primary" (click)="resetLocationFilter()">
+          <ion-icon slot="start" name="refresh-outline"></ion-icon>
           {{ 'explorer.resetFilters' | translate }}
         </ion-button>
-        <ion-button expand="block" (click)="applyLocationFilter()">
+        <ion-button expand="block" class="btn-fill" (click)="applyLocationFilter()">
+          <ion-icon slot="start" name="checkmark-outline"></ion-icon>
           {{ (applyLocationFlash.active() ? 'profile.applied' : 'profile.apply') | translate }}
         </ion-button>
       </app-filter-actions-row>

@@ -1,9 +1,8 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { Location } from '@angular/common';
-import { IonContent, IonIcon, IonButton } from '@ionic/angular/standalone';
-import { TranslatePipe } from '@ngx-translate/core';
+import { IonContent } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
-import { calendarOutline, close } from 'ionicons/icons';
+import { calendarOutline } from 'ionicons/icons';
 import { DisciplineService } from '../../services/discipline.service';
 import { EventTypeService } from '../../services/event-type.service';
 import { Discipline, DISCIPLINE_NAMES, EventType, EVENT_TYPE_NAMES, EventStatus, EVENT_STATUSES, PriceOption } from '../../models';
@@ -11,6 +10,7 @@ import { sortByNameOrder, STATUS_LABEL_KEYS } from '../../shared/icon-catalog';
 import { ExplorerFiltersService, DateQuickOption } from '../explorer/explorer-filters.service';
 import { createApplyFlash } from '../../shared/success-flash';
 import { FilterAllChipEvent, FilterAllComponent } from '../../shared/filter-all/filter-all.component';
+import { FilterSheetHeaderComponent } from '../../shared/filter-sheet-header/filter-sheet-header.component';
 import {
   disciplineChipItems,
   eventTypeChipItems,
@@ -30,7 +30,7 @@ const PRICE_OPTIONS: { id: PriceOption; labelKey: string }[] = [
   standalone: true,
   templateUrl: 'explorer-filters.page.html',
   styleUrls: ['explorer-filters.page.scss'],
-  imports: [IonContent, IonIcon, TranslatePipe, FilterAllComponent],
+  imports: [IonContent, FilterAllComponent, FilterSheetHeaderComponent],
 })
 export class ExplorerFiltersPage implements OnInit {
   private readonly location = inject(Location);
@@ -50,7 +50,7 @@ export class ExplorerFiltersPage implements OnInit {
   readonly quickDateChips = computed(() => quickDateChipItems(this.filters.draftActiveQuickDate()));
 
   constructor() {
-    addIcons({ calendarOutline, close });
+    addIcons({ calendarOutline });
   }
 
   ngOnInit(): void {

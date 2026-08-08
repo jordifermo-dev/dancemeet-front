@@ -43,6 +43,17 @@
 // box to match it (leaving a lot of empty space) or let each box size
 // itself to its own content (the mismatched heights this replaces), this
 // box scrolls its own content internally when it doesn't fit.
+// Ionic hardcodes fill="outline" to a transparent background regardless of
+// --background, so the unchecked state needs ::part(native) to actually show
+// white instead of transparent (which would otherwise show whatever's behind
+// the modal sheet). Scoped to [fill="outline"] specifically - this button
+// switches to solid (checked) at runtime, and unscoped this was also
+// overriding the checked state's teal btn-fill with white, making white text
+// invisible against a white background.
+.dont-show-toggle[fill="outline"]::part(native) {
+  background: var(--app-surface-card) !important;
+}
+
 .welcome-mockup {
   width: 100%;
   max-width: 320px;
@@ -133,7 +144,7 @@
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: var(--ion-color-primary);
+  background: var(--ion-color-primary-fill);
   color: #fff;
   display: flex;
   align-items: center;
@@ -214,7 +225,7 @@
   color: var(--ion-color-primary);
 
   &.selected {
-    background: var(--ion-color-primary);
+    background: var(--ion-color-primary-fill);
     color: var(--ion-color-primary-contrast);
   }
 }
@@ -255,7 +266,7 @@
     cursor: pointer;
 
     &.active {
-      background: var(--ion-color-primary);
+      background: var(--ion-color-primary-fill);
     }
   }
 }

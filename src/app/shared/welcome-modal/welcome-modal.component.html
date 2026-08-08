@@ -128,15 +128,18 @@
       <div class="welcome-footer-nav">
         @if (currentSlide() > 0) {
           <ion-button expand="block" fill="outline" color="primary" (click)="goBack()">
+            <ion-icon slot="start" name="chevron-back-outline"></ion-icon>
             {{ 'common.back' | translate }}
           </ion-button>
         }
         @if (currentSlide() < totalSlides - 1) {
-          <ion-button expand="block" (click)="goNext()">
+          <ion-button expand="block" class="btn-fill" (click)="goNext()">
+            <ion-icon slot="start" name="chevron-forward-outline"></ion-icon>
             {{ 'common.next' | translate }}
           </ion-button>
         } @else {
-          <ion-button expand="block" (click)="close()">
+          <ion-button expand="block" class="btn-fill" (click)="close()">
+            <ion-icon slot="start" name="checkmark-outline"></ion-icon>
             {{ 'welcome.gotIt' | translate }}
           </ion-button>
         }
@@ -144,6 +147,7 @@
 
       <ion-button
         expand="block"
+        class="btn-fill dont-show-toggle"
         color="primary"
         [fill]="dontShowAgain() ? 'solid' : 'outline'"
         (click)="toggleDontShowAgain()"

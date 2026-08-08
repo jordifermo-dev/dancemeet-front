@@ -13,7 +13,7 @@ import {
 import { IonButton, IonIcon, IonRange } from '@ionic/angular/standalone';
 import { TranslatePipe } from '@ngx-translate/core';
 import { addIcons } from 'ionicons';
-import { closeOutline } from 'ionicons/icons';
+import { closeOutline, checkmarkOutline } from 'ionicons/icons';
 
 export type CropAspect = 'square' | 'portrait';
 
@@ -65,7 +65,7 @@ export class ImageCropperComponent implements OnInit, OnDestroy {
   private dragStart: { pointerX: number; pointerY: number; offsetX: number; offsetY: number } | null = null;
 
   constructor() {
-    addIcons({ closeOutline });
+    addIcons({ closeOutline, checkmarkOutline });
   }
 
   /** Ionic pages set `contain: layout size style` on their `.ion-page` root,

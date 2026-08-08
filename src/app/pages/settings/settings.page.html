@@ -31,9 +31,11 @@
 
     <div class="quick-actions-row">
       <button type="button" class="quick-action" [class.active]="allEnabled()" (click)="enableAll()">
+        <ion-icon name="notifications-outline"></ion-icon>
         {{ (enableAllFlash.active() ? 'notifications.enableAllDone' : 'notifications.enableAll') | translate }}
       </button>
       <button type="button" class="quick-action" [class.active]="allDisabled()" (click)="disableAll()">
+        <ion-icon name="notifications-off-outline"></ion-icon>
         {{ (disableAllFlash.active() ? 'notifications.disableAllDone' : 'notifications.disableAll') | translate }}
       </button>
     </div>
@@ -68,9 +70,35 @@
       <ion-icon slot="start" name="help-circle-outline"></ion-icon>
       {{ (shareHintResetFlash.active() ? 'settings.shareHintResetDone' : 'settings.shareHintReset') | translate }}
     </ion-button>
-    <ion-button expand="block" color="primary" fill="outline" (click)="logout()">
+    <ion-button expand="block" color="primary" fill="outline" (click)="confirmLogout.set(true)">
       <ion-icon slot="start" name="log-out-outline"></ion-icon>
       {{ 'profile.logout' | translate }}
     </ion-button>
   </div>
 </ion-content>
+
+<ion-modal
+  [isOpen]="confirmLogout()"
+  [initialBreakpoint]="0.35"
+  [breakpoints]="[0, 0.35]"
+  (didDismiss)="confirmLogout.set(false)"
+>
+  <ng-template>
+    <div class="filter-sheet">
+      <div class="filter-sheet-header">
+        <h2>{{ 'settings.logoutConfirmTitle' | translate }}</h2>
+      </div>
+      <p>{{ 'settings.logoutConfirmMessage' | translate }}</p>
+      <app-filter-actions-row>
+        <ion-button expand="block" fill="outline" color="primary" (click)="confirmLogout.set(false)">
+          <ion-icon slot="start" name="close-outline"></ion-icon>
+          {{ 'common.cancel' | translate }}
+        </ion-button>
+        <ion-button expand="block" class="btn-fill" (click)="logout()">
+          <ion-icon slot="start" name="log-out-outline"></ion-icon>
+          {{ 'profile.logout' | translate }}
+        </ion-button>
+      </app-filter-actions-row>
+    </div>
+  </ng-template>
+</ion-modal>

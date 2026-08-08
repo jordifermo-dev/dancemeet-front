@@ -2,7 +2,7 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { IonIcon } from '@ionic/angular/standalone';
 import { TranslatePipe } from '@ngx-translate/core';
 import { addIcons } from 'ionicons';
-import { close } from 'ionicons/icons';
+import { closeOutline } from 'ionicons/icons';
 
 /** Title + close (X) button pair at the top of every filter/sort bottom
  * sheet in the app - font-size/weight/spacing defined once here instead of
@@ -21,6 +21,6 @@ export class FilterSheetHeaderComponent {
   @Output() readonly closed = new EventEmitter<void>();
 
   constructor() {
-    addIcons({ close });
+    addIcons({ closeOutline });
   }
 }

@@ -28,7 +28,16 @@ import {
 } from '@ionic/angular/standalone';
 import { TranslatePipe } from '@ngx-translate/core';
 import { addIcons } from 'ionicons';
-import { optionsOutline, calendarOutline, chevronDownOutline, addCircleOutline } from 'ionicons/icons';
+import {
+  optionsOutline,
+  calendarOutline,
+  chevronDownOutline,
+  addCircleOutline,
+  bookmarkOutline,
+  refreshOutline,
+  checkmarkOutline,
+  closeOutline,
+} from 'ionicons/icons';
 import { AuthService } from '../../services/auth.service';
 import { DisciplineService } from '../../services/discipline.service';
 import { EventTypeService } from '../../services/event-type.service';
@@ -188,7 +197,16 @@ export class EventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWillEnt
   readonly isDateModalOpen = signal(false);
 
   constructor() {
-    addIcons({ optionsOutline, calendarOutline, chevronDownOutline, addCircleOutline });
+    addIcons({
+      optionsOutline,
+      calendarOutline,
+      chevronDownOutline,
+      addCircleOutline,
+      bookmarkOutline,
+      refreshOutline,
+      checkmarkOutline,
+      closeOutline,
+    });
 
     // Re-run the search whenever any applied filter, the location, the radius
     // or the search term changes - all in one effect so every trigger stays in sync.

@@ -115,24 +115,22 @@
         <div [formGroup]="accountForm">
           <div formGroupName="socialLinks">
             @for (key of activeSocialNetworks(); track key) {
-              <ion-item>
+              <div class="social-link-row">
                 <ion-icon
-                  slot="start"
-                  class="contact-icon"
+                  class="social-link-icon"
                   [src]="contactIconUrl(key)"
                   [attr.aria-label]="socialNetworkLabelKey(key) | translate"
                 ></ion-icon>
                 <ion-input [formControlName]="key"></ion-input>
                 <button
                   type="button"
-                  slot="end"
                   class="remove-social-button"
                   [attr.aria-label]="'profile.removeSocialLink' | translate"
                   (click)="removeSocialNetwork(key)"
                 >
                   <ion-icon name="trash-outline"></ion-icon>
                 </button>
-              </ion-item>
+              </div>
               @if (accountForm.controls.socialLinks.controls[key].invalid && socialNetworkErrorKey(key); as errorKey) {
                 <p class="social-link-error">{{ errorKey | translate }}</p>
               }
@@ -277,9 +275,11 @@
         }
         <div class="account-actions-row">
           <ion-button expand="block" fill="outline" color="primary" (click)="clearAllSelections()">
+            <ion-icon slot="start" name="refresh-outline"></ion-icon>
             {{ 'explorer.clearFilter' | translate }}
           </ion-button>
-          <ion-button expand="block" [disabled]="accountForm.invalid" (click)="save()">
+          <ion-button expand="block" class="btn-fill" [disabled]="accountForm.invalid" (click)="save()">
+            <ion-icon slot="start" name="checkmark-outline"></ion-icon>
             {{ (savedFlash.active() ? 'profile.applied' : 'profile.apply') | translate }}
           </ion-button>
         </div>
@@ -302,9 +302,11 @@
       <p>{{ 'profile.unsavedChangesMessage' | translate }}</p>
       <app-filter-actions-row>
         <ion-button expand="block" fill="outline" color="primary" (click)="confirmDiscardChanges()">
+          <ion-icon slot="start" name="trash-outline"></ion-icon>
           {{ 'profile.discard' | translate }}
         </ion-button>
-        <ion-button expand="block" (click)="confirmApplyChanges()">
+        <ion-button expand="block" class="btn-fill" (click)="confirmApplyChanges()">
+          <ion-icon slot="start" name="checkmark-outline"></ion-icon>
           {{ 'profile.apply' | translate }}
         </ion-button>
       </app-filter-actions-row>

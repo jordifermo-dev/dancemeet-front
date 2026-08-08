@@ -83,8 +83,8 @@
   // custom properties - pulled up to sit closer to the hint/image above it.
   margin-top: -12px;
   --bar-background: rgba(255, 255, 255, 0.25);
-  --bar-background-active: var(--ion-color-primary);
-  --knob-background: var(--ion-color-primary);
+  --bar-background-active: var(--ion-color-primary-fill);
+  --knob-background: var(--ion-color-primary-fill);
 }
 
 .cropper-actions {

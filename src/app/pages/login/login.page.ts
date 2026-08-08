@@ -17,6 +17,7 @@ import {
   mailOutline,
   eyeOutline,
   eyeOffOutline,
+  logInOutline,
 } from 'ionicons/icons';
 import { AuthService, AuthProvider } from '../../services/auth.service';
 import { OnboardingService } from '../../services/onboarding.service';
@@ -56,7 +57,7 @@ export class LoginPage implements OnInit, AfterViewInit {
   });
 
   constructor() {
-    addIcons({ logoGoogle, logoApple, logoMicrosoft, mailOutline, eyeOutline, eyeOffOutline });
+    addIcons({ logoGoogle, logoApple, logoMicrosoft, mailOutline, eyeOutline, eyeOffOutline, logInOutline });
   }
 
   async ngOnInit(): Promise<void> {

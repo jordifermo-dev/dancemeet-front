@@ -48,6 +48,56 @@ ion-button {
   --border-radius: 999px;
 }
 
+/* Lighter, softer fill for the specific "confirm/apply/save" solid buttons
+   that opt in with this class (added explicitly per-button in each
+   template) - NOT a blanket [color="primary"] rule, because plenty of solid
+   ion-buttons (Google sign-in, header icon buttons like create-event/
+   settings) rely on their OWN --background override or on Ionic's
+   default and must stay untouched. !important because Ionic's own
+   compiled :host default otherwise wins the cascade against a plain class
+   selector. Outline buttons are unaffected either way since fill="outline"
+   never reads --background. */
+ion-button.btn-fill {
+  --background: var(--ion-color-primary-fill) !important;
+  --background-hover: var(--ion-color-primary-fill) !important;
+  --background-activated: var(--ion-color-primary-fill) !important;
+  --background-focused: var(--ion-color-primary-fill) !important;
+}
+
+/* Belt-and-braces for the rule above: ::part(native) reaches past the
+   shadow root straight to the element Ionic actually paints the background
+   on, instead of going through the --background custom property indirection
+   - a couple of solid buttons kept showing the old color through the
+   --background override alone, so this guarantees it regardless of why. */
+ion-button.btn-fill::part(native) {
+  background: var(--ion-color-primary-fill) !important;
+}
+
+/* Dark mode: the dark teal text/icon on outline ("not selected") buttons is
+   hard to read against a near-black background - switch it to white there.
+   Border stays the same teal in both themes, only the text/icon color
+   changes. */
+/* ion-datetime doesn't expose a --background-style token for the selected
+   day - it reads --ion-color-primary directly, so redefine it scoped to
+   just this element (cascades into its own shadow tree only) rather than
+   touching the real --ion-color-primary everywhere else (borders, unselected
+   text) that must stay the darker teal. */
+ion-datetime {
+  --ion-color-primary: var(--ion-color-primary-fill);
+  --ion-color-primary-rgb: 92, 146, 148;
+}
+
+/* Same lighter fill on ion-toggle's checked track AND handle (e.g.
+   "Gratuito" on the event form, notification switches in Settings) as the
+   rest of the app's solid/selected fills - --ion-color-primary-fill,
+   matching what the user asked for ("same color as the buttons'
+   background"), not the darker --ion-color-primary used for borders/text. */
+ion-toggle {
+  --background-checked: var(--ion-color-primary-fill) !important;
+  --handle-background: var(--ion-color-primary-fill) !important;
+  --handle-background-checked: var(--ion-color-primary-fill) !important;
+}
+
 /* ion-alert renders its own plain buttons (not ion-button), so they need the
    same sentence-case + weight treatment applied separately to stay consistent. */
 .alert-button {

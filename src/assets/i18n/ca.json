@@ -20,7 +20,9 @@
     "privacyPolicyLink": "Política de privadesa",
     "termsOfUseLink": "Termes d'ús",
     "shareHintReset": "Torna a mostrar l'avís de compartir esdeveniments",
-    "shareHintResetDone": "Fet ✓"
+    "shareHintResetDone": "Fet ✓",
+    "logoutConfirmTitle": "Tancar sessió?",
+    "logoutConfirmMessage": "Hauràs de tornar a iniciar sessió per accedir al teu compte."
   },
   "welcome": {
     "title": "Tour de benvinguda",

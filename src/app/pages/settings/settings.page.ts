@@ -10,6 +10,7 @@ import {
   IonIcon,
   IonToggle,
   IonButton,
+  IonModal,
 } from '@ionic/angular/standalone';
 import { TranslatePipe } from '@ngx-translate/core';
 import { addIcons } from 'ionicons';
@@ -26,6 +27,9 @@ import {
   sparklesOutline,
   sunnyOutline,
   moonOutline,
+  notificationsOutline,
+  notificationsOffOutline,
+  closeOutline,
 } from 'ionicons/icons';
 import { AuthService } from '../../services/auth.service';
 import { UserService } from '../../services/user.service';
@@ -35,6 +39,7 @@ import { ThemeService, ThemeMode } from '../../services/theme.service';
 import { NotificationType } from '../../models';
 import { ALL_NOTIFICATION_TYPES, NOTIFICATION_TYPE_ICONS, NOTIFICATION_TYPE_LABEL_KEYS } from '../../shared/notification-types';
 import { createSuccessFlash } from '../../shared/success-flash';
+import { FilterActionsRowComponent } from '../../shared/filter-actions-row/filter-actions-row.component';
 
 /** Single settings screen consolidating what used to be spread across three
  * places: the "how the app works" tour replay (was a button on Profile), the
@@ -47,7 +52,20 @@ import { createSuccessFlash } from '../../shared/success-flash';
   standalone: true,
   templateUrl: './settings.page.html',
   styleUrl: './settings.page.scss',
-  imports: [IonHeader, IonToolbar, IonTitle, IonButtons, IonBackButton, IonContent, IonIcon, IonToggle, IonButton, TranslatePipe],
+  imports: [
+    IonHeader,
+    IonToolbar,
+    IonTitle,
+    IonButtons,
+    IonBackButton,
+    IonContent,
+    IonIcon,
+    IonToggle,
+    IonButton,
+    IonModal,
+    TranslatePipe,
+    FilterActionsRowComponent,
+  ],
 })
 export class SettingsPage {
   private readonly authService = inject(AuthService);
@@ -70,6 +88,8 @@ export class SettingsPage {
   readonly disableAllFlash = createSuccessFlash();
   readonly shareHintResetFlash = createSuccessFlash();
 
+  readonly confirmLogout = signal(false);
+
   readonly disabledTypes = signal<Set<NotificationType>>(
     new Set(this.authService.currentUser()?.disabledNotificationTypes ?? []),
   );
@@ -90,6 +110,9 @@ export class SettingsPage {
       sparklesOutline,
       sunnyOutline,
       moonOutline,
+      notificationsOutline,
+      notificationsOffOutline,
+      closeOutline,
     });
   }
 

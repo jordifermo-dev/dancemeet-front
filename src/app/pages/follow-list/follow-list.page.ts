@@ -17,7 +17,7 @@ import {
 } from '@ionic/angular/standalone';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { addIcons } from 'ionicons';
-import { optionsOutline, chevronDownOutline } from 'ionicons/icons';
+import { optionsOutline, chevronDownOutline, refreshOutline, checkmarkOutline, closeOutline, trashOutline } from 'ionicons/icons';
 import { AuthService } from '../../services/auth.service';
 import { FollowService } from '../../services/follow.service';
 import { FavoriteService } from '../../services/favorite.service';
@@ -141,7 +141,7 @@ export class FollowListPage implements ViewWillEnter {
   });
 
   constructor() {
-    addIcons({ optionsOutline, chevronDownOutline });
+    addIcons({ optionsOutline, chevronDownOutline, refreshOutline, checkmarkOutline, closeOutline, trashOutline });
 
     this.disciplineService.getAll().subscribe({
       next: (disciplines) => {

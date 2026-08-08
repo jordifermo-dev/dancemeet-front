@@ -1,6 +1,8 @@
 import { Component, EventEmitter, Input, Output, computed, inject, signal } from '@angular/core';
-import { IonButton, IonDatetime, IonModal } from '@ionic/angular/standalone';
+import { IonButton, IonDatetime, IonIcon, IonModal } from '@ionic/angular/standalone';
 import { TranslatePipe } from '@ngx-translate/core';
+import { addIcons } from 'ionicons';
+import { closeOutline, checkmarkOutline } from 'ionicons/icons';
 import { LanguageService } from '../../services/language.service';
 import { formatEventDateOnly } from '../event-date-format';
 import { FilterSheetHeaderComponent } from '../filter-sheet-header/filter-sheet-header.component';
@@ -22,10 +24,14 @@ import { FilterActionsRowComponent } from '../filter-actions-row/filter-actions-
   standalone: true,
   templateUrl: './date-picker-field.component.html',
   styleUrl: './date-picker-field.component.scss',
-  imports: [IonModal, IonDatetime, IonButton, TranslatePipe, FilterSheetHeaderComponent, FilterActionsRowComponent],
+  imports: [IonModal, IonDatetime, IonButton, IonIcon, TranslatePipe, FilterSheetHeaderComponent, FilterActionsRowComponent],
 })
 export class DatePickerFieldComponent {
   private readonly languageService = inject(LanguageService);
+
+  constructor() {
+    addIcons({ closeOutline, checkmarkOutline });
+  }
 
   /** Seed timestamp - the date the calendar opens on. When isUnset is true
    * this still needs to be a real timestamp (e.g. Date.now() or the paired

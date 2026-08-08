@@ -72,9 +72,11 @@
 
       <app-filter-actions-row>
         <ion-button expand="block" fill="outline" color="primary" (click)="clearDisciplineFilter()">
+          <ion-icon slot="start" name="refresh-outline"></ion-icon>
           {{ 'explorer.clearFilter' | translate }}
         </ion-button>
-        <ion-button expand="block" (click)="applyDisciplineFilter()">
+        <ion-button expand="block" class="btn-fill" (click)="applyDisciplineFilter()">
+          <ion-icon slot="start" name="checkmark-outline"></ion-icon>
           {{ (disciplineApplyFlash.active() ? 'profile.applied' : 'profile.apply') | translate }}
         </ion-button>
       </app-filter-actions-row>
@@ -105,6 +107,7 @@
       </div>
       <app-filter-actions-row>
         <ion-button expand="block" fill="outline" color="primary" (click)="isSortModalOpen.set(false)">
+          <ion-icon slot="start" name="close-outline"></ion-icon>
           {{ 'common.cancel' | translate }}
         </ion-button>
       </app-filter-actions-row>
@@ -126,9 +129,11 @@
       <p>{{ confirmMessage() }}</p>
       <app-filter-actions-row>
         <ion-button expand="block" fill="outline" color="primary" (click)="confirmModalCancel()">
+          <ion-icon slot="start" name="trash-outline"></ion-icon>
           {{ 'profile.discard' | translate }}
         </ion-button>
-        <ion-button expand="block" (click)="confirmModalAccept()">
+        <ion-button expand="block" class="btn-fill" (click)="confirmModalAccept()">
+          <ion-icon slot="start" name="checkmark-outline"></ion-icon>
           {{ 'profile.apply' | translate }}
         </ion-button>
       </app-filter-actions-row>

@@ -23,6 +23,10 @@ import {
   removeOutline,
   calendarOutline,
   addCircleOutline,
+  bookmarkOutline,
+  refreshOutline,
+  checkmarkOutline,
+  closeOutline,
 } from 'ionicons/icons';
 import { DisciplineService } from '../../services/discipline.service';
 import { EventTypeService } from '../../services/event-type.service';
@@ -221,6 +225,10 @@ export class ExplorerPage implements OnInit, ViewWillEnter {
       removeOutline,
       calendarOutline,
       addCircleOutline,
+      bookmarkOutline,
+      refreshOutline,
+      checkmarkOutline,
+      closeOutline,
     });
 
     // Re-run the search whenever any applied filter, the location, the radius

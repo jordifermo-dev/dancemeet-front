@@ -22,8 +22,28 @@
   flex: 0 0 auto;
 }
 
+// Same bare-input look as the title/description fields (see .group-label
+// above) rather than the old ion-item-wrapped input, which let its
+// negative-margin error text below get clipped.
+.social-link-icon {
+  width: 22px;
+  height: 22px;
+  flex: 0 0 auto;
+}
+
+.social-link-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  ion-input {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
 .social-link-error {
-  margin: -6px 0 10px 38px;
+  margin: 4px 0 10px;
   font-size: 0.78rem;
   color: var(--ion-color-danger);
 }
@@ -37,6 +57,7 @@
   display: flex;
   align-items: center;
   cursor: pointer;
+  flex: 0 0 auto;
 
   ion-icon {
     font-size: 1.3rem;
@@ -194,7 +215,7 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  background: var(--ion-color-primary);
+  background: var(--ion-color-primary-fill);
   border: 1.5px solid var(--ion-color-primary);
   border-radius: 999px;
   padding: 3px 10px 3px 3px;
@@ -214,7 +235,7 @@
 
 .tag-price {
   padding: 4px 12px;
-  background: var(--ion-color-primary);
+  background: var(--ion-color-primary-fill);
   color: var(--ion-color-primary-contrast);
 }
 

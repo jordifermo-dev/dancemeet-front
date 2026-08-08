@@ -39,9 +39,11 @@
 
   <div class="cropper-actions">
     <ion-button expand="block" fill="outline" color="light" (click)="cancel()">
+      <ion-icon slot="start" name="close-outline"></ion-icon>
       {{ 'imageCropper.cancel' | translate }}
     </ion-button>
-    <ion-button expand="block" [disabled]="!imageLoaded()" (click)="confirm()">
+    <ion-button expand="block" class="btn-fill" [disabled]="!imageLoaded()" (click)="confirm()">
+      <ion-icon slot="start" name="checkmark-outline"></ion-icon>
       {{ 'imageCropper.confirm' | translate }}
     </ion-button>
   </div>

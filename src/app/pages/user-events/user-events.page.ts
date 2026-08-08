@@ -29,7 +29,17 @@ import {
 } from '@ionic/angular/standalone';
 import { TranslatePipe } from '@ngx-translate/core';
 import { addIcons } from 'ionicons';
-import { locationOutline, close, locateOutline, calendarOutline, optionsOutline, chevronDownOutline } from 'ionicons/icons';
+import {
+  locationOutline,
+  close,
+  locateOutline,
+  calendarOutline,
+  optionsOutline,
+  chevronDownOutline,
+  refreshOutline,
+  checkmarkOutline,
+  closeOutline,
+} from 'ionicons/icons';
 import { AuthService } from '../../services/auth.service';
 import { FavoriteService } from '../../services/favorite.service';
 import { EventListRefreshService } from '../../services/event-list-refresh.service';
@@ -279,7 +289,17 @@ export class UserEventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWil
   });
 
   constructor() {
-    addIcons({ locationOutline, close, locateOutline, calendarOutline, optionsOutline, chevronDownOutline });
+    addIcons({
+      locationOutline,
+      close,
+      locateOutline,
+      calendarOutline,
+      optionsOutline,
+      chevronDownOutline,
+      refreshOutline,
+      checkmarkOutline,
+      closeOutline,
+    });
 
     // queryParamMap emits immediately on subscribe (covers the initial load)
     // and again whenever ?userId changes without recreating this component -

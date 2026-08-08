@@ -27,7 +27,7 @@
   transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 
   &.selected {
-    background: var(--ion-color-primary);
+    background: var(--ion-color-primary-fill);
     color: var(--ion-color-primary-contrast);
   }
 

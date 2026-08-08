@@ -1,11 +1,6 @@
 <ion-content [fullscreen]="true" class="explorer-filters-content">
   <div class="explorer-filters-container">
-    <div class="top-bar">
-      <h1>{{ 'explorer.filterAllTitle' | translate }}</h1>
-      <button type="button" class="close-button" (click)="goBack()">
-        <ion-icon name="close"></ion-icon>
-      </button>
-    </div>
+    <app-filter-sheet-header titleKey="explorer.filterAllTitle" (closed)="goBack()"></app-filter-sheet-header>
 
     <app-filter-all
       [showSaveAsPreference]="true"

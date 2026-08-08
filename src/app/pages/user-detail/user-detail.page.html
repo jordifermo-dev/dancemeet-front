@@ -50,16 +50,18 @@
         <div class="actions-section">
           @if (amFollowing()) {
             <ion-button expand="block" fill="outline" color="primary" [disabled]="followActionBusy()" (click)="confirmUnfollow()">
+              <ion-icon slot="start" name="person-remove-outline"></ion-icon>
               {{ 'userDetail.unfollowButton' | translate }}
             </ion-button>
           }
           @if (isMyFollower()) {
             <ion-button expand="block" fill="outline" color="primary" [disabled]="followActionBusy()" (click)="confirmRemoveFollower()">
+              <ion-icon slot="start" name="person-remove-outline"></ion-icon>
               {{ (removeFollowerFlash.active() ? 'eventDetail.savedButton' : 'userDetail.removeFollowerButton') | translate }}
             </ion-button>
           }
           @if (!amFollowing() && !isMyFollower()) {
-            <ion-button expand="block" [disabled]="followActionBusy()" (click)="follow()">
+            <ion-button expand="block" class="btn-fill" [disabled]="followActionBusy()" (click)="follow()">
               <ion-icon slot="start" [name]="followFlash.active() ? 'checkmark-outline' : 'person-add-outline'"></ion-icon>
               {{ (followFlash.active() ? 'eventDetail.savedButton' : 'userDetail.followButton') | translate }}
             </ion-button>
@@ -189,9 +191,11 @@
       <p>{{ confirmMessage() }}</p>
       <app-filter-actions-row>
         <ion-button expand="block" fill="outline" color="primary" (click)="confirmModalCancel()">
+          <ion-icon slot="start" name="trash-outline"></ion-icon>
           {{ 'profile.discard' | translate }}
         </ion-button>
-        <ion-button expand="block" (click)="confirmModalAccept()">
+        <ion-button expand="block" class="btn-fill" (click)="confirmModalAccept()">
+          <ion-icon slot="start" name="checkmark-outline"></ion-icon>
           {{ 'profile.apply' | translate }}
         </ion-button>
       </app-filter-actions-row>

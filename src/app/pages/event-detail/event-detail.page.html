@@ -62,24 +62,22 @@
       <section class="section">
         <h2>{{ 'profile.socialLinksLabel' | translate }}</h2>
         @for (key of activeSocialNetworks(); track key) {
-          <ion-item>
+          <div class="social-link-row">
             <ion-icon
-              slot="start"
-              class="contact-icon"
+              class="social-link-icon"
               [src]="socialIconUrl(key)"
               [attr.aria-label]="socialNetworkLabelKey(key) | translate"
             ></ion-icon>
             <ion-input [formControlName]="key"></ion-input>
             <button
               type="button"
-              slot="end"
               class="remove-social-button"
               [attr.aria-label]="'profile.removeSocialLink' | translate"
               (click)="removeSocialNetwork(key)"
             >
               <ion-icon name="trash-outline"></ion-icon>
             </button>
-          </ion-item>
+          </div>
           @if (editForm.controls[key].invalid && socialNetworkErrorKey(key); as errorKey) {
             <p class="social-link-error">{{ errorKey | translate }}</p>
           }
@@ -208,9 +206,11 @@
 
       <app-filter-actions-row>
         <ion-button expand="block" fill="outline" color="primary" (click)="cancelEdit()">
+          <ion-icon slot="start" name="close-outline"></ion-icon>
           {{ 'eventDetail.cancelButton' | translate }}
         </ion-button>
-        <ion-button expand="block" [disabled]="saving()" (click)="onSaveClick()">
+        <ion-button expand="block" class="btn-fill" [disabled]="saving()" (click)="onSaveClick()">
+          <ion-icon slot="start" name="checkmark-outline"></ion-icon>
           {{ (savedFlash.active() ? 'eventDetail.savedButton' : 'eventDetail.saveButton') | translate }}
         </ion-button>
       </app-filter-actions-row>
@@ -286,12 +286,12 @@
 
       @if (isOwnEvent()) {
         @if (event()!.status === 'finished') {
-          <ion-button expand="block" (click)="reuseEvent()">
+          <ion-button expand="block" class="btn-fill" (click)="reuseEvent()">
             <ion-icon slot="start" name="refresh-outline"></ion-icon>
             {{ 'eventDetail.reuseButton' | translate }}
           </ion-button>
         } @else {
-          <ion-button expand="block" (click)="enterEditMode()">
+          <ion-button expand="block" class="btn-fill" (click)="enterEditMode()">
             <ion-icon slot="start" name="create-outline"></ion-icon>
             {{ 'eventDetail.editButton' | translate }}
           </ion-button>
@@ -370,7 +370,8 @@
         }
       </ul>
       <app-filter-actions-row>
-        <ion-button expand="block" (click)="closeValidationModal()">
+        <ion-button expand="block" class="btn-fill" (click)="closeValidationModal()">
+          <ion-icon slot="start" name="checkmark-outline"></ion-icon>
           {{ 'eventDetail.validationOk' | translate }}
         </ion-button>
       </app-filter-actions-row>
@@ -389,9 +390,11 @@
       <p class="validation-warning-intro">{{ 'eventDetail.dateInvalidMessage' | translate }}</p>
       <app-filter-actions-row>
         <ion-button expand="block" fill="outline" color="primary" (click)="discardDateInvalidChanges()">
+          <ion-icon slot="start" name="trash-outline"></ion-icon>
           {{ 'profile.discard' | translate }}
         </ion-button>
-        <ion-button expand="block" (click)="dismissDateInvalidModal()">
+        <ion-button expand="block" class="btn-fill" (click)="dismissDateInvalidModal()">
+          <ion-icon slot="start" name="create-outline"></ion-icon>
           {{ 'eventDetail.fixDateButton' | translate }}
         </ion-button>
       </app-filter-actions-row>
@@ -434,9 +437,11 @@
       <p>{{ 'profile.unsavedChangesMessage' | translate }}</p>
       <app-filter-actions-row>
         <ion-button expand="block" fill="outline" color="primary" (click)="confirmDiscardChanges()">
+          <ion-icon slot="start" name="trash-outline"></ion-icon>
           {{ 'profile.discard' | translate }}
         </ion-button>
-        <ion-button expand="block" (click)="confirmApplyChanges()">
+        <ion-button expand="block" class="btn-fill" (click)="confirmApplyChanges()">
+          <ion-icon slot="start" name="checkmark-outline"></ion-icon>
           {{ 'profile.apply' | translate }}
         </ion-button>
       </app-filter-actions-row>
@@ -467,9 +472,11 @@
       ></ion-datetime>
       <app-filter-actions-row>
         <ion-button expand="block" fill="outline" color="primary" (click)="eventDetailDateFromPicker.cancel(true)">
+          <ion-icon slot="start" name="close-outline"></ion-icon>
           {{ 'common.cancel' | translate }}
         </ion-button>
-        <ion-button expand="block" color="primary" (click)="eventDetailDateFromPicker.confirm(true)">
+        <ion-button expand="block" class="btn-fill" color="primary" (click)="eventDetailDateFromPicker.confirm(true)">
+          <ion-icon slot="start" name="checkmark-outline"></ion-icon>
           {{ 'profile.apply' | translate }}
         </ion-button>
       </app-filter-actions-row>
@@ -499,9 +506,11 @@
       ></ion-datetime>
       <app-filter-actions-row>
         <ion-button expand="block" fill="outline" color="primary" (click)="eventDetailDateToPicker.cancel(true)">
+          <ion-icon slot="start" name="close-outline"></ion-icon>
           {{ 'common.cancel' | translate }}
         </ion-button>
-        <ion-button expand="block" color="primary" (click)="eventDetailDateToPicker.confirm(true)">
+        <ion-button expand="block" class="btn-fill" color="primary" (click)="eventDetailDateToPicker.confirm(true)">
+          <ion-icon slot="start" name="checkmark-outline"></ion-icon>
           {{ 'profile.apply' | translate }}
         </ion-button>
       </app-filter-actions-row>
@@ -532,9 +541,11 @@
       ></ion-datetime>
       <app-filter-actions-row>
         <ion-button expand="block" fill="outline" color="primary" (click)="eventDetailTimeFromPicker.cancel(true)">
+          <ion-icon slot="start" name="close-outline"></ion-icon>
           {{ 'common.cancel' | translate }}
         </ion-button>
-        <ion-button expand="block" color="primary" (click)="eventDetailTimeFromPicker.confirm(true)">
+        <ion-button expand="block" class="btn-fill" color="primary" (click)="eventDetailTimeFromPicker.confirm(true)">
+          <ion-icon slot="start" name="checkmark-outline"></ion-icon>
           {{ 'profile.apply' | translate }}
         </ion-button>
       </app-filter-actions-row>
@@ -564,9 +575,11 @@
       ></ion-datetime>
       <app-filter-actions-row>
         <ion-button expand="block" fill="outline" color="primary" (click)="eventDetailTimeToPicker.cancel(true)">
+          <ion-icon slot="start" name="close-outline"></ion-icon>
           {{ 'common.cancel' | translate }}
         </ion-button>
-        <ion-button expand="block" color="primary" (click)="eventDetailTimeToPicker.confirm(true)">
+        <ion-button expand="block" class="btn-fill" color="primary" (click)="eventDetailTimeToPicker.confirm(true)">
+          <ion-icon slot="start" name="checkmark-outline"></ion-icon>
           {{ 'profile.apply' | translate }}
         </ion-button>
       </app-filter-actions-row>
@@ -595,9 +608,11 @@
       }
       <div class="share-preview-actions-row">
         <button type="button" class="share-preview-edit" [disabled]="shareTextLoading()" (click)="startShareTextEdit()">
+          <ion-icon name="create-outline"></ion-icon>
           {{ 'eventDetail.editTextButton' | translate }}
         </button>
         <button type="button" class="share-preview-copy" [disabled]="shareTextLoading()" (click)="copyShareText()">
+          <ion-icon [name]="shareFlash.active() && shareFeedback() === 'copied' ? 'checkmark-outline' : 'copy-outline'"></ion-icon>
           {{ (shareFlash.active() && shareFeedback() === 'copied' ? 'eventDetail.textCopied' : 'eventDetail.copyTextButton') | translate }}
         </button>
       </div>
@@ -615,9 +630,11 @@
       }
       <app-filter-actions-row>
         <ion-button expand="block" fill="outline" color="primary" (click)="closeSharePreview()">
+          <ion-icon slot="start" name="close-outline"></ion-icon>
           {{ 'common.cancel' | translate }}
         </ion-button>
-        <ion-button expand="block" color="primary" [disabled]="shareTextLoading()" (click)="confirmShare()">
+        <ion-button expand="block" class="btn-fill" color="primary" [disabled]="shareTextLoading()" (click)="confirmShare()">
+          <ion-icon slot="start" name="share-social-outline"></ion-icon>
           {{ 'eventDetail.shareButton' | translate }}
         </ion-button>
       </app-filter-actions-row>
@@ -659,9 +676,11 @@
       </div>
       <app-filter-actions-row>
         <ion-button expand="block" fill="outline" color="primary" (click)="cancelShareTextEdit()">
+          <ion-icon slot="start" name="close-outline"></ion-icon>
           {{ 'common.cancel' | translate }}
         </ion-button>
-        <ion-button expand="block" color="primary" (click)="applyShareTextEdit()">
+        <ion-button expand="block" class="btn-fill" color="primary" (click)="applyShareTextEdit()">
+          <ion-icon slot="start" name="checkmark-outline"></ion-icon>
           {{ 'profile.apply' | translate }}
         </ion-button>
       </app-filter-actions-row>

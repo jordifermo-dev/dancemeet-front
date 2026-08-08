@@ -29,6 +29,7 @@
         [disabled]="followBusy()"
         (click)="toggleFollow($event)"
       >
+        <ion-icon name="person-remove-outline"></ion-icon>
         {{ (followFlash.active() ? 'eventDetail.savedButton' : 'profile.following') | translate }}
       </button>
     } @else {

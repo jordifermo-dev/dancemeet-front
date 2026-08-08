@@ -47,6 +47,8 @@ import {
   refreshOutline,
   arrowUndoOutline,
   arrowRedoOutline,
+  closeOutline,
+  copyOutline,
 } from 'ionicons/icons';
 import { AuthService } from '../../services/auth.service';
 import { EventService } from '../../services/event.service';
@@ -703,6 +705,8 @@ export class EventDetailPage implements ComponentWithUnsavedChanges {
       refreshOutline,
       arrowUndoOutline,
       arrowRedoOutline,
+      closeOutline,
+      copyOutline,
     });
 
     this.disciplineService.getAll().subscribe({

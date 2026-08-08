@@ -24,6 +24,9 @@ import {
   optionsOutline,
   chevronDownOutline,
   addCircleOutline,
+  refreshOutline,
+  checkmarkOutline,
+  closeOutline,
 } from 'ionicons/icons';
 import { AuthService } from '../../services/auth.service';
 import { FavoriteService } from '../../services/favorite.service';
@@ -278,6 +281,9 @@ export class FavoritesPage implements OnInit, AfterViewInit, OnDestroy, ViewWill
       optionsOutline,
       chevronDownOutline,
       addCircleOutline,
+      refreshOutline,
+      checkmarkOutline,
+      closeOutline,
     });
 
     // A just-created/reused event shows up here without waiting for

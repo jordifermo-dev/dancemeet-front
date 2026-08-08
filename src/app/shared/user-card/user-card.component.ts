@@ -3,7 +3,7 @@ import { Router } from '@angular/router';
 import { IonIcon } from '@ionic/angular/standalone';
 import { TranslatePipe } from '@ngx-translate/core';
 import { addIcons } from 'ionicons';
-import { personOutline, personAddOutline, checkmarkOutline } from 'ionicons/icons';
+import { personOutline, personAddOutline, checkmarkOutline, personRemoveOutline } from 'ionicons/icons';
 import { AuthService } from '../../services/auth.service';
 import { FollowService } from '../../services/follow.service';
 import { Discipline, FollowUser } from '../../models';
@@ -72,7 +72,7 @@ export class UserCardComponent {
   });
 
   constructor() {
-    addIcons({ personOutline, personAddOutline, checkmarkOutline });
+    addIcons({ personOutline, personAddOutline, checkmarkOutline, personRemoveOutline });
   }
 
   open(): void {

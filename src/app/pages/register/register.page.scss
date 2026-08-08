@@ -246,7 +246,7 @@ ion-input ion-icon[slot='end'] {
     background: var(--ion-color-light-shade);
 
     &.active {
-      background: var(--ion-color-primary);
+      background: var(--ion-color-primary-fill);
     }
   }
 }
