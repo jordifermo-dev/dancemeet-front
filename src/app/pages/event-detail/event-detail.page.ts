@@ -1,6 +1,6 @@
 import { Location } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, ElementRef, computed, inject, signal, viewChild } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -23,6 +23,7 @@ import {
   IonToggle,
   IonDatetime,
   IonSearchbar,
+  IonCheckbox,
 } from '@ionic/angular/standalone';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { addIcons } from 'ionicons';
@@ -44,7 +45,8 @@ import {
   heart,
   heartOutline,
   refreshOutline,
-  copyOutline,
+  arrowUndoOutline,
+  arrowRedoOutline,
 } from 'ionicons/icons';
 import { AuthService } from '../../services/auth.service';
 import { EventService } from '../../services/event.service';
@@ -94,11 +96,19 @@ import { ComponentWithUnsavedChanges } from '../../guards/unsaved-changes.guard'
 import { MinSelectionWarningService } from '../../shared/min-selection-warning.service';
 import { toggleWithMinimum } from '../../shared/min-selection';
 import { createSuccessFlash } from '../../shared/success-flash';
+import { dismissSharePreviewHint, isSharePreviewHintDismissed } from '../../shared/share-hint';
 import { Share } from '@capacitor/share';
+import { Directory, Filesystem } from '@capacitor/filesystem';
 import { environment } from '../../../environments/environment';
 
 const MIN_ZOOM = 3;
 const MAX_ZOOM = 20;
+// Keeps organizers from pasting in a novel - long enough for a real event
+// title/description/note, short enough that the share text (which embeds
+// all three verbatim) stays a readable message instead of a wall of text.
+const TITLE_MAX_LENGTH = 50;
+const DESCRIPTION_MAX_LENGTH = 200;
+const ADDITIONAL_INFO_MAX_LENGTH = 200;
 const STATUS_OPTIONS = EVENT_STATUSES.map((id) => ({ id, labelKey: STATUS_LABEL_KEYS[id] }));
 // "Finalizado" isn't a manual choice - it should reflect that the event's date
 // has already passed, not something the organizer picks when creating/editing.
@@ -128,6 +138,27 @@ function bold(text: string): string {
       return char;
     })
     .join('');
+}
+
+// No "strikethrough alphabet" exists in Unicode the way bold() has one -
+// the standard trick is a combining stroke (U+0336) layered after every
+// character instead, which works on any character (accents, digits, emoji
+// included) since it's a diacritic, not a swapped-out letter. Only used for
+// the plain-text fallback (see htmlToShareText) - the rich editor itself
+// applies real strikethrough via execCommand.
+function strikethroughText(text: string): string {
+  return Array.from(text)
+    .map((char) => (char === '\n' ? char : `${char}̶`))
+    .join('');
+}
+
+// Plain-text -> the minimal HTML needed to seed the rich editor (see
+// startShareTextEdit) with the same line breaks it already has.
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
 }
 
 interface SocialLinkRow {
@@ -196,6 +227,7 @@ function withTimePart(base: number, timeValue: string): number {
     IonToggle,
     IonDatetime,
     IonSearchbar,
+    IonCheckbox,
     TranslatePipe,
     PhotoEditorComponent,
     FilterSheetHeaderComponent,
@@ -500,10 +532,17 @@ export class EventDetailPage implements ComponentWithUnsavedChanges {
    * Simple flat fields live on this form; single-select category pickers and
    * location/date live as plain signals below, same split as profile.page.ts
    * (its own account form vs. its chip-grid/city-search state). */
+  // Exposed for the template's [maxlength]/[counter] bindings - ion-input
+  // and ion-textarea need the number as an input, not just enforced via
+  // the form's own Validators.maxLength above.
+  readonly titleMaxLength = TITLE_MAX_LENGTH;
+  readonly descriptionMaxLength = DESCRIPTION_MAX_LENGTH;
+  readonly additionalInfoMaxLength = ADDITIONAL_INFO_MAX_LENGTH;
+
   readonly editForm = this.fb.nonNullable.group({
-    title: ['', Validators.required],
-    description: ['', Validators.required],
-    additionalInfo: [''],
+    title: ['', [Validators.required, Validators.maxLength(TITLE_MAX_LENGTH)]],
+    description: ['', [Validators.required, Validators.maxLength(DESCRIPTION_MAX_LENGTH)]],
+    additionalInfo: ['', Validators.maxLength(ADDITIONAL_INFO_MAX_LENGTH)],
     imageUrl: ['', Validators.required],
     isFree: [true],
     price: [0],
@@ -662,7 +701,8 @@ export class EventDetailPage implements ComponentWithUnsavedChanges {
       heart,
       heartOutline,
       refreshOutline,
-      copyOutline,
+      arrowUndoOutline,
+      arrowRedoOutline,
     });
 
     this.disciplineService.getAll().subscribe({
@@ -853,6 +893,16 @@ export class EventDetailPage implements ComponentWithUnsavedChanges {
 
   readonly shareText = signal('');
   readonly shareTextLoading = signal(false);
+  readonly shareTextEditing = signal(false);
+  // Editable HTML shown in the contenteditable box while editing (real
+  // <b>/<i>/<s> markup, not the Unicode substitutes buildShareText uses).
+  readonly shareTextDraft = signal('');
+  // Set once the organizer has actually edited the text - lets copyShareText
+  // offer a real rich-text clipboard payload instead of always falling back
+  // to plain (see EXPERIMENTAL comment on copyShareText).
+  private shareHtml: string | null = null;
+
+  private readonly richTextEl = viewChild<ElementRef<HTMLDivElement>>('richTextEl');
 
   // Some share targets only keep one of {image, text} (see confirmShare's own
   // comment) - embedding the event/maps links straight into the text means
@@ -865,6 +915,8 @@ export class EventDetailPage implements ComponentWithUnsavedChanges {
       return;
     }
     this.showSharePreviewModal.set(true);
+    this.shareTextEditing.set(false);
+    this.shareHtml = null;
     this.shareTextLoading.set(true);
     this.shareText.set(await this.buildShareText(event));
     this.shareTextLoading.set(false);
@@ -874,40 +926,162 @@ export class EventDetailPage implements ComponentWithUnsavedChanges {
     this.showSharePreviewModal.set(false);
   }
 
+  // See shared/share-hint.ts - Settings offers a way to reset this, same as
+  // it does for the welcome tour.
+  readonly showSharePreviewHint = signal(!isSharePreviewHintDismissed());
+
+  onSharePreviewHintDismissChange(checked: boolean): void {
+    if (!checked) {
+      return;
+    }
+    dismissSharePreviewHint();
+    this.showSharePreviewHint.set(false);
+  }
+
+  // Generated wording is a reasonable default, not the last word - the
+  // organizer knows the event better than any template does, so they can
+  // tweak the copy (fix a typo, add an emoji, shorten it) before it's
+  // copied/shared, the same way they could if they'd typed it by hand.
+  //
+  // EXPERIMENTAL: editing now happens in a real contenteditable box so
+  // bold/italic/strikethrough are genuine HTML formatting (via
+  // execCommand), not the Unicode-lookalike trick buildShareText uses for
+  // the auto-generated portions - trying this to see whether a rich
+  // clipboard payload (see copyShareText) actually survives being pasted
+  // into WhatsApp/Instagram/etc.'s composers, or gets stripped to plain
+  // text the way a normal paste there does.
+  startShareTextEdit(): void {
+    this.shareTextDraft.set(this.shareHtml ?? escapeHtml(this.shareText()).replace(/\n/g, '<br>'));
+    this.shareTextEditing.set(true);
+  }
+
+  // Discards whatever's in the contenteditable box - it was never written
+  // back to shareText/shareHtml, so simply leaving edit mode is enough.
+  cancelShareTextEdit(): void {
+    this.shareTextEditing.set(false);
+  }
+
+  applyShareTextEdit(): void {
+    const el = this.richTextEl()?.nativeElement;
+    const html = el?.innerHTML ?? this.shareTextDraft();
+    this.shareHtml = html;
+    // htmlToShareText (not el.innerText) - innerText discards formatting
+    // outright, so any bold/strikethrough just applied by hand would
+    // silently vanish from the plain-text fallback that some share targets
+    // end up using instead of the rich clipboard payload.
+    this.shareText.set(this.htmlToShareText(html));
+    this.shareTextEditing.set(false);
+  }
+
+  // mousedown on the toolbar buttons must not steal focus/selection away
+  // from the contenteditable box before the click's execCommand runs, or
+  // there'd be nothing left selected to format/undo/redo.
+  preventFormatButtonFocusSteal(event: MouseEvent): void {
+    event.preventDefault();
+  }
+
+  applyShareTextBold(): void {
+    document.execCommand('bold');
+  }
+
+  applyShareTextItalic(): void {
+    document.execCommand('italic');
+  }
+
+  applyShareTextStrikethrough(): void {
+    document.execCommand('strikeThrough');
+  }
+
+  undoShareTextEdit(): void {
+    document.execCommand('undo');
+  }
+
+  redoShareTextEdit(): void {
+    document.execCommand('redo');
+  }
+
   // Not every target the native share sheet offers actually combines the
   // image and text together (see confirmShare's own comment) - a dedicated
   // copy button lets the user grab the text on its own to paste by hand
   // wherever the image alone ended up (a WhatsApp Status, an Instagram
   // Story...).
+  //
+  // EXPERIMENTAL: once the text has been through the rich editor (see
+  // applyShareTextEdit), this writes both an HTML and a plain-text payload
+  // to the clipboard - real bold/italic/strikethrough for whatever target
+  // paste is smart enough to use it, the same plain fallback as before for
+  // everything else.
   async copyShareText(): Promise<void> {
     if (!navigator.clipboard) {
       return;
+    }
+    if (this.shareHtml && window.ClipboardItem) {
+      try {
+        await navigator.clipboard.write([
+          new ClipboardItem({
+            'text/html': new Blob([this.shareHtml], { type: 'text/html' }),
+            'text/plain': new Blob([this.shareText()], { type: 'text/plain' }),
+          }),
+        ]);
+        this.shareFeedback.set('copied');
+        this.shareFlash.trigger();
+        return;
+      } catch {
+        // Some platforms restrict multi-type clipboard writes - fall back
+        // to the plain-text copy below rather than leaving nothing copied.
+      }
     }
     await navigator.clipboard.writeText(this.shareText());
     this.shareFeedback.set('copied');
     this.shareFlash.trigger();
   }
 
+  // Shares the event's own photo as a real image file rather than a link -
+  // a URL-only share is *why* Instagram/Facebook only ever offered Message
+  // as a target and WhatsApp Status stayed text-only (none of those unfurl
+  // link previews the way a chat message does, but they all handle a real
+  // image perfectly well, Reels/Story/Feed included). No `text` alongside
+  // it: sharing both together is exactly what caused every earlier
+  // platform-specific mismatch (Facebook dropping the text, Telegram
+  // dropping the image...) - the copy-text button above is the deliberate,
+  // reliable way to get the caption in, pasted by hand wherever it belongs.
   async confirmShare(): Promise<void> {
-    // No separate `url` field - the event's own link already lives inside
-    // the text (see buildShareText), and Capacitor's Share plugin just
-    // concatenates text+url into one string on Android anyway, so passing
-    // both would only duplicate the link in the final message.
-    const text = this.shareText();
+    const event = this.event();
+    if (!event) {
+      return;
+    }
     this.shareFeedback.set('shared');
     this.shareFlash.trigger();
     try {
+      const response = await fetch(event.imageUrl);
+      const blob = await response.blob();
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve((reader.result as string).split(',')[1]);
+        reader.onerror = () => reject(reader.error);
+        reader.readAsDataURL(blob);
+      });
+      const { uri } = await Filesystem.writeFile({
+        path: `dancemeet-share-${event.id}.jpg`,
+        data: base64,
+        directory: Directory.Cache,
+      });
       // Capacitor's Share plugin falls back to the Web Share API on web
       // builds by itself, so this one call covers both native and browser.
-      await Share.share({ title: 'DanceMeet', text });
+      await Share.share({ title: 'DanceMeet', files: [uri] });
     } catch {
-      // User cancelled the native share sheet, or neither share mechanism is
-      // available - fall back to copying the text. Re-triggers the flash
-      // (resetting its timer) with the more accurate "copied" wording.
-      if (navigator.clipboard) {
-        await navigator.clipboard.writeText(text);
-        this.shareFeedback.set('copied');
-        this.shareFlash.trigger();
+      // Image fetch/write/share failed (offline, cancelled share sheet...) -
+      // fall back to sharing the text, and if even that has nowhere to go,
+      // to copying it. Re-triggers the flash (resetting its timer) with the
+      // more accurate wording either way.
+      try {
+        await Share.share({ title: 'DanceMeet', text: this.shareText() });
+      } catch {
+        if (navigator.clipboard) {
+          await navigator.clipboard.writeText(this.shareText());
+          this.shareFeedback.set('copied');
+          this.shareFlash.trigger();
+        }
       }
     }
     this.showSharePreviewModal.set(false);
@@ -932,9 +1106,22 @@ export class EventDetailPage implements ComponentWithUnsavedChanges {
   /** Not every share target renders the link-preview card built from
    * ShareController's meta tags (Facebook's composer, Instagram Stories,
    * X/Twitter...) - so the event's own details need to travel as plain text
-   * too, not just live behind a link only some apps bother to unfurl. */
+   * too, not just live behind a link only some apps bother to unfurl.
+   *
+   * Builds real HTML (real <b> tags) rather than bold()'s Unicode
+   * substitutes - accented letters (á, ñ...) have no bold codepoint in that
+   * scheme and stayed plain, and it looked visually different from actual
+   * bold applied through the rich editor's own Bold button. Real HTML
+   * fixes both: any character can be bold, and it's the same bold
+   * everywhere. Sets this.shareHtml as a side effect (consumed by
+   * copyShareText/startShareTextEdit) and returns the plain-text
+   * equivalent for shareText (native Share.share() only ever accepts
+   * plain strings) - see htmlToShareText below for how that's derived
+   * without losing the bold styling entirely. */
   private async buildShareText(event: EventWithCreatorName): Promise<string> {
-    const intro = this.translate.instant(SHARE_INTRO_KEYS[event.status], { creator: bold(event.creatorName) });
+    const intro = this.translate.instant(SHARE_INTRO_KEYS[event.status], {
+      creator: `<b>${escapeHtml(event.creatorName)}</b>`,
+    });
     const preferences = [
       ...this.eventTypeTags().map((tag) => tag.name),
       ...this.disciplineTags().map((tag) => tag.name),
@@ -953,24 +1140,54 @@ export class EventDetailPage implements ComponentWithUnsavedChanges {
       this.shortenUrl(mapsUrl),
     ]);
 
-    // Emoji instead of translated word labels (🎉 title, 📝 description...) -
+    // Emoji instead of translated word labels (🎫 title, 📝 description...) -
     // unlike text they need no i18n and read the same in every language.
-    const lines = [bold('DanceMeet'), intro, `🎉 ${bold(event.title)}`];
+    const lines = [`<b>DanceMeet</b>`, intro, `🎫 <b>${escapeHtml(event.title)}</b>`];
     if (event.description) {
-      lines.push(`📝 ${bold(event.description)}`);
+      lines.push(`📝 <b>${escapeHtml(event.description)}</b>`);
     }
     if (event.additionalInfo) {
-      lines.push(`ℹ️ ${bold(event.additionalInfo)}`);
+      lines.push(`ℹ️ <b>${escapeHtml(event.additionalInfo)}</b>`);
     }
-    lines.push(`🏷️ ${bold(preferences)}`);
-    lines.push(`📅 ${this.dateLabel()}`);
+    lines.push(`🏷️ <b>${escapeHtml(preferences)}</b>`);
+    lines.push(`📅 ${escapeHtml(this.dateLabel())}`);
     // The event link goes before the maps link - platforms that build a
     // link-preview card out of shared plain text (WhatsApp in particular)
     // unfurl whichever URL appears *first* in the message, and the event's
     // own card (photo, title...) is what should win that slot, not Maps'.
-    lines.push(`🔗 ${shortEventUrl}`);
-    lines.push(`📍 ${event.address}, ${event.city} - ${shortMapsUrl}`);
-    return lines.join('\n');
+    lines.push(`🔗 ${escapeHtml(shortEventUrl)}`);
+    lines.push(`📍 ${escapeHtml(event.address)}, ${escapeHtml(event.city)}`);
+    lines.push(`🔗 ${escapeHtml(shortMapsUrl)}`);
+    const html = lines.join('<br>');
+    this.shareHtml = html;
+    return this.htmlToShareText(html);
+  }
+
+  // Detached-element walk (no document.body attach, so this works even
+  // before the modal's ever been opened) - converts real <b>/<strong> and
+  // <s>/<strike>/<del> content to bold()/strikethroughText()'s Unicode
+  // substitutes so the plain-text fallback (native Share.share(), or
+  // whatever a share target uses instead of the rich clipboard payload)
+  // still reads as formatted instead of losing it outright. execCommand's
+  // exact tag choice for strikethrough varies by browser (Chrome/Blink
+  // uses <strike>), so all three are covered. Italic (<i>/<em>) has no
+  // Unicode substitute here - the Mathematical Sans-Serif Italic block hit
+  // the same tofu-box font problem strikethrough-on-bold did earlier, so
+  // instead it's wrapped in _underscores_, the same markdown WhatsApp and
+  // Telegram already recognize as italic in plain text.
+  private htmlToShareText(html: string): string {
+    const container = document.createElement('div');
+    container.innerHTML = html.replace(/<br\s*\/?>/gi, '\n');
+    container.querySelectorAll('b, strong').forEach((node) => {
+      node.textContent = bold(node.textContent ?? '');
+    });
+    container.querySelectorAll('s, strike, del').forEach((node) => {
+      node.textContent = strikethroughText(node.textContent ?? '');
+    });
+    container.querySelectorAll('i, em').forEach((node) => {
+      node.textContent = `_${node.textContent ?? ''}_`;
+    });
+    return container.textContent ?? '';
   }
 
   // --- Attend (favorite as attendee) ---------------------------------------

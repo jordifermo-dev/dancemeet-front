@@ -23,7 +23,15 @@ export class OnboardingService {
     }
   }
 
+  /** Called from Settings' "Volver a ver tour de bienvenida" - clears the
+   * seen flag too (not just opening it once now), so the tour also comes
+   * back automatically on the next login, the same as if it had never been
+   * dismissed. */
   openWelcome(): void {
+    const userId = this.authService.currentUser()?.id;
+    if (userId) {
+      localStorage.removeItem(STORAGE_PREFIX + userId);
+    }
     this.isWelcomeModalOpen.set(true);
   }
 

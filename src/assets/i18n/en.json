@@ -18,7 +18,9 @@
     "themeDark": "Dark",
     "legalSection": "Legal",
     "privacyPolicyLink": "Privacy policy",
-    "termsOfUseLink": "Terms of use"
+    "termsOfUseLink": "Terms of use",
+    "shareHintReset": "Show the events share hint again",
+    "shareHintResetDone": "Done ✓"
   },
   "welcome": {
     "title": "Welcome tour",
@@ -39,7 +41,7 @@
     "tipPreferences": "Seeing few events? Check your search preferences (style, type, location, distance, status...) - the more open they are, the more events show up.",
     "dontShowAgain": "Don't show this again",
     "gotIt": "Got it, let's go!",
-    "reopenLink": "View welcome tour"
+    "reopenLink": "View welcome tour again"
   },
   "notifications": {
     "title": "Notifications",
@@ -283,9 +285,12 @@
     "shareIntroCancelled": "{{creator}} has cancelled the following event:",
     "shareIntroFinished": "{{creator}} is sharing this event:",
     "sharePreviewTitle": "Share event",
+    "editSharePreviewTitle": "Edit text",
     "copyTextButton": "Copy text",
+    "editTextButton": "Edit",
     "textCopied": "Text copied ✓",
     "sharePreviewHint": "Some social networks don't share the image and text together. We recommend copying the text to paste it yourself into the post, message or status — you can edit it there to your liking.",
+    "dontShowHintAgain": "Don't show again",
     "editButton": "Edit event",
     "reuseButton": "Reuse event",
     "attendeesLabel": "Attendees",

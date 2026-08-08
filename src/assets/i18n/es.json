@@ -18,7 +18,9 @@
     "themeDark": "Oscuro",
     "legalSection": "Legal",
     "privacyPolicyLink": "Política de privacidad",
-    "termsOfUseLink": "Términos de uso"
+    "termsOfUseLink": "Términos de uso",
+    "shareHintReset": "Volver a mostrar el aviso de compartir eventos",
+    "shareHintResetDone": "Hecho ✓"
   },
   "welcome": {
     "title": "Tour de bienvenida",
@@ -39,7 +41,7 @@
     "tipPreferences": "Si ves pocos eventos, revisa tus preferencias de búsqueda (estilo, tipo, ubicación, distancia, estado...): cuanto más abiertas, más eventos te aparecerán.",
     "dontShowAgain": "No volver a mostrar",
     "gotIt": "Entendido, ¡vamos!",
-    "reopenLink": "Ver tour de bienvenida"
+    "reopenLink": "Volver a ver tour de bienvenida"
   },
   "notifications": {
     "title": "Notificaciones",
@@ -283,9 +285,12 @@
     "shareIntroCancelled": "{{creator}} ha cancelado el siguiente evento:",
     "shareIntroFinished": "{{creator}} comparte este evento:",
     "sharePreviewTitle": "Compartir evento",
+    "editSharePreviewTitle": "Editar texto",
     "copyTextButton": "Copiar texto",
+    "editTextButton": "Editar",
     "textCopied": "Texto copiado ✓",
     "sharePreviewHint": "Algunas redes sociales no comparten la imagen y el texto a la vez. Te recomendamos copiar el texto para pegarlo tú mismo/a en la publicación, el mensaje o el estado — allí podrás editarlo a tu gusto.",
+    "dontShowHintAgain": "No volver a mostrar",
     "editButton": "Editar evento",
     "reuseButton": "Reutilizar evento",
     "attendeesLabel": "Asistentes",

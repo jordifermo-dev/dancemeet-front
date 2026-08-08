@@ -64,6 +64,10 @@
       <ion-icon slot="start" name="help-circle-outline"></ion-icon>
       {{ 'welcome.reopenLink' | translate }}
     </ion-button>
+    <ion-button expand="block" fill="outline" (click)="resetShareHint()">
+      <ion-icon slot="start" name="help-circle-outline"></ion-icon>
+      {{ (shareHintResetFlash.active() ? 'settings.shareHintResetDone' : 'settings.shareHintReset') | translate }}
+    </ion-button>
     <ion-button expand="block" color="primary" fill="outline" (click)="logout()">
       <ion-icon slot="start" name="log-out-outline"></ion-icon>
       {{ 'profile.logout' | translate }}

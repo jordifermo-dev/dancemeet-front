@@ -621,13 +621,67 @@ a.info-row {
   margin-bottom: 12px !important;
 }
 
+.share-preview-format-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+
+  button {
+    appearance: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border: 1.5px solid var(--ion-color-primary);
+    border-radius: 8px;
+    background: var(--app-surface-card);
+    color: var(--ion-color-primary);
+    font-size: 0.95rem;
+    cursor: pointer;
+
+    ion-icon {
+      font-size: 1.1rem;
+    }
+  }
+}
+
+.share-preview-richtext {
+  color: var(--app-text-strong);
+  background: var(--ion-color-light);
+  padding: 12px;
+  font-size: 0.88rem;
+  border-radius: 12px;
+  margin-bottom: 12px;
+  min-height: 140px;
+  outline: none;
+
+  b,
+  strong {
+    font-weight: 700;
+  }
+
+  i,
+  em {
+    font-style: italic;
+  }
+}
+
+.share-preview-actions-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.share-preview-edit,
 .share-preview-copy {
   appearance: none;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  width: 100%;
+  flex: 1;
   border: 1.5px solid var(--ion-color-primary);
   border-radius: 999px;
   padding: 8px 12px;
@@ -636,16 +690,40 @@ a.info-row {
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
-  margin-bottom: 12px;
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
 
   ion-icon {
     font-size: 1.1rem;
   }
 }
 
+.share-preview-hint-row {
+  margin-bottom: 16px;
+}
+
 .share-preview-hint {
   font-size: 0.78rem !important;
   font-style: italic;
-  margin-bottom: 16px !important;
+  margin-bottom: 6px !important;
+}
+
+// Same look as .group-label (Profile's "Tipo de evento"/"Disciplinas"
+// section titles) - a plain, consistent typographic voice for any field/
+// option title across the app, this checkbox's label included.
+.share-preview-hint-row ion-checkbox {
+  --size: 16px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--ion-color-medium);
+
+  &::part(label) {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--ion-color-medium);
+  }
 }
 

@@ -30,6 +30,7 @@ import {
 import { AuthService } from '../../services/auth.service';
 import { UserService } from '../../services/user.service';
 import { OnboardingService } from '../../services/onboarding.service';
+import { resetSharePreviewHint } from '../../shared/share-hint';
 import { ThemeService, ThemeMode } from '../../services/theme.service';
 import { NotificationType } from '../../models';
 import { ALL_NOTIFICATION_TYPES, NOTIFICATION_TYPE_ICONS, NOTIFICATION_TYPE_LABEL_KEYS } from '../../shared/notification-types';
@@ -67,6 +68,7 @@ export class SettingsPage {
 
   readonly enableAllFlash = createSuccessFlash();
   readonly disableAllFlash = createSuccessFlash();
+  readonly shareHintResetFlash = createSuccessFlash();
 
   readonly disabledTypes = signal<Set<NotificationType>>(
     new Set(this.authService.currentUser()?.disabledNotificationTypes ?? []),
@@ -133,6 +135,16 @@ export class SettingsPage {
 
   openWelcomeGuide(): void {
     this.onboarding.openWelcome();
+  }
+
+  // Unlike the welcome tour (which reopens right away, giving its own
+  // visible feedback), resetting this flag has no immediate on-screen
+  // effect - it only shows again next time the share-preview modal opens -
+  // so the button needs its own flash to confirm the tap actually did
+  // something.
+  resetShareHint(): void {
+    resetSharePreviewHint();
+    this.shareHintResetFlash.trigger();
   }
 
   goToPrivacyPolicy(): void {

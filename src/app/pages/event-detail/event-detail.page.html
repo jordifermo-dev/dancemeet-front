@@ -21,18 +21,27 @@
       <section class="section">
         <h2>{{ 'eventDetail.detailsSection' | translate }}</h2>
         <p class="group-label">{{ 'eventDetail.titleLabel' | translate }}<span class="required-marker">*</span></p>
-        <ion-input [placeholder]="'eventDetail.titlePlaceholder' | translate" formControlName="title"></ion-input>
+        <ion-input
+          [placeholder]="'eventDetail.titlePlaceholder' | translate"
+          formControlName="title"
+          [maxlength]="titleMaxLength"
+          [counter]="true"
+        ></ion-input>
         <p class="group-label">{{ 'eventDetail.descriptionLabel' | translate }}<span class="required-marker">*</span></p>
         <ion-textarea
           [placeholder]="'eventDetail.descriptionPlaceholder' | translate"
           [autoGrow]="true"
           formControlName="description"
+          [maxlength]="descriptionMaxLength"
+          [counter]="true"
         ></ion-textarea>
         <p class="group-label">{{ 'eventDetail.additionalInfoLabel' | translate }}</p>
         <ion-textarea
           [placeholder]="'eventDetail.additionalInfoPlaceholder' | translate"
           [autoGrow]="true"
           formControlName="additionalInfo"
+          [maxlength]="additionalInfoMaxLength"
+          [counter]="true"
         ></ion-textarea>
         <div class="event-image-edit">
           @if (editForm.controls.imageUrl.value) {
@@ -567,8 +576,8 @@
 
 <ion-modal
   [isOpen]="showSharePreviewModal()"
-  [initialBreakpoint]="0.95"
-  [breakpoints]="[0, 0.95]"
+  [initialBreakpoint]="1"
+  [breakpoints]="[0, 1]"
   (didDismiss)="closeSharePreview()"
 >
   <ng-template>
@@ -584,17 +593,76 @@
           <p class="share-preview-text">{{ shareText() }}</p>
         }
       }
-      <button type="button" class="share-preview-copy" [disabled]="shareTextLoading()" (click)="copyShareText()">
-        <ion-icon [name]="shareFlash.active() && shareFeedback() === 'copied' ? 'checkmark-outline' : 'copy-outline'"></ion-icon>
-        {{ (shareFlash.active() && shareFeedback() === 'copied' ? 'eventDetail.textCopied' : 'eventDetail.copyTextButton') | translate }}
-      </button>
-      <p class="share-preview-hint">{{ 'eventDetail.sharePreviewHint' | translate }}</p>
+      <div class="share-preview-actions-row">
+        <button type="button" class="share-preview-edit" [disabled]="shareTextLoading()" (click)="startShareTextEdit()">
+          {{ 'eventDetail.editTextButton' | translate }}
+        </button>
+        <button type="button" class="share-preview-copy" [disabled]="shareTextLoading()" (click)="copyShareText()">
+          {{ (shareFlash.active() && shareFeedback() === 'copied' ? 'eventDetail.textCopied' : 'eventDetail.copyTextButton') | translate }}
+        </button>
+      </div>
+      @if (showSharePreviewHint()) {
+        <div class="share-preview-hint-row">
+          <p class="share-preview-hint">{{ 'eventDetail.sharePreviewHint' | translate }}</p>
+          <ion-checkbox
+            justify="start"
+            labelPlacement="end"
+            (ionChange)="onSharePreviewHintDismissChange($event.detail.checked)"
+          >
+            {{ 'eventDetail.dontShowHintAgain' | translate }}
+          </ion-checkbox>
+        </div>
+      }
       <app-filter-actions-row>
         <ion-button expand="block" fill="outline" color="primary" (click)="closeSharePreview()">
           {{ 'common.cancel' | translate }}
         </ion-button>
         <ion-button expand="block" color="primary" [disabled]="shareTextLoading()" (click)="confirmShare()">
           {{ 'eventDetail.shareButton' | translate }}
+        </ion-button>
+      </app-filter-actions-row>
+    </div>
+  </ng-template>
+</ion-modal>
+
+<ion-modal
+  [isOpen]="shareTextEditing()"
+  [initialBreakpoint]="1"
+  [breakpoints]="[0, 1]"
+  (didDismiss)="cancelShareTextEdit()"
+>
+  <ng-template>
+    <div class="filter-sheet share-preview-sheet">
+      <app-filter-sheet-header titleKey="eventDetail.editSharePreviewTitle" (closed)="cancelShareTextEdit()"></app-filter-sheet-header>
+      <div #richTextEl class="share-preview-richtext" contenteditable="true" [innerHTML]="shareTextDraft()"></div>
+      <!-- Below the text, not above it - Android's own Cortar/Copiar/Pegar
+           selection menu pops up right against whatever's selected, and a
+           toolbar sitting above the box would get covered by it for any
+           selection near the top. Down here it's never in that menu's way,
+           whatever's selected. -->
+      <div class="share-preview-format-row">
+        <button type="button" (mousedown)="preventFormatButtonFocusSteal($event)" (click)="applyShareTextBold()">
+          <b>B</b>
+        </button>
+        <button type="button" (mousedown)="preventFormatButtonFocusSteal($event)" (click)="applyShareTextItalic()">
+          <i>K</i>
+        </button>
+        <button type="button" (mousedown)="preventFormatButtonFocusSteal($event)" (click)="applyShareTextStrikethrough()">
+          <s>S</s>
+        </button>
+        <button type="button" (mousedown)="preventFormatButtonFocusSteal($event)" (click)="undoShareTextEdit()">
+          <ion-icon name="arrow-undo-outline"></ion-icon>
+        </button>
+        <button type="button" (mousedown)="preventFormatButtonFocusSteal($event)" (click)="redoShareTextEdit()">
+          <ion-icon name="arrow-redo-outline"></ion-icon>
+        </button>
+      </div>
+      <app-filter-actions-row>
+        <ion-button expand="block" fill="outline" color="primary" (click)="cancelShareTextEdit()">
+          {{ 'common.cancel' | translate }}
+        </ion-button>
+        <ion-button expand="block" color="primary" (click)="applyShareTextEdit()">
+          {{ 'profile.apply' | translate }}
         </ion-button>
       </app-filter-actions-row>
     </div>

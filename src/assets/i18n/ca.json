@@ -18,7 +18,9 @@
     "themeDark": "Fosc",
     "legalSection": "Legal",
     "privacyPolicyLink": "Política de privadesa",
-    "termsOfUseLink": "Termes d'ús"
+    "termsOfUseLink": "Termes d'ús",
+    "shareHintReset": "Torna a mostrar l'avís de compartir esdeveniments",
+    "shareHintResetDone": "Fet ✓"
   },
   "welcome": {
     "title": "Tour de benvinguda",
@@ -39,7 +41,7 @@
     "tipPreferences": "Si veus pocs esdeveniments, revisa les teves preferències de cerca (estil, tipus, ubicació, distància, estat...): com més obertes, més esdeveniments t'apareixeran.",
     "dontShowAgain": "No tornar a mostrar",
     "gotIt": "Entesos, som-hi!",
-    "reopenLink": "Veure tour de benvinguda"
+    "reopenLink": "Torna a veure el tour de benvinguda"
   },
   "notifications": {
     "title": "Notificacions",
@@ -283,9 +285,12 @@
     "shareIntroCancelled": "{{creator}} ha cancel·lat el següent esdeveniment:",
     "shareIntroFinished": "{{creator}} comparteix aquest esdeveniment:",
     "sharePreviewTitle": "Comparteix l'esdeveniment",
+    "editSharePreviewTitle": "Edita el text",
     "copyTextButton": "Copia el text",
+    "editTextButton": "Edita",
     "textCopied": "Text copiat ✓",
     "sharePreviewHint": "Algunes xarxes socials no comparteixen la imatge i el text alhora. Et recomanem copiar el text per enganxar-lo tu mateix/a a la publicació, el missatge o l'estat — allà el podràs editar al teu gust.",
+    "dontShowHintAgain": "No tornar a mostrar",
     "editButton": "Edita l'esdeveniment",
     "reuseButton": "Reutilitza l'esdeveniment",
     "attendeesLabel": "Assistents",
