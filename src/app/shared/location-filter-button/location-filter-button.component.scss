@@ -18,65 +18,7 @@
   }
 }
 
-.tgtg-searchbar {
-  flex: 1;
-  min-width: 0;
-  padding: 0;
-  --background: var(--app-surface-card);
-  --border-radius: 999px;
-  --box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  --placeholder-color: var(--ion-color-medium);
-  --icon-color: var(--ion-color-medium);
-  --color: var(--app-text-strong);
-  // Plain border on the host itself (ion-searchbar has no --border-color
-  // custom property) - without it, the search box (--background) had no
-  // visible edge at all in dark mode, where it's nearly the same near-black
-  // as the page behind it.
-  border: 1.5px solid var(--ion-color-primary);
-  border-radius: 999px;
-}
-
 .filter-sheet {
   padding: 20px 20px 16px;
-}
-
-.city-suggestions {
-  display: flex;
-  flex-direction: column;
-  background: var(--app-surface-card);
-  border: 1px solid var(--ion-color-light-shade);
-  border-radius: 12px;
-  margin-top: 8px;
-  margin-bottom: 8px;
-  overflow: hidden;
-}
-
-.city-suggestion {
-  appearance: none;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  border: none;
-  background: transparent;
-  padding: 10px 14px;
-  font-size: 0.85rem;
-  text-align: left;
-  color: var(--app-text-strong);
-  cursor: pointer;
-
-  &:not(:last-child) {
-    border-bottom: 1px solid var(--ion-color-light-shade);
-  }
-
-  ion-icon {
-    color: var(--ion-color-medium);
-    flex: 0 0 auto;
-  }
-}
-
-.range-label {
-  margin-top: 16px;
-  margin-bottom: 0;
-  font-weight: 600;
 }
 

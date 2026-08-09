@@ -16,11 +16,11 @@
         [debounce]="0"
         (ionInput)="onSearchChange($event.detail.value)"
       ></ion-searchbar>
-      <button type="button" class="icon-btn" (click)="openLocationModal()">
-        <ion-icon name="location-outline"></ion-icon>
-      </button>
       <button type="button" class="icon-btn filter-all-btn" (click)="openGenericFilterModal()">
         <ion-icon name="options-outline"></ion-icon>
+      </button>
+      <button type="button" class="icon-btn" (click)="openLocationModal()">
+        <ion-icon name="location-outline"></ion-icon>
       </button>
     </div>
 
@@ -148,13 +148,8 @@
   </ng-template>
 </ion-modal>
 
-<!-- Location bottom sheet: distance, city search, current location -->
-<ion-modal
-  [isOpen]="isLocationModalOpen()"
-  [initialBreakpoint]="0.67"
-  [breakpoints]="[0, 0.67]"
-  (didDismiss)="isLocationModalOpen.set(false)"
->
+<!-- Location sheet: map, distance, city search, current location -->
+<ion-modal [isOpen]="isLocationModalOpen()" (didDismiss)="isLocationModalOpen.set(false)">
   <ng-template>
     <div class="filter-sheet">
       <app-filter-sheet-header
@@ -162,32 +157,27 @@
         (closed)="isLocationModalOpen.set(false)"
       ></app-filter-sheet-header>
 
-      <ion-searchbar
-        class="tgtg-searchbar"
-        [placeholder]="'register.cityPlaceholder' | translate"
-        [value]="draftCity()"
-        [debounce]="0"
-        (ionInput)="onCityInput($event.detail.value)"
-      ></ion-searchbar>
-
-      @if (citySuggestions().length) {
-        <div class="city-suggestions">
-          @for (suggestion of citySuggestions(); track suggestion.placeId) {
-            <button type="button" class="city-suggestion" (click)="selectCitySuggestion(suggestion)">
-              <ion-icon name="location-outline"></ion-icon>
-              {{ suggestion.description }}
-            </button>
-          }
-        </div>
-      }
-
-      <ion-button fill="clear" (click)="useCurrentLocation()" [disabled]="locatingMe()">
-        <ion-icon slot="start" name="locate-outline"></ion-icon>
-        {{ 'register.useCurrentLocation' | translate }}
-      </ion-button>
-
-      <p class="range-label">{{ 'register.distanceLabel' | translate: { km: draftDistanceRange() } }}</p>
-      <ion-range [min]="1" [max]="150" [value]="draftDistanceRange()" (ionChange)="onDistanceChange($event)"></ion-range>
+      <app-location-picker
+        [editable]="true"
+        [lat]="draftLatitude()"
+        [lng]="draftLongitude()"
+        [zoom]="zoomLevel()"
+        [mapType]="mapType()"
+        [addressValue]="draftAddress()"
+        [citySuggestions]="citySuggestions()"
+        [locating]="locatingMe()"
+        [addressLine]="resolvedAddressLine()"
+        [showDistance]="true"
+        [distanceValue]="draftDistanceRange()"
+        (zoomIn)="zoomIn()"
+        (zoomOut)="zoomOut()"
+        (mapTypeToggle)="toggleMapType()"
+        (addressInput)="onCityInput($event)"
+        (suggestionSelect)="selectCitySuggestion($event)"
+        (useCurrentLocation)="useCurrentLocation()"
+        (distanceChange)="onDistanceChange($event)"
+        (pinMoved)="onPinMoved($event)"
+      ></app-location-picker>
 
       <app-filter-actions-row>
         <ion-button expand="block" fill="outline" color="primary" (click)="clearLocationFilter()">

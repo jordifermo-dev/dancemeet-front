@@ -23,7 +23,6 @@ import {
   IonIcon,
   IonButton,
   IonModal,
-  IonRange,
   IonSpinner,
   ViewWillEnter,
 } from '@ionic/angular/standalone';
@@ -58,7 +57,8 @@ import {
   PriceOption,
 } from '../../models';
 import { sortByNameOrder, STATUS_LABEL_KEYS } from '../../shared/icon-catalog';
-import { haversineDistanceMeters } from '../../shared/maps';
+import { haversineDistanceMeters, MapType } from '../../shared/maps';
+import { LocationPickerComponent } from '../../shared/location-picker/location-picker.component';
 import { toggleWithMinimum } from '../../shared/min-selection';
 import { MinSelectionWarningService } from '../../shared/min-selection-warning.service';
 import { EventCardComponent } from '../../shared/event-card/event-card.component';
@@ -92,6 +92,8 @@ const PRICE_OPTIONS: { id: PriceOption; labelKey: string }[] = [
   { id: 'free', labelKey: 'explorer.priceFreeOption' },
   { id: 'paid', labelKey: 'explorer.pricePaidOption' },
 ];
+const MIN_ZOOM = 3;
+const MAX_ZOOM = 20;
 
 /** "X's events" list (organized + favorited) - your own (no ?userId) or
  * someone else's (from their follower/following profile). Same card,
@@ -113,7 +115,6 @@ const PRICE_OPTIONS: { id: PriceOption; labelKey: string }[] = [
     IonIcon,
     IonButton,
     IonModal,
-    IonRange,
     IonSpinner,
     TranslatePipe,
     EventCardComponent,
@@ -122,6 +123,7 @@ const PRICE_OPTIONS: { id: PriceOption; labelKey: string }[] = [
     ChipGridComponent,
     FilterAllComponent,
     DatePickerFieldComponent,
+    LocationPickerComponent,
   ],
 })
 export class UserEventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWillEnter {
@@ -201,6 +203,7 @@ export class UserEventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWil
   private readonly profileDefaults = this.authService.currentUser();
   readonly draftCity = signal(this.profileDefaults?.city || '');
   readonly appliedCity = signal(this.profileDefaults?.city || '');
+  readonly appliedAddress = signal(this.profileDefaults?.address || '');
   readonly draftDistanceRange = signal(this.profileDefaults?.distanceRange || 50);
   readonly appliedDistanceRange = signal(this.profileDefaults?.distanceRange || 50);
   readonly draftLatitude = signal<number | null>(this.profileDefaults?.latitude || null);
@@ -210,6 +213,19 @@ export class UserEventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWil
 
   readonly citySuggestions = signal<CitySuggestion[]>([]);
   readonly locatingMe = signal(false);
+  readonly zoomLevel = signal(15);
+  readonly mapType = signal<MapType>('roadmap');
+  /** Search box text (register/profile's `editAddress` pattern) - live while
+   * typing, then overwritten with the full formatted address once a
+   * suggestion is picked, GPS resolves, or a pin is dropped. Kept separate
+   * from `draftCity`, which only ever holds the short, *resolved* city name
+   * (never a half-typed fragment) since that's the value that actually gets
+   * applied/saved as the filter's "city". */
+  readonly draftAddress = signal('');
+  /** Only truthy once a real location is resolved (mirrors `draftCity` being
+   * empty while still typing) - shows the full address line below the search
+   * box, or the hint text while nothing's resolved yet. */
+  readonly resolvedAddressLine = computed(() => (this.draftCity() ? this.draftAddress() : null));
 
   readonly isDisciplineModalOpen = signal(false);
   readonly isEventTypeModalOpen = signal(false);
@@ -709,17 +725,30 @@ export class UserEventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWil
     this.draftLatitude.set(this.appliedLatitude());
     this.draftLongitude.set(this.appliedLongitude());
     this.draftCity.set(this.appliedCity());
+    this.draftAddress.set(this.appliedAddress());
     this.isLocationModalOpen.set(true);
   }
 
-  onDistanceChange(event: Event): void {
-    const value = (event as CustomEvent<{ value: number }>).detail.value;
+  zoomIn(): void {
+    this.zoomLevel.update((zoom) => Math.min(MAX_ZOOM, zoom + 1));
+  }
+
+  zoomOut(): void {
+    this.zoomLevel.update((zoom) => Math.max(MIN_ZOOM, zoom - 1));
+  }
+
+  toggleMapType(): void {
+    this.mapType.update((type) => (type === 'roadmap' ? 'satellite' : 'roadmap'));
+  }
+
+  onDistanceChange(value: number): void {
     this.draftDistanceRange.set(value);
   }
 
   onCityInput(value: string | null | undefined): void {
     const query = (value ?? '').trim();
-    this.draftCity.set(value ?? '');
+    this.draftAddress.set(value ?? '');
+    this.draftCity.set('');
     if (this.cityInputTimer) {
       clearTimeout(this.cityInputTimer);
     }
@@ -744,9 +773,32 @@ export class UserEventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWil
         this.draftLatitude.set(result.latitude);
         this.draftLongitude.set(result.longitude);
         this.draftCity.set(result.city);
+        this.draftAddress.set(result.formattedAddress);
         this.citySuggestions.set([]);
       },
     });
+  }
+
+  /** Shared by "use my current location" (GPS) and tapping a pin on the map. */
+  private reverseGeocodeTo(lat: number, lng: number): void {
+    this.geocodingService.reverse(lat, lng).subscribe({
+      next: (result) => {
+        this.draftLatitude.set(lat);
+        this.draftLongitude.set(lng);
+        this.draftCity.set(result?.city ?? '');
+        this.draftAddress.set(result?.formattedAddress ?? '');
+        this.locatingMe.set(false);
+      },
+      error: () => {
+        this.draftLatitude.set(lat);
+        this.draftLongitude.set(lng);
+        this.locatingMe.set(false);
+      },
+    });
+  }
+
+  onPinMoved(coords: { lat: number; lng: number }): void {
+    this.reverseGeocodeTo(coords.lat, coords.lng);
   }
 
   useCurrentLocation(): void {
@@ -755,23 +807,7 @@ export class UserEventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWil
     }
     this.locatingMe.set(true);
     navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const lat = position.coords.latitude;
-        const lng = position.coords.longitude;
-        this.geocodingService.reverse(lat, lng).subscribe({
-          next: (result) => {
-            this.draftLatitude.set(lat);
-            this.draftLongitude.set(lng);
-            this.draftCity.set(result?.city ?? '');
-            this.locatingMe.set(false);
-          },
-          error: () => {
-            this.draftLatitude.set(lat);
-            this.draftLongitude.set(lng);
-            this.locatingMe.set(false);
-          },
-        });
-      },
+      (position) => this.reverseGeocodeTo(position.coords.latitude, position.coords.longitude),
       () => this.locatingMe.set(false),
     );
   }
@@ -783,6 +819,7 @@ export class UserEventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWil
     this.appliedLatitude.set(this.draftLatitude());
     this.appliedLongitude.set(this.draftLongitude());
     this.appliedCity.set(this.draftCity());
+    this.appliedAddress.set(this.draftAddress());
     this.locationApplyFlash.trigger();
   }
 
@@ -792,14 +829,17 @@ export class UserEventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWil
   clearLocationFilter(): void {
     const user = this.authService.currentUser();
     const city = user?.city || '';
+    const address = user?.address || '';
     const distanceRange = user?.distanceRange || 50;
     const latitude = user?.latitude || null;
     const longitude = user?.longitude || null;
     this.draftCity.set(city);
+    this.draftAddress.set(address);
     this.draftDistanceRange.set(distanceRange);
     this.draftLatitude.set(latitude);
     this.draftLongitude.set(longitude);
     this.appliedCity.set(city);
+    this.appliedAddress.set(address);
     this.appliedDistanceRange.set(distanceRange);
     this.appliedLatitude.set(latitude);
     this.appliedLongitude.set(longitude);

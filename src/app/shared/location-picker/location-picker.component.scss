@@ -1,0 +1,285 @@
+// Single source of truth for the "map + zoom/satellite + search + current
+// location + address + distance" block, previously copy-pasted (and slowly
+// drifting - different element order per page) across register, profile,
+// event create/edit, event view and user-detail. See the component's own
+// doc comment for the full list of call sites.
+
+// Host pages keep their own outer wrapper (register's bare .step, profile/
+// event-detail's card-styled .section) unchanged - this only standardizes
+// the title itself, which had drifted to 3 slightly different margins
+// despite already sharing the same 0.95rem/700 size everywhere.
+// Default (inline, compact): an ordinary block wrapper, laid out exactly as
+// if these were bare siblings in the host page (register's .step, profile/
+// event-detail's .section, ...). The .expanded variant of this same markup
+// (see the component's `pickerBody` template) instead renders inside a real
+// `<ion-modal>` - see the component's own doc comment for why a plain CSS
+// `position: fixed` overlay doesn't work here - so it just needs to fill
+// that modal's already-fullscreen content area edge to edge.
+.location-picker-root {
+  display: block;
+
+  &.expanded {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    min-height: 100dvh;
+    padding: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom));
+    overflow-y: auto;
+    box-sizing: border-box;
+
+    // `flex: 1` on .map-preview would need this container's own height to
+    // reliably resolve to the full viewport first, which - even sized off
+    // `dvh` above - didn't pan out in practice (Ionic's modal wrapper
+    // structure between us and the true viewport keeps the flex box's
+    // resolved height ambiguous, so there's nothing for `flex: 1` to grow
+    // into). Sizing the map straight off `dvh` instead doesn't have that
+    // problem - a `dvh` length always resolves against the real viewport
+    // no matter what any ancestor's height computes to, so this reliably
+    // gives a big map regardless of what's going on above it in the DOM.
+    // Kept to just over half the screen (not the ~72dvh this could
+    // technically afford now that address line/distance are hidden here)
+    // specifically so the suggestions list below always has real,
+    // guaranteed room - the software keyboard covering the lower portion of
+    // the screen while typing was squeezing that space to near-zero at
+    // 72dvh, since a fixed `dvh` height doesn't shrink for the keyboard the
+    // way the visible viewport does.
+    .map-preview {
+      flex: none;
+      height: 58vh;
+      height: 58dvh;
+    }
+
+    // Guaranteed own scroll region, independent of the keyboard/map above -
+    // without this a handful of suggestions could still end up needing more
+    // vertical room than was left, going invisible below the fold instead
+    // of being reachable by scrolling this specific list.
+    .city-suggestions {
+      max-height: 25vh;
+      max-height: 25dvh;
+      overflow-y: auto;
+    }
+
+    // ion-searchbar's host was stretching to fill the flex column's leftover
+    // vertical space here (unlike every other .tgtg-searchbar usage in the
+    // app, which all sit in plain block-flow containers, never a flex
+    // column) - the visible pill still rendered at its normal size at the
+    // top, but .tgtg-searchbar's own border/border-radius wrapped the whole
+    // stretched host, drawing a huge teal oval around a lot of empty space
+    // below it. Pinning it to its content size stops it claiming that space.
+    .tgtg-searchbar {
+      flex: none;
+      height: auto;
+    }
+  }
+}
+
+.location-picker-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+
+  h2 {
+    font-size: 0.95rem;
+    font-weight: 700;
+    margin: 0;
+  }
+}
+
+.visibility-toggle-btn {
+  appearance: none;
+  border: none;
+  background: transparent;
+  padding: 8px;
+  margin: -8px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.visibility-icon {
+  font-size: 1.15rem;
+  color: var(--ion-color-primary);
+}
+
+.map-preview {
+  position: relative;
+  width: 100%;
+  height: 280px;
+  border-radius: 16px;
+  overflow: hidden;
+  margin-bottom: 12px;
+
+  google-map {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+}
+
+.expand-toggle-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1;
+  appearance: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: none;
+  background: var(--app-surface-card);
+  color: var(--ion-color-primary);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+
+  ion-icon {
+    font-size: 1.15rem;
+  }
+}
+
+.map-preview-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  background: var(--ion-color-light);
+  border: 1px dashed var(--ion-color-light-shade);
+  height: 100%;
+
+  p {
+    color: var(--ion-color-medium);
+    padding: 0 20px;
+    margin: 0;
+  }
+}
+
+.map-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.zoom-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ion-color-medium);
+
+  button {
+    appearance: none;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 1px solid var(--ion-color-light-shade);
+    background: var(--app-surface-card);
+    color: var(--ion-color-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+  }
+}
+
+.map-type-toggle {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--ion-color-primary);
+  border-radius: 999px;
+  padding: 6px 12px;
+  background: var(--app-surface-card);
+  color: var(--ion-color-primary);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.tgtg-searchbar {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  font-size: 0.9rem;
+  margin-bottom: 10px;
+  --background: var(--ion-color-light-shade);
+  --border-radius: 999px;
+  --box-shadow: none;
+  --placeholder-color: var(--ion-color-medium);
+  --icon-color: var(--ion-color-medium);
+  --color: var(--app-text-strong);
+  border: 1.5px solid var(--ion-color-primary);
+  border-radius: 999px;
+}
+
+.location-hint {
+  margin: -4px 0 10px;
+  font-size: 0.78rem;
+  color: var(--ion-color-medium);
+  font-style: italic;
+}
+
+.event-detail-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 8px;
+  font-size: 0.88rem;
+  color: var(--ion-color-medium);
+
+  ion-icon {
+    flex: 0 0 auto;
+    font-size: 1.1rem;
+  }
+}
+
+.city-suggestions {
+  display: flex;
+  flex-direction: column;
+  background: var(--app-surface-card);
+  border: 1px solid var(--ion-color-light-shade);
+  border-radius: 12px;
+  margin-top: -4px;
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+
+.city-suggestion {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: none;
+  background: transparent;
+  padding: 10px 14px;
+  font-size: 0.85rem;
+  text-align: left;
+  color: var(--app-text-strong);
+  cursor: pointer;
+
+  &:not(:last-child) {
+    border-bottom: 1px solid var(--ion-color-light-shade);
+  }
+
+  ion-icon {
+    color: var(--ion-color-medium);
+    flex: 0 0 auto;
+  }
+}
+
+.range-label {
+  margin-top: 24px;
+  margin-bottom: 0;
+  font-weight: 600;
+}
+
+.required-marker {
+  color: var(--ion-color-primary);
+  margin-left: 2px;
+}

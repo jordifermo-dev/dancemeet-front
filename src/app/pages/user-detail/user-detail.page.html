@@ -141,35 +141,26 @@
 
       <!-- Ubicación -->
       <section class="section">
-        <h2>{{ 'profile.locationSection' | translate }}</h2>
         @if (showLocation()) {
-          <p class="event-detail-line">
-            <ion-icon name="location-outline"></ion-icon>
-            <span>{{ user()!.address }}, {{ user()!.city }}</span>
-          </p>
-          <div class="map-preview">
-            <iframe [src]="mapEmbedUrl()" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
-          </div>
-          <div class="map-controls">
-            <div class="zoom-controls">
-              <button type="button" (click)="zoomOut()">
-                <ion-icon name="remove-outline"></ion-icon>
-              </button>
-              <span>{{ zoomLevel() }}</span>
-              <button type="button" (click)="zoomIn()">
-                <ion-icon name="add-outline"></ion-icon>
-              </button>
-            </div>
-            <button type="button" class="map-type-toggle" (click)="toggleMapType()">
-              <ion-icon name="layers-outline"></ion-icon>
-              {{ (mapType() === 'roadmap' ? 'userDetail.mapTypeSatellite' : 'userDetail.mapTypeRoadmap') | translate }}
-            </button>
-          </div>
-          <ion-button expand="block" fill="outline" (click)="openDirections()">
-            <ion-icon slot="start" [name]="directionsFlash.active() ? 'checkmark-outline' : 'navigate-outline'"></ion-icon>
-            {{ (directionsFlash.active() ? 'eventDetail.directionsOpened' : 'userDetail.directionsButton') | translate }}
-          </ion-button>
+          <app-location-picker
+            titleKey="profile.locationSection"
+            [editable]="false"
+            [lat]="user()!.latitude"
+            [lng]="user()!.longitude"
+            [zoom]="zoomLevel()"
+            [mapType]="mapType()"
+            [showSearch]="false"
+            [showCurrentLocationButton]="false"
+            [addressLine]="userAddressLine()"
+            [showDirectionsButton]="true"
+            [directionsActive]="directionsFlash.active()"
+            (zoomIn)="zoomIn()"
+            (zoomOut)="zoomOut()"
+            (mapTypeToggle)="toggleMapType()"
+            (directions)="openDirections()"
+          ></app-location-picker>
         } @else {
+          <h2>{{ 'profile.locationSection' | translate }}</h2>
           <p class="city-only">{{ user()!.city }}</p>
         }
       </section>

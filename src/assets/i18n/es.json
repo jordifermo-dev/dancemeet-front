@@ -112,7 +112,6 @@
     "statusCancelled": "Cancelado",
     "statusFinished": "Finalizado",
     "locationTitle": "Ubicación y distancia",
-    "mapEmptyState": "Busca tu ciudad o usa tu ubicación actual para ver el mapa.",
     "cityLabel": "Ciudad",
     "cityPlaceholder": "¿Dónde te mueves?",
     "useCurrentLocation": "Utilizar mi ubicación actual",
@@ -219,7 +218,9 @@
     "noEvents": "No se han encontrado eventos en esta zona.",
     "selectFiltersPrompt": "Ajusta los filtros para ver eventos.",
     "minSelectionWarning": "Debes tener al menos uno seleccionado.",
-    "mapLoadError": "No se ha podido cargar el mapa."
+    "mapLoadError": "No se ha podido cargar el mapa.",
+    "mapExpand": "Ampliar mapa a pantalla completa",
+    "mapCollapse": "Minimizar mapa"
   },
   "eventCard": {
     "free": "Gratis"

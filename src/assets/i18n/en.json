@@ -112,7 +112,6 @@
     "statusCancelled": "Cancelled",
     "statusFinished": "Finished",
     "locationTitle": "Location and distance",
-    "mapEmptyState": "Search your city or use your current location to see the map.",
     "cityLabel": "City",
     "cityPlaceholder": "Where do you get around?",
     "useCurrentLocation": "Use my current location",
@@ -219,7 +218,9 @@
     "noEvents": "No events found in this area.",
     "selectFiltersPrompt": "Adjust your filters to see events.",
     "minSelectionWarning": "You must keep at least one selected.",
-    "mapLoadError": "The map couldn't be loaded."
+    "mapLoadError": "The map couldn't be loaded.",
+    "mapExpand": "Expand map to full screen",
+    "mapCollapse": "Collapse map"
   },
   "eventCard": {
     "free": "Free"

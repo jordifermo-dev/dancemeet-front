@@ -188,84 +188,31 @@
 
       <!-- Ubicación -->
       <section class="section">
-        <div class="section-header-row">
-          <h2>{{ 'profile.locationSection' | translate }}</h2>
-          <div class="visibility-control">
-            <button
-              type="button"
-              class="visibility-toggle-btn"
-              (click)="showLocation.set(!showLocation())"
-              [attr.aria-label]="(showLocation() ? 'profile.visibleToOthers' : 'profile.hiddenFromOthers') | translate"
-            >
-              <ion-icon
-                class="visibility-icon"
-                [class.active]="showLocation()"
-                [name]="showLocation() ? 'eye-outline' : 'eye-off-outline'"
-              ></ion-icon>
-            </button>
-          </div>
-        </div>
-
-        @if (mapEmbedUrl(); as embedUrl) {
-          <div class="map-preview">
-            <iframe [src]="embedUrl" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
-          </div>
-          <div class="map-controls">
-            <div class="zoom-controls">
-              <button type="button" (click)="zoomOut()">
-                <ion-icon name="remove-outline"></ion-icon>
-              </button>
-              <span>{{ zoomLevel() }}</span>
-              <button type="button" (click)="zoomIn()">
-                <ion-icon name="add-outline"></ion-icon>
-              </button>
-            </div>
-            <button type="button" class="map-type-toggle" (click)="toggleMapType()">
-              <ion-icon name="layers-outline"></ion-icon>
-              {{ (mapType() === 'roadmap' ? 'userDetail.mapTypeSatellite' : 'userDetail.mapTypeRoadmap') | translate }}
-            </button>
-          </div>
-        }
-
-        <ion-searchbar
-          class="tgtg-searchbar"
-          [placeholder]="'eventDetail.addressLabel' | translate"
-          [value]="editAddress()"
-          [debounce]="0"
-          (ionInput)="onLocationInput($event.detail.value)"
-        ></ion-searchbar>
-        @if (!editCity()) {
-          <p class="location-hint">{{ 'eventDetail.locationHint' | translate }}</p>
-        }
-        @if (citySuggestions().length) {
-          <div class="city-suggestions">
-            @for (suggestion of citySuggestions(); track suggestion.placeId) {
-              <button type="button" class="city-suggestion" (click)="selectLocationSuggestion(suggestion)">
-                <ion-icon name="location-outline"></ion-icon>
-                {{ suggestion.description }}
-              </button>
-            }
-          </div>
-        }
-
-        <ion-button fill="clear" (click)="useCurrentLocation()" [disabled]="locatingMe()">
-          <ion-icon slot="start" name="locate-outline"></ion-icon>
-          {{ 'register.useCurrentLocation' | translate }}
-        </ion-button>
-        @if (editCity()) {
-          <p class="event-detail-line">
-            <ion-icon name="location-outline"></ion-icon>
-            <span>{{ editAddress() }}, {{ editCity() }}</span>
-          </p>
-        }
-
-        <p class="range-label">{{ 'register.distanceLabel' | translate: { km: distanceRange() } }}</p>
-        <ion-range
-          [min]="1"
-          [max]="150"
-          [value]="distanceRange()"
-          (ionChange)="onDistanceChange($event)"
-        ></ion-range>
+        <app-location-picker
+          titleKey="profile.locationSection"
+          [showHideToggle]="true"
+          [locationVisible]="showLocation()"
+          [editable]="true"
+          [lat]="latitude()"
+          [lng]="longitude()"
+          [zoom]="zoomLevel()"
+          [mapType]="mapType()"
+          [addressValue]="editAddress()"
+          [citySuggestions]="citySuggestions()"
+          [locating]="locatingMe()"
+          [addressLine]="addressLine()"
+          [showDistance]="true"
+          [distanceValue]="distanceRange()"
+          (visibleToggle)="showLocation.set(!showLocation())"
+          (zoomIn)="zoomIn()"
+          (zoomOut)="zoomOut()"
+          (mapTypeToggle)="toggleMapType()"
+          (addressInput)="onLocationInput($event)"
+          (suggestionSelect)="selectLocationSuggestion($event)"
+          (useCurrentLocation)="useCurrentLocation()"
+          (distanceChange)="onDistanceChange($event)"
+          (pinMoved)="onPinMoved($event)"
+        ></app-location-picker>
       </section>
 
       <!-- Acciones -->

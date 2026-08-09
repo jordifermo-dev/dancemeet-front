@@ -1,13 +1,18 @@
-import { Component, inject, signal } from '@angular/core';
-import { IonSearchbar, IonIcon, IonButton, IonModal, IonRange } from '@ionic/angular/standalone';
+import { Component, computed, inject, signal } from '@angular/core';
+import { IonIcon, IonButton, IonModal } from '@ionic/angular/standalone';
 import { TranslatePipe } from '@ngx-translate/core';
 import { addIcons } from 'ionicons';
-import { locationOutline, locateOutline, bookmarkOutline, refreshOutline, checkmarkOutline } from 'ionicons/icons';
+import { locationOutline, bookmarkOutline, refreshOutline, checkmarkOutline } from 'ionicons/icons';
 import { CitySuggestion, GeocodingService } from '../../services/geocoding.service';
 import { ExplorerFiltersService } from '../../pages/explorer/explorer-filters.service';
+import { MapType } from '../maps';
 import { createApplyFlash } from '../success-flash';
 import { FilterSheetHeaderComponent } from '../filter-sheet-header/filter-sheet-header.component';
 import { FilterActionsRowComponent } from '../filter-actions-row/filter-actions-row.component';
+import { LocationPickerComponent } from '../location-picker/location-picker.component';
+
+const MIN_ZOOM = 3;
+const MAX_ZOOM = 20;
 
 /** The "Ubicación" icon button + bottom sheet (distance, city search, current
  * location) shared by every tab that filters by location - all bound to the
@@ -19,14 +24,13 @@ import { FilterActionsRowComponent } from '../filter-actions-row/filter-actions-
   templateUrl: './location-filter-button.component.html',
   styleUrl: './location-filter-button.component.scss',
   imports: [
-    IonSearchbar,
     IonIcon,
     IonButton,
     IonModal,
-    IonRange,
     TranslatePipe,
     FilterSheetHeaderComponent,
     FilterActionsRowComponent,
+    LocationPickerComponent,
   ],
 })
 export class LocationFilterButtonComponent {
@@ -36,10 +40,16 @@ export class LocationFilterButtonComponent {
   readonly isOpen = signal(false);
   readonly citySuggestions = signal<CitySuggestion[]>([]);
   readonly locatingMe = signal(false);
+  readonly zoomLevel = signal(15);
+  readonly mapType = signal<MapType>('roadmap');
+  /** Only truthy once a real location is resolved (mirrors `filters.draftCity`
+   * being empty while still typing) - shows the full address line below the
+   * search box, or the hint text while nothing's resolved yet. */
+  readonly resolvedAddressLine = computed(() => (this.filters.draftCity() ? this.filters.draftAddress() : null));
   private cityInputTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor() {
-    addIcons({ locationOutline, locateOutline, bookmarkOutline, refreshOutline, checkmarkOutline });
+    addIcons({ locationOutline, bookmarkOutline, refreshOutline, checkmarkOutline });
   }
 
   open(): void {
@@ -48,17 +58,30 @@ export class LocationFilterButtonComponent {
     this.filters.draftLatitude.set(this.filters.appliedLatitude());
     this.filters.draftLongitude.set(this.filters.appliedLongitude());
     this.filters.draftCity.set(this.filters.appliedCity());
+    this.filters.draftAddress.set(this.filters.appliedAddress());
     this.isOpen.set(true);
   }
 
-  onDistanceChange(event: Event): void {
-    const value = (event as CustomEvent<{ value: number }>).detail.value;
+  zoomIn(): void {
+    this.zoomLevel.update((zoom) => Math.min(MAX_ZOOM, zoom + 1));
+  }
+
+  zoomOut(): void {
+    this.zoomLevel.update((zoom) => Math.max(MIN_ZOOM, zoom - 1));
+  }
+
+  toggleMapType(): void {
+    this.mapType.update((type) => (type === 'roadmap' ? 'satellite' : 'roadmap'));
+  }
+
+  onDistanceChange(value: number): void {
     this.filters.setDraftDistanceRange(value);
   }
 
   onCityInput(value: string | null | undefined): void {
     const query = (value ?? '').trim();
-    this.filters.draftCity.set(value ?? '');
+    this.filters.draftAddress.set(value ?? '');
+    this.filters.draftCity.set('');
     if (this.cityInputTimer) {
       clearTimeout(this.cityInputTimer);
     }
@@ -80,10 +103,28 @@ export class LocationFilterButtonComponent {
         if (!result) {
           return;
         }
-        this.filters.setDraftLocation(result.latitude, result.longitude, result.city);
+        this.filters.setDraftLocation(result.latitude, result.longitude, result.city, result.formattedAddress);
         this.citySuggestions.set([]);
       },
     });
+  }
+
+  /** Shared by "use my current location" (GPS) and tapping a pin on the map. */
+  private reverseGeocodeTo(lat: number, lng: number): void {
+    this.geocodingService.reverse(lat, lng).subscribe({
+      next: (result) => {
+        this.filters.setDraftLocation(lat, lng, result?.city ?? '', result?.formattedAddress ?? '');
+        this.locatingMe.set(false);
+      },
+      error: () => {
+        this.filters.setDraftLocation(lat, lng);
+        this.locatingMe.set(false);
+      },
+    });
+  }
+
+  onPinMoved(coords: { lat: number; lng: number }): void {
+    this.reverseGeocodeTo(coords.lat, coords.lng);
   }
 
   useCurrentLocation(): void {
@@ -92,20 +133,7 @@ export class LocationFilterButtonComponent {
     }
     this.locatingMe.set(true);
     navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const lat = position.coords.latitude;
-        const lng = position.coords.longitude;
-        this.geocodingService.reverse(lat, lng).subscribe({
-          next: (result) => {
-            this.filters.setDraftLocation(lat, lng, result?.city ?? '');
-            this.locatingMe.set(false);
-          },
-          error: () => {
-            this.filters.setDraftLocation(lat, lng);
-            this.locatingMe.set(false);
-          },
-        });
-      },
+      (position) => this.reverseGeocodeTo(position.coords.latitude, position.coords.longitude),
       () => this.locatingMe.set(false),
     );
   }

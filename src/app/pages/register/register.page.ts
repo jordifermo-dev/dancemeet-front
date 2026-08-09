@@ -6,31 +6,15 @@ import {
   ValidationErrors,
   Validators,
 } from '@angular/forms';
-import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import {
-  IonContent,
-  IonButton,
-  IonIcon,
-  IonItem,
-  IonInput,
-  IonSearchbar,
-  IonCheckbox,
-  IonRange,
-  IonText,
-} from '@ionic/angular/standalone';
+import { IonContent, IonButton, IonIcon, IonItem, IonInput, IonCheckbox, IonText } from '@ionic/angular/standalone';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { addIcons } from 'ionicons';
 import {
   chevronBack,
-  locateOutline,
-  locationOutline,
   eyeOutline,
   eyeOffOutline,
-  addOutline,
-  removeOutline,
-  layersOutline,
   checkmarkOutline,
   chevronBackOutline,
   chevronForwardOutline,
@@ -45,8 +29,9 @@ import { CitySuggestion, GeocodingService } from '../../services/geocoding.servi
 import { CreateUserPayload, Discipline, DISCIPLINE_NAMES, EventType, EVENT_TYPE_NAMES } from '../../models';
 import { firebaseErrorMessage } from '../../shared/firebase-error-message';
 import { DISCIPLINE_ICON_FILES, sortByNameOrder } from '../../shared/icon-catalog';
-import { MapType, mapEmbedUrl as buildMapEmbedUrl } from '../../shared/maps';
+import { MapType } from '../../shared/maps';
 import { ChipGridComponent } from '../../shared/chip-grid/chip-grid.component';
+import { LocationPickerComponent } from '../../shared/location-picker/location-picker.component';
 import { disciplineChipItems, eventTypeChipItems } from '../../shared/chip-grid/chip-grid-presets';
 
 const MIN_ZOOM = 3;
@@ -86,12 +71,11 @@ function passwordsMatchValidator(control: AbstractControl): ValidationErrors | n
     IonIcon,
     IonItem,
     IonInput,
-    IonSearchbar,
     IonCheckbox,
-    IonRange,
     IonText,
     TranslatePipe,
     ChipGridComponent,
+    LocationPickerComponent,
   ],
 })
 export class RegisterPage implements OnInit {
@@ -105,7 +89,6 @@ export class RegisterPage implements OnInit {
   private readonly geocodingService = inject(GeocodingService);
   private readonly translate = inject(TranslateService);
   private readonly router = inject(Router);
-  private readonly sanitizer = inject(DomSanitizer);
   private cityInputTimer: ReturnType<typeof setTimeout> | null = null;
 
   readonly totalSteps = 5;
@@ -141,18 +124,14 @@ export class RegisterPage implements OnInit {
 
   readonly citySuggestions = signal<CitySuggestion[]>([]);
 
-  readonly zoomLevel = signal(15);
+  // Starts wide (shows all of Catalunya around the map's default Barcelona
+  // center) since there's no location yet on a fresh register - jumps to a
+  // close-up zoom once a real one is picked, in reverseGeocodeTo/
+  // selectLocationSuggestion below.
+  readonly zoomLevel = signal(8);
   readonly mapType = signal<MapType>('roadmap');
 
-  readonly mapEmbedUrl = computed<SafeResourceUrl | null>(() => {
-    const lat = this.latitude();
-    const lng = this.longitude();
-    if (lat === null || lng === null) {
-      return null;
-    }
-    const url = buildMapEmbedUrl(lat, lng, this.zoomLevel(), this.mapType());
-    return this.sanitizer.bypassSecurityTrustResourceUrl(url);
-  });
+  readonly addressLine = computed(() => (this.editCity() ? `${this.editAddress()}, ${this.editCity()}` : null));
 
   readonly disciplines = signal<Discipline[]>(FALLBACK_DISCIPLINES);
   readonly selectedDisciplineIds = signal<string[]>([]);
@@ -173,13 +152,8 @@ export class RegisterPage implements OnInit {
   constructor() {
     addIcons({
       chevronBack,
-      locateOutline,
-      locationOutline,
       eyeOutline,
       eyeOffOutline,
-      addOutline,
-      removeOutline,
-      layersOutline,
       checkmarkOutline,
       chevronBackOutline,
       chevronForwardOutline,
@@ -301,9 +275,35 @@ export class RegisterPage implements OnInit {
     );
   }
 
-  onDistanceChange(event: Event): void {
-    const value = (event as CustomEvent<{ value: number }>).detail.value;
+  onDistanceChange(value: number): void {
     this.distanceRange.set(value);
+  }
+
+  /** Reverse-geocode so a real address/city gets written to the DB, not a
+   * generic "current location" placeholder - falls back to that placeholder
+   * only if the geocoding backend is unreachable/misconfigured. Shared by
+   * "use my current location" (GPS) and tapping a pin on the map. */
+  private reverseGeocodeTo(lat: number, lng: number): void {
+    this.latitude.set(lat);
+    this.longitude.set(lng);
+    this.zoomLevel.set(15);
+    this.citySuggestions.set([]);
+    this.geocodingService.reverse(lat, lng).subscribe({
+      next: (result) => {
+        this.editAddress.set(result?.formattedAddress ?? this.translate.instant('register.currentLocationValue'));
+        this.editCity.set(result?.city ?? this.translate.instant('register.currentLocationValue'));
+        this.locatingMe.set(false);
+      },
+      error: () => {
+        this.editAddress.set(this.translate.instant('register.currentLocationValue'));
+        this.editCity.set(this.translate.instant('register.currentLocationValue'));
+        this.locatingMe.set(false);
+      },
+    });
+  }
+
+  onPinMoved(coords: { lat: number; lng: number }): void {
+    this.reverseGeocodeTo(coords.lat, coords.lng);
   }
 
   useCurrentLocation(): void {
@@ -313,28 +313,7 @@ export class RegisterPage implements OnInit {
     }
     this.locatingMe.set(true);
     navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const lat = position.coords.latitude;
-        const lng = position.coords.longitude;
-        this.latitude.set(lat);
-        this.longitude.set(lng);
-        this.citySuggestions.set([]);
-        // Reverse-geocode so a real address/city gets written to the DB, not a
-        // generic "current location" placeholder - falls back to that placeholder
-        // only if the geocoding backend is unreachable/misconfigured.
-        this.geocodingService.reverse(lat, lng).subscribe({
-          next: (result) => {
-            this.editAddress.set(result?.formattedAddress ?? this.translate.instant('register.currentLocationValue'));
-            this.editCity.set(result?.city ?? this.translate.instant('register.currentLocationValue'));
-            this.locatingMe.set(false);
-          },
-          error: () => {
-            this.editAddress.set(this.translate.instant('register.currentLocationValue'));
-            this.editCity.set(this.translate.instant('register.currentLocationValue'));
-            this.locatingMe.set(false);
-          },
-        });
-      },
+      (position) => this.reverseGeocodeTo(position.coords.latitude, position.coords.longitude),
       () => {
         this.locatingMe.set(false);
         this.errorMessage.set(this.translate.instant('register.geolocationFailed'));
@@ -372,6 +351,7 @@ export class RegisterPage implements OnInit {
         this.editCity.set(result.city);
         this.latitude.set(result.latitude);
         this.longitude.set(result.longitude);
+        this.zoomLevel.set(15);
       },
     });
   }

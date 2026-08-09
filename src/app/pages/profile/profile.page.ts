@@ -1,6 +1,5 @@
 import { Component, OnInit, computed, effect, inject, signal, untracked } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import {
@@ -13,20 +12,13 @@ import {
   IonIcon,
   IonItem,
   IonInput,
-  IonSearchbar,
-  IonRange,
   IonModal,
   ViewWillEnter,
 } from '@ionic/angular/standalone';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { addIcons } from 'ionicons';
 import {
-  locateOutline,
-  locationOutline,
   personOutline,
-  addOutline,
-  removeOutline,
-  layersOutline,
   settingsOutline,
   eyeOutline,
   eyeOffOutline,
@@ -58,7 +50,8 @@ import {
   User,
 } from '../../models';
 import { DISCIPLINE_ICON_FILES, SocialIconKey, socialIconUrl, sortByNameOrder, STATUS_LABEL_KEYS } from '../../shared/icon-catalog';
-import { MapType, mapEmbedUrl as buildMapEmbedUrl } from '../../shared/maps';
+import { MapType } from '../../shared/maps';
+import { LocationPickerComponent } from '../../shared/location-picker/location-picker.component';
 import { PhotoEditorComponent } from '../../shared/photo-editor/photo-editor.component';
 import { NotificationBellComponent } from '../../shared/notification-bell/notification-bell.component';
 import { FilterSheetHeaderComponent } from '../../shared/filter-sheet-header/filter-sheet-header.component';
@@ -137,8 +130,6 @@ const LANGUAGE_OPTIONS = SUPPORTED_LANGUAGES.map((code) => ({
     IonIcon,
     IonItem,
     IonInput,
-    IonSearchbar,
-    IonRange,
     IonModal,
     TranslatePipe,
     PhotoEditorComponent,
@@ -146,6 +137,7 @@ const LANGUAGE_OPTIONS = SUPPORTED_LANGUAGES.map((code) => ({
     FilterSheetHeaderComponent,
     FilterActionsRowComponent,
     ChipGridComponent,
+    LocationPickerComponent,
   ],
 })
 export class ProfilePage implements OnInit, ViewWillEnter, ComponentWithUnsavedChanges {
@@ -159,7 +151,6 @@ export class ProfilePage implements OnInit, ViewWillEnter, ComponentWithUnsavedC
   private readonly geocodingService = inject(GeocodingService);
   private readonly translate = inject(TranslateService);
   private readonly router = inject(Router);
-  private readonly sanitizer = inject(DomSanitizer);
   readonly minSelectionWarning = inject(MinSelectionWarningService);
   private cityInputTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -195,16 +186,7 @@ export class ProfilePage implements OnInit, ViewWillEnter, ComponentWithUnsavedC
 
   readonly zoomLevel = signal(15);
   readonly mapType = signal<MapType>('roadmap');
-
-  readonly mapEmbedUrl = computed<SafeResourceUrl | null>(() => {
-    const lat = this.latitude();
-    const lng = this.longitude();
-    if (lat === null || lng === null) {
-      return null;
-    }
-    const url = buildMapEmbedUrl(lat, lng, this.zoomLevel(), this.mapType());
-    return this.sanitizer.bypassSecurityTrustResourceUrl(url);
-  });
+  readonly addressLine = computed(() => (this.editCity() ? `${this.editAddress()}, ${this.editCity()}` : null));
   readonly locatingMe = signal(false);
   readonly citySuggestions = signal<CitySuggestion[]>([]);
 
@@ -258,12 +240,7 @@ export class ProfilePage implements OnInit, ViewWillEnter, ComponentWithUnsavedC
 
   constructor() {
     addIcons({
-      locateOutline,
-      locationOutline,
       personOutline,
-      addOutline,
-      removeOutline,
-      layersOutline,
       settingsOutline,
       eyeOutline,
       eyeOffOutline,
@@ -541,8 +518,7 @@ export class ProfilePage implements OnInit, ViewWillEnter, ComponentWithUnsavedC
     this.selectedRelationTypes.set(this.relationOptions.map((option) => option.id));
   }
 
-  onDistanceChange(event: Event): void {
-    const value = (event as CustomEvent<{ value: number }>).detail.value;
+  onDistanceChange(value: number): void {
     this.distanceRange.set(value);
   }
 
@@ -558,34 +534,39 @@ export class ProfilePage implements OnInit, ViewWillEnter, ComponentWithUnsavedC
     this.mapType.update((type) => (type === 'roadmap' ? 'satellite' : 'roadmap'));
   }
 
+  /** Reverse-geocode so a real address/city gets written to the DB, not a
+   * generic "current location" placeholder - falls back to that placeholder
+   * only if the geocoding backend is unreachable/misconfigured. Shared by
+   * "use my current location" (GPS) and tapping a pin on the map. */
+  private reverseGeocodeTo(lat: number, lng: number): void {
+    this.latitude.set(lat);
+    this.longitude.set(lng);
+    this.citySuggestions.set([]);
+    this.geocodingService.reverse(lat, lng).subscribe({
+      next: (result) => {
+        this.editAddress.set(result?.formattedAddress ?? this.translate.instant('register.currentLocationValue'));
+        this.editCity.set(result?.city ?? this.translate.instant('register.currentLocationValue'));
+        this.locatingMe.set(false);
+      },
+      error: () => {
+        this.editAddress.set(this.translate.instant('register.currentLocationValue'));
+        this.editCity.set(this.translate.instant('register.currentLocationValue'));
+        this.locatingMe.set(false);
+      },
+    });
+  }
+
+  onPinMoved(coords: { lat: number; lng: number }): void {
+    this.reverseGeocodeTo(coords.lat, coords.lng);
+  }
+
   useCurrentLocation(): void {
     if (!navigator.geolocation) {
       return;
     }
     this.locatingMe.set(true);
     navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const lat = position.coords.latitude;
-        const lng = position.coords.longitude;
-        this.latitude.set(lat);
-        this.longitude.set(lng);
-        this.citySuggestions.set([]);
-        // Reverse-geocode so a real address/city gets written to the DB, not a
-        // generic "current location" placeholder - falls back to that placeholder
-        // only if the geocoding backend is unreachable/misconfigured.
-        this.geocodingService.reverse(lat, lng).subscribe({
-          next: (result) => {
-            this.editAddress.set(result?.formattedAddress ?? this.translate.instant('register.currentLocationValue'));
-            this.editCity.set(result?.city ?? this.translate.instant('register.currentLocationValue'));
-            this.locatingMe.set(false);
-          },
-          error: () => {
-            this.editAddress.set(this.translate.instant('register.currentLocationValue'));
-            this.editCity.set(this.translate.instant('register.currentLocationValue'));
-            this.locatingMe.set(false);
-          },
-        });
-      },
+      (position) => this.reverseGeocodeTo(position.coords.latitude, position.coords.longitude),
       () => {
         this.locatingMe.set(false);
       },

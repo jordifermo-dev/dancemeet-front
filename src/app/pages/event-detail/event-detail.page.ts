@@ -4,7 +4,6 @@ import { Component, ElementRef, computed, inject, signal, viewChild } from '@ang
 import { toSignal } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
   IonHeader,
@@ -22,7 +21,6 @@ import {
   IonTextarea,
   IonToggle,
   IonDatetime,
-  IonSearchbar,
   IonCheckbox,
 } from '@ionic/angular/standalone';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
@@ -79,9 +77,10 @@ import {
   STATUS_LABEL_KEYS,
   sortByNameOrder,
 } from '../../shared/icon-catalog';
-import { MapType, mapEmbedUrl as buildMapEmbedUrl } from '../../shared/maps';
+import { MapType } from '../../shared/maps';
 import { formatEventDateRange, formatEventDateOnly } from '../../shared/event-date-format';
 import { buildGoogleCalendarUrl, buildIcs, downloadIcs } from '../../shared/calendar-export';
+import { LocationPickerComponent } from '../../shared/location-picker/location-picker.component';
 import { PhotoEditorComponent } from '../../shared/photo-editor/photo-editor.component';
 import { FilterSheetHeaderComponent } from '../../shared/filter-sheet-header/filter-sheet-header.component';
 import { FilterActionsRowComponent } from '../../shared/filter-actions-row/filter-actions-row.component';
@@ -228,9 +227,9 @@ function withTimePart(base: number, timeValue: string): number {
     IonTextarea,
     IonToggle,
     IonDatetime,
-    IonSearchbar,
     IonCheckbox,
     TranslatePipe,
+    LocationPickerComponent,
     PhotoEditorComponent,
     FilterSheetHeaderComponent,
     FilterActionsRowComponent,
@@ -242,7 +241,6 @@ export class EventDetailPage implements ComponentWithUnsavedChanges {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly location = inject(Location);
-  private readonly sanitizer = inject(DomSanitizer);
   private readonly authService = inject(AuthService);
   private readonly eventService = inject(EventService);
   private readonly favoriteService = inject(FavoriteService);
@@ -372,13 +370,9 @@ export class EventDetailPage implements ComponentWithUnsavedChanges {
 
   readonly zoomLevel = signal(15);
   readonly mapType = signal<MapType>('roadmap');
-  readonly mapEmbedUrl = computed<SafeResourceUrl | null>(() => {
+  readonly eventAddressLine = computed(() => {
     const event = this.event();
-    if (!event) {
-      return null;
-    }
-    const url = buildMapEmbedUrl(event.latitude, event.longitude, this.zoomLevel(), this.mapType());
-    return this.sanitizer.bypassSecurityTrustResourceUrl(url);
+    return event ? `${event.address}, ${event.city}` : null;
   });
 
   readonly socialIconUrl = socialIconUrl;
@@ -605,15 +599,12 @@ export class EventDetailPage implements ComponentWithUnsavedChanges {
   readonly editTimeFromIso = computed(() => `1970-01-01T${this.editTimeFromValue()}:00`);
   readonly editTimeToIso = computed(() => `1970-01-01T${this.editTimeToValue()}:00`);
 
-  readonly editMapEmbedUrl = computed<SafeResourceUrl | null>(() => {
-    const latitude = this.editLatitude();
-    const longitude = this.editLongitude();
-    if (!latitude && !longitude) {
-      return null;
-    }
-    const url = buildMapEmbedUrl(latitude, longitude, this.zoomLevel(), this.mapType());
-    return this.sanitizer.bypassSecurityTrustResourceUrl(url);
-  });
+  // null (not 0) means "nothing picked yet" - editLatitude/editLongitude
+  // default to plain 0, which is otherwise indistinguishable from a real
+  // (admittedly implausible) null-island event location.
+  readonly editMapLat = computed(() => (this.editLatitude() || this.editLongitude() ? this.editLatitude() : null));
+  readonly editMapLng = computed(() => (this.editLatitude() || this.editLongitude() ? this.editLongitude() : null));
+  readonly editAddressLine = computed(() => (this.editCity() ? `${this.editAddress()}, ${this.editCity()}` : null));
 
   // editForm.valid/controls.X.invalid are plain Reactive Forms properties,
   // not signals - a computed() that reads them has no way to know when a
@@ -775,6 +766,15 @@ export class EventDetailPage implements ComponentWithUnsavedChanges {
   private finishEnteringCreateMode(): void {
     this.isCreateMode.set(true);
     this.isEditMode.set(true);
+    // Starts wide (shows all of Catalunya around the map's default Barcelona
+    // center) only for a genuinely blank new event - populateFormFromReuse
+    // (called right before this, for "reutilizar evento") already set a real
+    // lat/lng, so that case keeps the normal close-up zoom instead of
+    // zooming back out. Jumps to close-up once a real location is picked, in
+    // selectLocationSuggestion/reverseGeocodeEditTo above.
+    if (!this.editLatitude() && !this.editLongitude()) {
+      this.zoomLevel.set(8);
+    }
     this.captureEditBaseline();
     this.loading.set(false);
   }
@@ -1334,8 +1334,32 @@ export class EventDetailPage implements ComponentWithUnsavedChanges {
         this.editLatitude.set(result.latitude);
         this.editLongitude.set(result.longitude);
         this.editCitySuggestions.set([]);
+        this.zoomLevel.set(15);
       },
     });
+  }
+
+  /** Shared by "use my current location" (GPS) and tapping a pin on the map. */
+  private reverseGeocodeEditTo(lat: number, lng: number): void {
+    this.geocodingService.reverse(lat, lng).subscribe({
+      next: (result) => {
+        this.editLatitude.set(lat);
+        this.editLongitude.set(lng);
+        this.editAddress.set(result?.formattedAddress ?? '');
+        this.editCity.set(result?.city ?? '');
+        this.editLocatingMe.set(false);
+        this.zoomLevel.set(15);
+      },
+      error: () => {
+        this.editLatitude.set(lat);
+        this.editLongitude.set(lng);
+        this.editLocatingMe.set(false);
+      },
+    });
+  }
+
+  onEditPinMoved(coords: { lat: number; lng: number }): void {
+    this.reverseGeocodeEditTo(coords.lat, coords.lng);
   }
 
   useCurrentLocationForEdit(): void {
@@ -1344,24 +1368,7 @@ export class EventDetailPage implements ComponentWithUnsavedChanges {
     }
     this.editLocatingMe.set(true);
     navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const lat = position.coords.latitude;
-        const lng = position.coords.longitude;
-        this.geocodingService.reverse(lat, lng).subscribe({
-          next: (result) => {
-            this.editLatitude.set(lat);
-            this.editLongitude.set(lng);
-            this.editAddress.set(result?.formattedAddress ?? '');
-            this.editCity.set(result?.city ?? '');
-            this.editLocatingMe.set(false);
-          },
-          error: () => {
-            this.editLatitude.set(lat);
-            this.editLongitude.set(lng);
-            this.editLocatingMe.set(false);
-          },
-        });
-      },
+      (position) => this.reverseGeocodeEditTo(position.coords.latitude, position.coords.longitude),
       () => this.editLocatingMe.set(false),
     );
   }

@@ -68,6 +68,14 @@ export class ExplorerFiltersService {
 
   readonly appliedCity = signal<string>('');
   readonly draftCity = signal<string>('');
+  /** Full formatted address (register/profile's `address` field) - shown in
+   * the location filter's search box, kept separate from `city` (which is
+   * all that's actually used to filter/display, and the same field shown as
+   * a privacy fallback on someone else's hidden-location profile) purely so
+   * reopening the filter shows the complete address again instead of just
+   * the short city name. */
+  readonly appliedAddress = signal<string>('');
+  readonly draftAddress = signal<string>('');
 
   private readonly initialRange = this.quickDateRange('today');
   readonly appliedDateFrom = signal<number>(this.initialRange.from);
@@ -419,11 +427,14 @@ export class ExplorerFiltersService {
     this.draftDistanceRange.set(value);
   }
 
-  setDraftLocation(latitude: number, longitude: number, city?: string): void {
+  setDraftLocation(latitude: number, longitude: number, city?: string, address?: string): void {
     this.draftLatitude.set(latitude);
     this.draftLongitude.set(longitude);
     if (city !== undefined) {
       this.draftCity.set(city);
+    }
+    if (address !== undefined) {
+      this.draftAddress.set(address);
     }
   }
 
@@ -432,6 +443,7 @@ export class ExplorerFiltersService {
     this.appliedLatitude.set(this.draftLatitude());
     this.appliedLongitude.set(this.draftLongitude());
     this.appliedCity.set(this.draftCity());
+    this.appliedAddress.set(this.draftAddress());
   }
 
   resetLocation(): void {
@@ -446,15 +458,18 @@ export class ExplorerFiltersService {
     const latitude = this.draftLatitude();
     const longitude = this.draftLongitude();
     const city = this.draftCity();
+    const address = this.draftAddress();
     this.appliedDistanceRange.set(distanceRange);
     this.appliedLatitude.set(latitude);
     this.appliedLongitude.set(longitude);
     this.appliedCity.set(city);
+    this.appliedAddress.set(address);
     this.persistToProfile({
       distanceRange,
       ...(latitude !== null ? { latitude } : {}),
       ...(longitude !== null ? { longitude } : {}),
       ...(city ? { city } : {}),
+      ...(address ? { address } : {}),
     });
   }
 
@@ -463,12 +478,15 @@ export class ExplorerFiltersService {
     const latitude = user.latitude || null;
     const longitude = user.longitude || null;
     const city = user.city || '';
+    const address = user.address || '';
     this.appliedDistanceRange.set(distanceRange);
     this.draftDistanceRange.set(distanceRange);
     this.appliedLatitude.set(latitude);
     this.draftLatitude.set(latitude);
     this.appliedLongitude.set(longitude);
     this.draftLongitude.set(longitude);
+    this.appliedAddress.set(address);
+    this.draftAddress.set(address);
     this.appliedCity.set(city);
     this.draftCity.set(city);
   }

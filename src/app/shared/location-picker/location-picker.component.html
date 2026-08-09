@@ -1,0 +1,132 @@
+<ng-template #pickerBody>
+  @if (titleKey || showHideToggle) {
+    <div class="location-picker-header">
+      @if (titleKey) {
+        <h2>{{ titleKey | translate }}@if (required) {<span class="required-marker">*</span>}</h2>
+      }
+      @if (showHideToggle) {
+        <button
+          type="button"
+          class="visibility-toggle-btn"
+          (click)="visibleToggle.emit()"
+          [attr.aria-label]="(locationVisible ? 'profile.visibleToOthers' : 'profile.hiddenFromOthers') | translate"
+        >
+          <ion-icon
+            class="visibility-icon"
+            [class.active]="locationVisible"
+            [name]="locationVisible ? 'eye-outline' : 'eye-off-outline'"
+          ></ion-icon>
+        </button>
+      }
+    </div>
+  }
+
+  <div class="map-preview">
+    @if (mapReady()) {
+      <google-map
+        [center]="center()"
+        [zoom]="zoom()"
+        [options]="mapOptions()"
+        width="100%"
+        height="100%"
+        (mapClick)="onMapClick($event)"
+      >
+        @if (hasLocation()) {
+          <map-marker [position]="center()"></map-marker>
+        }
+      </google-map>
+    } @else if (mapLoadError()) {
+      <div class="map-preview-empty">
+        <p>{{ 'explorer.mapLoadError' | translate }}</p>
+      </div>
+    }
+    @if (mapReady()) {
+      <button
+        type="button"
+        class="expand-toggle-btn"
+        (click)="toggleExpanded()"
+        [attr.aria-label]="(isExpanded() ? 'explorer.mapCollapse' : 'explorer.mapExpand') | translate"
+      >
+        <ion-icon [name]="isExpanded() ? 'contract-outline' : 'expand-outline'"></ion-icon>
+      </button>
+    }
+  </div>
+  <div class="map-controls">
+    <div class="zoom-controls">
+      <button type="button" (click)="zoomOut.emit()">
+        <ion-icon name="remove-outline"></ion-icon>
+      </button>
+      <span>{{ zoom() }}</span>
+      <button type="button" (click)="zoomIn.emit()">
+        <ion-icon name="add-outline"></ion-icon>
+      </button>
+    </div>
+    <button type="button" class="map-type-toggle" (click)="mapTypeToggle.emit()">
+      <ion-icon name="layers-outline"></ion-icon>
+      {{ (mapType() === 'roadmap' ? 'userDetail.mapTypeSatellite' : 'userDetail.mapTypeRoadmap') | translate }}
+    </button>
+  </div>
+
+  @if (showSearch) {
+    <ion-searchbar
+      class="tgtg-searchbar"
+      [placeholder]="'eventDetail.addressLabel' | translate"
+      [value]="addressValue"
+      [debounce]="0"
+      (ionInput)="onAddressInput($event.detail.value)"
+    ></ion-searchbar>
+    @if (!addressLine) {
+      <p class="location-hint">{{ 'eventDetail.locationHint' | translate }}</p>
+    }
+    @if (citySuggestions.length) {
+      <div class="city-suggestions">
+        @for (suggestion of citySuggestions; track suggestion.placeId) {
+          <button type="button" class="city-suggestion" (click)="suggestionSelect.emit(suggestion)">
+            <ion-icon name="location-outline"></ion-icon>
+            {{ suggestion.description }}
+          </button>
+        }
+      </div>
+    }
+  }
+
+  @if (showCurrentLocationButton) {
+    <ion-button fill="clear" (click)="useCurrentLocation.emit()" [disabled]="locating">
+      <ion-icon slot="start" name="locate-outline"></ion-icon>
+      {{ 'register.useCurrentLocation' | translate }}
+    </ion-button>
+  }
+
+  @if (addressLine && !isExpanded()) {
+    <p class="event-detail-line">
+      <ion-icon name="location-outline"></ion-icon>
+      <span>{{ addressLine }}</span>
+    </p>
+  }
+
+  @if (showDistance && !isExpanded()) {
+    <p class="range-label">{{ 'register.distanceLabel' | translate: { km: distanceValue } }}</p>
+    <ion-range [min]="1" [max]="150" [value]="distanceValue" (ionChange)="onDistanceChange($event)"></ion-range>
+  }
+
+  @if (showDirectionsButton) {
+    <ion-button expand="block" fill="outline" (click)="directions.emit()">
+      <ion-icon slot="start" [name]="directionsActive ? 'checkmark-outline' : 'navigate-outline'"></ion-icon>
+      {{ (directionsActive ? 'eventDetail.directionsOpened' : 'userDetail.directionsButton') | translate }}
+    </ion-button>
+  }
+</ng-template>
+
+@if (!isExpanded()) {
+  <div class="location-picker-root">
+    <ng-container [ngTemplateOutlet]="pickerBody"></ng-container>
+  </div>
+}
+
+<ion-modal [isOpen]="isExpanded()" (didDismiss)="isExpanded.set(false)">
+  <ng-template>
+    <div class="location-picker-root expanded">
+      <ng-container [ngTemplateOutlet]="pickerBody"></ng-container>
+    </div>
+  </ng-template>
+</ion-modal>

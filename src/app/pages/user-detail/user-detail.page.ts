@@ -1,6 +1,5 @@
 import { Location } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
-import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 import {
   IonHeader,
@@ -18,13 +17,8 @@ import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { addIcons } from 'ionicons';
 import {
   personOutline,
-  navigateOutline,
-  addOutline,
-  removeOutline,
-  layersOutline,
   personAddOutline,
   downloadOutline,
-  locationOutline,
   checkmarkOutline,
   trashOutline,
   personRemoveOutline,
@@ -37,7 +31,8 @@ import { DisciplineService } from '../../services/discipline.service';
 import { EventTypeService } from '../../services/event-type.service';
 import { Discipline, EventType, EVENT_STATUSES, SocialLinks, User } from '../../models';
 import { formatSocialUrl, SocialIconKey, socialIconUrl, STATUS_LABEL_KEYS } from '../../shared/icon-catalog';
-import { MapType, mapEmbedUrl as buildMapEmbedUrl } from '../../shared/maps';
+import { MapType } from '../../shared/maps';
+import { LocationPickerComponent } from '../../shared/location-picker/location-picker.component';
 import { buildVCard, downloadVCard } from '../../shared/vcard';
 import { createSuccessFlash } from '../../shared/success-flash';
 import { FilterActionsRowComponent } from '../../shared/filter-actions-row/filter-actions-row.component';
@@ -75,13 +70,13 @@ const SOCIAL_LINK_ORDER: (keyof SocialLinks)[] = ['instagram', 'facebook', 'tikt
     TranslatePipe,
     FilterActionsRowComponent,
     ChipGridComponent,
+    LocationPickerComponent,
   ],
 })
 export class UserDetailPage {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly location = inject(Location);
-  private readonly sanitizer = inject(DomSanitizer);
   private readonly authService = inject(AuthService);
   private readonly userService = inject(UserService);
   private readonly followService = inject(FollowService);
@@ -200,14 +195,9 @@ export class UserDetailPage {
 
   readonly zoomLevel = signal(15);
   readonly mapType = signal<MapType>('roadmap');
-
-  readonly mapEmbedUrl = computed<SafeResourceUrl | null>(() => {
+  readonly userAddressLine = computed(() => {
     const user = this.user();
-    if (!user) {
-      return null;
-    }
-    const url = buildMapEmbedUrl(user.latitude, user.longitude, this.zoomLevel(), this.mapType());
-    return this.sanitizer.bypassSecurityTrustResourceUrl(url);
+    return user ? `${user.address}, ${user.city}` : null;
   });
 
   readonly socialIconUrl = socialIconUrl;
@@ -222,13 +212,8 @@ export class UserDetailPage {
   constructor() {
     addIcons({
       personOutline,
-      navigateOutline,
-      addOutline,
-      removeOutline,
-      layersOutline,
       personAddOutline,
       downloadOutline,
-      locationOutline,
       checkmarkOutline,
       trashOutline,
       personRemoveOutline,

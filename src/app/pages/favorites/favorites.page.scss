@@ -32,6 +32,7 @@
   flex: 1;
   min-width: 0;
   padding: 0;
+  font-size: 0.9rem;
   --background: var(--app-surface-card);
   --border-radius: 999px;
   --box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
@@ -193,46 +194,6 @@
 
 .filter-sheet {
   padding: 20px 20px 16px;
-}
-
-.city-suggestions {
-  display: flex;
-  flex-direction: column;
-  background: var(--app-surface-card);
-  border: 1px solid var(--ion-color-light-shade);
-  border-radius: 12px;
-  margin-top: 8px;
-  margin-bottom: 8px;
-  overflow: hidden;
-}
-
-.city-suggestion {
-  appearance: none;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  border: none;
-  background: transparent;
-  padding: 10px 14px;
-  font-size: 0.85rem;
-  text-align: left;
-  color: var(--app-text-strong);
-  cursor: pointer;
-
-  &:not(:last-child) {
-    border-bottom: 1px solid var(--ion-color-light-shade);
-  }
-
-  ion-icon {
-    color: var(--ion-color-medium);
-    flex: 0 0 auto;
-  }
-}
-
-.range-label {
-  margin-top: 16px;
-  margin-bottom: 0;
-  font-weight: 600;
 }
 
 .date-range-row {

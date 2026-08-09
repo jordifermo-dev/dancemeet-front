@@ -166,42 +166,26 @@
       </section>
 
       <section class="section">
-        <h2>{{ 'profile.locationSection' | translate }}<span class="required-marker">*</span></h2>
-        <ion-searchbar
-          class="tgtg-searchbar"
-          [placeholder]="'eventDetail.addressLabel' | translate"
-          [value]="editAddress()"
-          [debounce]="0"
-          (ionInput)="onLocationInput($event.detail.value)"
-        ></ion-searchbar>
-        @if (!editCity()) {
-          <p class="location-hint">{{ 'eventDetail.locationHint' | translate }}</p>
-        }
-        @if (editCitySuggestions().length) {
-          <div class="city-suggestions">
-            @for (suggestion of editCitySuggestions(); track suggestion.placeId) {
-              <button type="button" class="city-suggestion" (click)="selectLocationSuggestion(suggestion)">
-                <ion-icon name="location-outline"></ion-icon>
-                {{ suggestion.description }}
-              </button>
-            }
-          </div>
-        }
-        <ion-button fill="clear" (click)="useCurrentLocationForEdit()" [disabled]="editLocatingMe()">
-          <ion-icon slot="start" name="locate-outline"></ion-icon>
-          {{ 'register.useCurrentLocation' | translate }}
-        </ion-button>
-        @if (editCity()) {
-          <p class="event-detail-line">
-            <ion-icon name="location-outline"></ion-icon>
-            <span>{{ editAddress() }}, {{ editCity() }}</span>
-          </p>
-        }
-        @if (editMapEmbedUrl()) {
-          <div class="map-preview">
-            <iframe [src]="editMapEmbedUrl()" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
-          </div>
-        }
+        <app-location-picker
+          titleKey="profile.locationSection"
+          [required]="true"
+          [editable]="true"
+          [lat]="editMapLat()"
+          [lng]="editMapLng()"
+          [zoom]="zoomLevel()"
+          [mapType]="mapType()"
+          [addressValue]="editAddress()"
+          [citySuggestions]="editCitySuggestions()"
+          [locating]="editLocatingMe()"
+          [addressLine]="editAddressLine()"
+          (zoomIn)="zoomIn()"
+          (zoomOut)="zoomOut()"
+          (mapTypeToggle)="toggleMapType()"
+          (addressInput)="onLocationInput($event)"
+          (suggestionSelect)="selectLocationSuggestion($event)"
+          (useCurrentLocation)="useCurrentLocationForEdit()"
+          (pinMoved)="onEditPinMoved($event)"
+        ></app-location-picker>
       </section>
 
       <app-filter-actions-row>
@@ -323,33 +307,23 @@
       </section>
 
       <section class="section">
-        <h2>{{ 'profile.locationSection' | translate }}</h2>
-        <p class="event-detail-line">
-          <ion-icon name="location-outline"></ion-icon>
-          <span>{{ event()!.address }}, {{ event()!.city }}</span>
-        </p>
-        <div class="map-preview">
-          <iframe [src]="mapEmbedUrl()" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
-        </div>
-        <div class="map-controls">
-          <div class="zoom-controls">
-            <button type="button" (click)="zoomOut()">
-              <ion-icon name="remove-outline"></ion-icon>
-            </button>
-            <span>{{ zoomLevel() }}</span>
-            <button type="button" (click)="zoomIn()">
-              <ion-icon name="add-outline"></ion-icon>
-            </button>
-          </div>
-          <button type="button" class="map-type-toggle" (click)="toggleMapType()">
-            <ion-icon name="layers-outline"></ion-icon>
-            {{ (mapType() === 'roadmap' ? 'userDetail.mapTypeSatellite' : 'userDetail.mapTypeRoadmap') | translate }}
-          </button>
-        </div>
-        <ion-button expand="block" fill="outline" (click)="openDirections()">
-          <ion-icon slot="start" [name]="directionsFlash.active() ? 'checkmark-outline' : 'navigate-outline'"></ion-icon>
-          {{ (directionsFlash.active() ? 'eventDetail.directionsOpened' : 'userDetail.directionsButton') | translate }}
-        </ion-button>
+        <app-location-picker
+          titleKey="profile.locationSection"
+          [editable]="false"
+          [lat]="event()!.latitude"
+          [lng]="event()!.longitude"
+          [zoom]="zoomLevel()"
+          [mapType]="mapType()"
+          [showSearch]="false"
+          [showCurrentLocationButton]="false"
+          [addressLine]="eventAddressLine()"
+          [showDirectionsButton]="true"
+          [directionsActive]="directionsFlash.active()"
+          (zoomIn)="zoomIn()"
+          (zoomOut)="zoomOut()"
+          (mapTypeToggle)="toggleMapType()"
+          (directions)="openDirections()"
+        ></app-location-picker>
       </section>
     </div>
   }

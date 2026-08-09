@@ -112,7 +112,6 @@
     "statusCancelled": "Cancel·lat",
     "statusFinished": "Finalitzat",
     "locationTitle": "Ubicació i distància",
-    "mapEmptyState": "Cerca la teva ciutat o utilitza la teva ubicació actual per veure el mapa.",
     "cityLabel": "Ciutat",
     "cityPlaceholder": "On et mous?",
     "useCurrentLocation": "Utilitza la meva ubicació actual",
@@ -219,7 +218,9 @@
     "noEvents": "No s'han trobat esdeveniments en aquesta zona.",
     "selectFiltersPrompt": "Ajusta els filtres per veure esdeveniments.",
     "minSelectionWarning": "Cal mantenir-ne almenys un de seleccionat.",
-    "mapLoadError": "No s'ha pogut carregar el mapa."
+    "mapLoadError": "No s'ha pogut carregar el mapa.",
+    "mapExpand": "Amplia el mapa a pantalla completa",
+    "mapCollapse": "Minimitza el mapa"
   },
   "eventCard": {
     "free": "Gratuït"
