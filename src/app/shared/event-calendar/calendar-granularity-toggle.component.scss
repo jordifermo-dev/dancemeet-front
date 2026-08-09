@@ -1,0 +1,25 @@
+// Same bordered/teal-text-when-off, filled/white-text-when-on look as every
+// other pill/toggle in the app (e.g. .pill in favorites.page.scss).
+.granularity-row {
+  display: flex;
+  gap: 8px;
+}
+
+.granularity-btn {
+  appearance: none;
+  flex: 1;
+  border: 1.5px solid var(--ion-color-primary);
+  border-radius: 999px;
+  padding: 6px 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  background: var(--app-surface-card);
+  color: var(--ion-color-primary);
+  cursor: pointer;
+
+  &.active {
+    background: var(--ion-color-primary-fill);
+    color: var(--ion-color-primary-contrast);
+    border-color: var(--ion-color-primary-fill);
+  }
+}

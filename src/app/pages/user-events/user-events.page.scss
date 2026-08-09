@@ -2,6 +2,10 @@
   --background: var(--ion-color-light);
 }
 
+.view-mode-button {
+  --color: var(--ion-color-primary);
+}
+
 .top-overlay {
   position: absolute;
   top: 0;
@@ -169,6 +173,13 @@
   // from the real overlay height via ResizeObserver - a fixed guess here
   // drifts as soon as a pill wraps or a translation runs longer.
   padding: 16px 16px 24px;
+}
+
+.user-events-calendar {
+  // Same measured-overlay padding-top as .user-events-list (see
+  // listTopPadding) - <app-event-calendar> handles its own internal spacing
+  // beyond that.
+  padding: 0 16px 24px;
 }
 
 .loading-row {

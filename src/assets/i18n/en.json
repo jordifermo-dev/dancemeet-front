@@ -220,7 +220,15 @@
     "minSelectionWarning": "You must keep at least one selected.",
     "mapLoadError": "The map couldn't be loaded.",
     "mapExpand": "Expand map to full screen",
-    "mapCollapse": "Collapse map"
+    "mapCollapse": "Collapse map",
+    "viewCalendar": "View as calendar",
+    "viewList": "View as list"
+  },
+  "calendar": {
+    "month": "Month",
+    "week": "Week",
+    "day": "Day",
+    "emptyDay": "No events on this day."
   },
   "eventCard": {
     "free": "Free"

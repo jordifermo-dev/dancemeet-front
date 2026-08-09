@@ -220,7 +220,15 @@
     "minSelectionWarning": "Debes tener al menos uno seleccionado.",
     "mapLoadError": "No se ha podido cargar el mapa.",
     "mapExpand": "Ampliar mapa a pantalla completa",
-    "mapCollapse": "Minimizar mapa"
+    "mapCollapse": "Minimizar mapa",
+    "viewCalendar": "Ver como calendario",
+    "viewList": "Ver como lista"
+  },
+  "calendar": {
+    "month": "Mes",
+    "week": "Semana",
+    "day": "Día",
+    "emptyDay": "No hay eventos este día."
   },
   "eventCard": {
     "free": "Gratis"

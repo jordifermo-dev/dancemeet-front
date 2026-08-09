@@ -1,0 +1,11 @@
+<div class="granularity-row">
+  <button type="button" class="granularity-btn" [class.active]="granularity() === 'month'" (click)="select('month')">
+    {{ 'calendar.month' | translate }}
+  </button>
+  <button type="button" class="granularity-btn" [class.active]="granularity() === 'week'" (click)="select('week')">
+    {{ 'calendar.week' | translate }}
+  </button>
+  <button type="button" class="granularity-btn" [class.active]="granularity() === 'day'" (click)="select('day')">
+    {{ 'calendar.day' | translate }}
+  </button>
+</div>

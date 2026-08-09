@@ -20,6 +20,7 @@ import {
   close,
   locateOutline,
   calendarOutline,
+  listOutline,
   optionsOutline,
   chevronDownOutline,
   addCircleOutline,
@@ -53,6 +54,9 @@ import { EventCardComponent } from '../../shared/event-card/event-card.component
 import { NotificationBellComponent } from '../../shared/notification-bell/notification-bell.component';
 import { EventCardView } from '../../shared/event-card/event-card.model';
 import { buildEventCardView } from '../../shared/event-card/build-event-card-view';
+import { EventCalendarComponent } from '../../shared/event-calendar/event-calendar.component';
+import { CalendarGranularityToggleComponent } from '../../shared/event-calendar/calendar-granularity-toggle.component';
+import { CalendarGranularity } from '../../shared/event-calendar/event-calendar.model';
 import { recoverAttendState } from '../../shared/attend-toggle';
 import { EVENT_SORT_OPTIONS, EventSortMode, sortEvents } from '../../shared/event-sort';
 import { SortPreferenceService } from '../../services/sort-preference.service';
@@ -111,6 +115,8 @@ const MAX_ZOOM = 20;
     FilterAllComponent,
     DatePickerFieldComponent,
     LocationPickerComponent,
+    EventCalendarComponent,
+    CalendarGranularityToggleComponent,
   ],
 })
 export class FavoritesPage implements OnInit, AfterViewInit, OnDestroy, ViewWillEnter {
@@ -237,14 +243,26 @@ export class FavoritesPage implements OnInit, AfterViewInit, OnDestroy, ViewWill
   readonly priceChips = computed(() => priceChipItems(this.priceOptions, this.draftPriceOptions()));
   readonly quickDateChips = computed(() => quickDateChipItems(this.draftActiveQuickDate()));
 
-  private readonly disciplinesById = computed(() => new Map(this.disciplines().map((d) => [d.id, d])));
-  private readonly eventTypesById = computed(() => new Map(this.eventTypes().map((e) => [e.id, e])));
+  readonly disciplinesById = computed(() => new Map(this.disciplines().map((d) => [d.id, d])));
+  readonly eventTypesById = computed(() => new Map(this.eventTypes().map((e) => [e.id, e])));
+
+  /** List vs calendar - independent per screen (not shared with Events/
+   * user-events, unlike sort mode), so it's just a local signal, not
+   * SortPreferenceService-style shared state. */
+  readonly viewMode = signal<'list' | 'calendar'>('list');
+  /** Owns the Mes/Semana/Día choice so the toggle (rendered in this page's
+   * own fixed top-overlay) and <app-event-calendar>'s grid (rendered below,
+   * scrollable) stay in sync. */
+  readonly calendarGranularity = signal<CalendarGranularity>('month');
 
   /** Same filter dimensions as Explorer (discipline/event type/status/date/
    * location/search), plus "organize vs attend", applied client-side since a
    * user's own events are already a small, fully-loaded list - entirely
-   * local to this screen, no shared state and nothing gets persisted. */
-  readonly cardViews = computed<EventCardView[]>(() => {
+   * local to this screen, no shared state and nothing gets persisted. Kept
+   * as its own computed (rather than inlined into cardViews) so the
+   * calendar view can bucket these same raw, already-filtered events by day
+   * instead of duplicating this whole filter chain. */
+  readonly filteredEvents = computed<FavoritedEvent[]>(() => {
     const term = this.searchTerm().trim().toLowerCase();
     const disciplineIds = this.appliedDisciplineIds();
     const typeIds = this.appliedEventTypeIds();
@@ -256,15 +274,10 @@ export class FavoritesPage implements OnInit, AfterViewInit, OnDestroy, ViewWill
     const lat = this.appliedLatitude();
     const lng = this.appliedLongitude();
     const radiusMeters = this.appliedDistanceRange() * 1000;
-    const disciplinesById = this.disciplinesById();
-    const eventTypesById = this.eventTypesById();
-    const lang = this.languageService.currentLang();
-    const currentUserId = this.authService.currentUser()?.id;
     const wantsOrganizer = relations.includes('organizer');
     const wantsAttendee = relations.includes('attendee');
-    const sortMode = this.sortMode();
 
-    const filtered = this.allEvents()
+    return this.allEvents()
       .filter((event) => event.disciplineIds.some((id) => disciplineIds.includes(id)))
       .filter((event) => event.typeIds.some((id) => typeIds.includes(id)))
       .filter((event) => statuses.includes(event.status))
@@ -283,8 +296,14 @@ export class FavoritesPage implements OnInit, AfterViewInit, OnDestroy, ViewWill
         }
         return haversineDistanceMeters(lat, lng, event.latitude, event.longitude) <= radiusMeters;
       });
+  });
 
-    return sortEvents(filtered, sortMode).map((event) =>
+  readonly cardViews = computed<EventCardView[]>(() => {
+    const disciplinesById = this.disciplinesById();
+    const eventTypesById = this.eventTypesById();
+    const lang = this.languageService.currentLang();
+    const currentUserId = this.authService.currentUser()?.id;
+    return sortEvents(this.filteredEvents(), this.sortMode()).map((event) =>
       buildEventCardView(event, disciplinesById, eventTypesById, lang, currentUserId),
     );
   });
@@ -295,6 +314,7 @@ export class FavoritesPage implements OnInit, AfterViewInit, OnDestroy, ViewWill
       close,
       locateOutline,
       calendarOutline,
+      listOutline,
       optionsOutline,
       chevronDownOutline,
       addCircleOutline,
@@ -669,6 +689,10 @@ export class FavoritesPage implements OnInit, AfterViewInit, OnDestroy, ViewWill
 
   goToCreateEvent(): void {
     this.router.navigate(['/events/new'], { queryParams: { origin: '/tabs/favorites' } });
+  }
+
+  toggleViewMode(): void {
+    this.viewMode.update((mode) => (mode === 'list' ? 'calendar' : 'list'));
   }
 
   openLocationModal(): void {

@@ -4,6 +4,15 @@
       <ion-back-button defaultHref="/tabs/profile" text=""></ion-back-button>
     </ion-buttons>
     <ion-title>{{ 'userEvents.title' | translate }}</ion-title>
+    <ion-buttons slot="end">
+      <ion-button
+        class="view-mode-button"
+        (click)="toggleViewMode()"
+        [attr.aria-label]="(viewMode() === 'list' ? 'explorer.viewCalendar' : 'explorer.viewList') | translate"
+      >
+        <ion-icon slot="icon-only" [name]="viewMode() === 'list' ? 'calendar-outline' : 'list-outline'"></ion-icon>
+      </ion-button>
+    </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
@@ -57,23 +66,43 @@
         <ion-icon name="chevron-down-outline"></ion-icon>
       </span>
     </button>
-  </div>
 
-  <div class="user-events-list" [style.paddingTop.px]="listTopPadding()">
-    @if (loading()) {
-      <div class="loading-row">
-        <ion-spinner name="crescent"></ion-spinner>
-      </div>
-    } @else if (cardViews().length === 0) {
-      <div class="empty-state">
-        <p>{{ 'favorites.empty' | translate }}</p>
-      </div>
-    } @else {
-      @for (view of cardViews(); track view.id) {
-        <app-event-card [view]="view" origin="/user-events" (attendToggle)="onAttendToggle($event)"></app-event-card>
-      }
+    @if (viewMode() === 'calendar') {
+      <app-calendar-granularity-toggle [(granularity)]="calendarGranularity"></app-calendar-granularity-toggle>
     }
   </div>
+
+  @if (viewMode() === 'list') {
+    <div class="user-events-list" [style.paddingTop.px]="listTopPadding()">
+      @if (loading()) {
+        <div class="loading-row">
+          <ion-spinner name="crescent"></ion-spinner>
+        </div>
+      } @else if (cardViews().length === 0) {
+        <div class="empty-state">
+          <p>{{ 'favorites.empty' | translate }}</p>
+        </div>
+      } @else {
+        @for (view of cardViews(); track view.id) {
+          <app-event-card [view]="view" origin="/user-events" (attendToggle)="onAttendToggle($event)"></app-event-card>
+        }
+      }
+    </div>
+  } @else {
+    <div class="user-events-calendar" [style.paddingTop.px]="listTopPadding()">
+      <app-event-calendar
+        [events]="filteredEvents()"
+        [eventTypesById]="eventTypesById()"
+        [disciplinesById]="disciplinesById()"
+        [attendedEventIds]="attendedEventIds()"
+        [sortMode]="sortMode()"
+        [granularity]="calendarGranularity()"
+        [minDate]="appliedDateFrom() ?? null"
+        [maxDate]="appliedDateTo() ?? null"
+        (attendToggle)="onAttendToggle($event)"
+      ></app-event-calendar>
+    </div>
+  }
 </ion-content>
 
 <!-- Sort sheet -->

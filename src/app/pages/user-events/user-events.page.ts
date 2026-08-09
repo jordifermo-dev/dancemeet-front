@@ -33,6 +33,7 @@ import {
   close,
   locateOutline,
   calendarOutline,
+  listOutline,
   optionsOutline,
   chevronDownOutline,
   refreshOutline,
@@ -64,6 +65,9 @@ import { MinSelectionWarningService } from '../../shared/min-selection-warning.s
 import { EventCardComponent } from '../../shared/event-card/event-card.component';
 import { EventCardView } from '../../shared/event-card/event-card.model';
 import { buildEventCardView } from '../../shared/event-card/build-event-card-view';
+import { EventCalendarComponent } from '../../shared/event-calendar/event-calendar.component';
+import { CalendarGranularityToggleComponent } from '../../shared/event-calendar/calendar-granularity-toggle.component';
+import { CalendarGranularity } from '../../shared/event-calendar/event-calendar.model';
 import { recoverAttendState } from '../../shared/attend-toggle';
 import { DateQuickOption, ExplorerFiltersService } from '../explorer/explorer-filters.service';
 import { createApplyFlash } from '../../shared/success-flash';
@@ -124,6 +128,8 @@ const MAX_ZOOM = 20;
     FilterAllComponent,
     DatePickerFieldComponent,
     LocationPickerComponent,
+    EventCalendarComponent,
+    CalendarGranularityToggleComponent,
   ],
 })
 export class UserEventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWillEnter {
@@ -162,6 +168,14 @@ export class UserEventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWil
   readonly attendedEventIds = signal<Set<string>>(new Set());
   readonly disciplines = signal<Discipline[]>([]);
   readonly eventTypes = signal<EventType[]>([]);
+  /** List vs calendar - independent per screen (not shared with Events/
+   * Favorites, unlike sort mode), so it's just a local signal, not
+   * SortPreferenceService-style shared state. */
+  readonly viewMode = signal<'list' | 'calendar'>('list');
+  /** Owns the Mes/Semana/Día choice so the toggle (rendered in this page's
+   * own fixed top-overlay) and <app-event-calendar>'s grid (rendered below,
+   * scrollable) stay in sync. */
+  readonly calendarGranularity = signal<CalendarGranularity>('month');
   readonly statusOptions = EVENT_STATUSES.map((id) => ({ id, labelKey: STATUS_LABEL_KEYS[id] }));
   readonly relationOptions = RELATION_OPTIONS;
   readonly priceOptions = PRICE_OPTIONS;
@@ -253,13 +267,16 @@ export class UserEventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWil
   readonly priceChips = computed(() => priceChipItems(this.priceOptions, this.draftPriceOptions()));
   readonly quickDateChips = computed(() => quickDateChipItems(this.draftActiveQuickDate()));
 
-  private readonly disciplinesById = computed(() => new Map(this.disciplines().map((d) => [d.id, d])));
-  private readonly eventTypesById = computed(() => new Map(this.eventTypes().map((e) => [e.id, e])));
+  readonly disciplinesById = computed(() => new Map(this.disciplines().map((d) => [d.id, d])));
+  readonly eventTypesById = computed(() => new Map(this.eventTypes().map((e) => [e.id, e])));
 
   /** Same filter dimensions as Favorites (discipline/event type/status/date/
    * location/search/organize-attend), applied client-side since one user's
-   * events are already a small, fully-loaded list. */
-  readonly cardViews = computed<EventCardView[]>(() => {
+   * events are already a small, fully-loaded list. Kept as its own computed
+   * (rather than inlined into cardViews) so the calendar view can bucket
+   * these same raw, already-filtered events by day instead of duplicating
+   * this whole filter chain. */
+  readonly filteredEvents = computed<FavoritedEvent[]>(() => {
     const term = this.searchTerm().trim().toLowerCase();
     const disciplineIds = this.appliedDisciplineIds();
     const typeIds = this.appliedEventTypeIds();
@@ -271,15 +288,10 @@ export class UserEventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWil
     const lat = this.appliedLatitude();
     const lng = this.appliedLongitude();
     const radiusMeters = this.appliedDistanceRange() * 1000;
-    const disciplinesById = this.disciplinesById();
-    const eventTypesById = this.eventTypesById();
-    const lang = this.languageService.currentLang();
-    const currentUserId = this.authService.currentUser()?.id;
     const wantsOrganizer = relations.includes('organizer');
     const wantsAttendee = relations.includes('attendee');
-    const sortMode = this.sortMode();
 
-    const filtered = this.allEvents()
+    return this.allEvents()
       .filter((event) => event.disciplineIds.some((id) => disciplineIds.includes(id)))
       .filter((event) => event.typeIds.some((id) => typeIds.includes(id)))
       .filter((event) => statuses.includes(event.status))
@@ -298,8 +310,14 @@ export class UserEventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWil
         }
         return haversineDistanceMeters(lat, lng, event.latitude, event.longitude) <= radiusMeters;
       });
+  });
 
-    return sortEvents(filtered, sortMode).map((event) =>
+  readonly cardViews = computed<EventCardView[]>(() => {
+    const disciplinesById = this.disciplinesById();
+    const eventTypesById = this.eventTypesById();
+    const lang = this.languageService.currentLang();
+    const currentUserId = this.authService.currentUser()?.id;
+    return sortEvents(this.filteredEvents(), this.sortMode()).map((event) =>
       buildEventCardView(event, disciplinesById, eventTypesById, lang, currentUserId, this.attendedEventIds()),
     );
   });
@@ -310,6 +328,7 @@ export class UserEventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWil
       close,
       locateOutline,
       calendarOutline,
+      listOutline,
       optionsOutline,
       chevronDownOutline,
       refreshOutline,
@@ -482,6 +501,10 @@ export class UserEventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWil
       clearTimeout(this.searchInputTimer);
     }
     this.searchInputTimer = setTimeout(() => this.searchTerm.set(term), 300);
+  }
+
+  toggleViewMode(): void {
+    this.viewMode.update((mode) => (mode === 'list' ? 'calendar' : 'list'));
   }
 
   openSortModal(): void {

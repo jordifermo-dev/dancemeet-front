@@ -2,6 +2,13 @@
   <ion-toolbar>
     <ion-title>{{ 'tabs.events' | translate }}</ion-title>
     <ion-buttons slot="end">
+      <ion-button
+        class="view-mode-button"
+        (click)="toggleViewMode()"
+        [attr.aria-label]="(viewMode() === 'list' ? 'explorer.viewCalendar' : 'explorer.viewList') | translate"
+      >
+        <ion-icon slot="icon-only" [name]="viewMode() === 'list' ? 'calendar-outline' : 'list-outline'"></ion-icon>
+      </ion-button>
       <app-notification-bell></app-notification-bell>
       <ion-button class="create-event-button" (click)="goToCreateEvent()">
         <ion-icon slot="icon-only" name="add-circle-outline"></ion-icon>
@@ -68,27 +75,47 @@
       [valueLabelKey]="currentSortLabelKey()"
       (opened)="isSortModalOpen.set(true)"
     ></app-sort-row>
-  </div>
 
-  <div class="events-list" [style.paddingTop.px]="listTopPadding()">
-    @if (loading()) {
-      <div class="loading-row">
-        <ion-spinner name="crescent"></ion-spinner>
-      </div>
-    } @else if (cardViews().length === 0) {
-      <div class="empty-state">
-        @if (noCategorySelected()) {
-          <p>{{ 'explorer.selectFiltersPrompt' | translate }}</p>
-        } @else {
-          <p>{{ 'explorer.noEvents' | translate }}</p>
-        }
-      </div>
-    } @else {
-      @for (view of cardViews(); track view.id) {
-        <app-event-card [view]="view" origin="/tabs/events" (attendToggle)="onAttendToggle($event)"></app-event-card>
-      }
+    @if (viewMode() === 'calendar') {
+      <app-calendar-granularity-toggle [(granularity)]="calendarGranularity"></app-calendar-granularity-toggle>
     }
   </div>
+
+  @if (viewMode() === 'list') {
+    <div class="events-list" [style.paddingTop.px]="listTopPadding()">
+      @if (loading()) {
+        <div class="loading-row">
+          <ion-spinner name="crescent"></ion-spinner>
+        </div>
+      } @else if (cardViews().length === 0) {
+        <div class="empty-state">
+          @if (noCategorySelected()) {
+            <p>{{ 'explorer.selectFiltersPrompt' | translate }}</p>
+          } @else {
+            <p>{{ 'explorer.noEvents' | translate }}</p>
+          }
+        </div>
+      } @else {
+        @for (view of cardViews(); track view.id) {
+          <app-event-card [view]="view" origin="/tabs/events" (attendToggle)="onAttendToggle($event)"></app-event-card>
+        }
+      }
+    </div>
+  } @else {
+    <div class="events-calendar" [style.paddingTop.px]="listTopPadding()">
+      <app-event-calendar
+        [events]="events()"
+        [eventTypesById]="eventTypesById()"
+        [disciplinesById]="disciplinesById()"
+        [attendedEventIds]="attendedEventIds()"
+        [sortMode]="sortMode()"
+        [granularity]="calendarGranularity()"
+        [minDate]="filters.appliedDateFrom()"
+        [maxDate]="filters.appliedDateTo() ?? null"
+        (attendToggle)="onAttendToggle($event)"
+      ></app-event-calendar>
+    </div>
+  }
 </ion-content>
 
 <!-- Sort sheet -->

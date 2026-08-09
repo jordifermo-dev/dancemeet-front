@@ -1,6 +1,6 @@
 import { AppLanguage } from '../services/language.service';
 
-const INTL_LOCALES: Record<AppLanguage, string> = {
+export const INTL_LOCALES: Record<AppLanguage, string> = {
   es: 'es-ES',
   ca: 'ca-ES',
   en: 'en-GB',

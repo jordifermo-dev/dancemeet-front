@@ -1,0 +1,57 @@
+<div class="calendar-period-row">
+  <button type="button" class="period-nav-btn" [disabled]="!canGoPrev()" (click)="goPrev()">
+    <ion-icon name="chevron-back-outline"></ion-icon>
+  </button>
+  <span class="period-label">{{ periodLabel() }}</span>
+  <button type="button" class="period-nav-btn" [disabled]="!canGoNext()" (click)="goNext()">
+    <ion-icon name="chevron-forward-outline"></ion-icon>
+  </button>
+</div>
+
+<div class="calendar-swipe-area" #swipeArea>
+  @if (granularity() !== 'day') {
+    <div class="calendar-weekday-header">
+      @for (label of weekdayLabels(); track $index) {
+        <span class="weekday-label">{{ label }}</span>
+      }
+    </div>
+    <div class="calendar-grid" [class.week-grid]="granularity() === 'week'">
+      @for (cell of gridCells(); track cell.date) {
+        <button
+          type="button"
+          class="calendar-cell"
+          [class.muted]="!cell.isInPeriod"
+          [class.today]="cell.isToday"
+          [class.selected]="cell.isSelected"
+          [class.out-of-range]="cell.isOutOfRange"
+          [disabled]="cell.isOutOfRange"
+          (click)="selectDay(cell)"
+        >
+          <span class="cell-day-number">{{ cell.dayOfMonth }}</span>
+          @if (cell.typeIcons.length) {
+            <span class="cell-icons">
+              @for (icon of cell.typeIcons; track icon.id) {
+                <img class="cell-icon" [src]="icon.iconUrl" [alt]="icon.name" />
+              }
+              @if (cell.overflowCount > 0) {
+                <span class="cell-icon-overflow">+{{ cell.overflowCount }}</span>
+              }
+            </span>
+          }
+        </button>
+      }
+    </div>
+  }
+
+  <div class="calendar-agenda">
+    @if (agendaCardViews().length === 0) {
+      <div class="agenda-empty">
+        <p>{{ 'calendar.emptyDay' | translate }}</p>
+      </div>
+    } @else {
+      @for (view of agendaCardViews(); track view.id) {
+        <app-event-card [view]="view" (attendToggle)="onAttendToggle($event)"></app-event-card>
+      }
+    }
+  </div>
+</div>

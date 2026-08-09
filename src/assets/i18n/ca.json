@@ -220,7 +220,15 @@
     "minSelectionWarning": "Cal mantenir-ne almenys un de seleccionat.",
     "mapLoadError": "No s'ha pogut carregar el mapa.",
     "mapExpand": "Amplia el mapa a pantalla completa",
-    "mapCollapse": "Minimitza el mapa"
+    "mapCollapse": "Minimitza el mapa",
+    "viewCalendar": "Veure com a calendari",
+    "viewList": "Veure com a llista"
+  },
+  "calendar": {
+    "month": "Mes",
+    "week": "Setmana",
+    "day": "Dia",
+    "emptyDay": "No hi ha esdeveniments aquest dia."
   },
   "eventCard": {
     "free": "Gratuït"

@@ -31,6 +31,7 @@ import { addIcons } from 'ionicons';
 import {
   optionsOutline,
   calendarOutline,
+  listOutline,
   chevronDownOutline,
   addCircleOutline,
   bookmarkOutline,
@@ -74,6 +75,9 @@ import { FilterActionsRowComponent } from '../../shared/filter-actions-row/filte
 import { EventCardComponent } from '../../shared/event-card/event-card.component';
 import { EventCardView } from '../../shared/event-card/event-card.model';
 import { buildEventCardView } from '../../shared/event-card/build-event-card-view';
+import { EventCalendarComponent } from '../../shared/event-calendar/event-calendar.component';
+import { CalendarGranularityToggleComponent } from '../../shared/event-calendar/calendar-granularity-toggle.component';
+import { CalendarGranularity } from '../../shared/event-calendar/event-calendar.model';
 import { recoverAttendState } from '../../shared/attend-toggle';
 import { EVENT_SORT_OPTIONS, EventSortMode, sortEvents } from '../../shared/event-sort';
 import { SortPreferenceService } from '../../services/sort-preference.service';
@@ -115,6 +119,8 @@ const PRICE_OPTIONS: { id: PriceOption; labelKey: string }[] = [
     SortRowComponent,
     SortOptionsModalComponent,
     DatePickerFieldComponent,
+    EventCalendarComponent,
+    CalendarGranularityToggleComponent,
   ],
 })
 export class EventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWillEnter {
@@ -142,6 +148,14 @@ export class EventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWillEnt
   readonly loading = signal(true);
   readonly events = signal<EventWithCreatorName[]>([]);
   readonly searchTerm = signal('');
+  /** List vs calendar - independent per screen (not shared with Favorites/
+   * user-events, unlike sort mode), so it's just a local signal, not
+   * SortPreferenceService-style shared state. */
+  readonly viewMode = signal<'list' | 'calendar'>('list');
+  /** Owns the Mes/Semana/Día choice so the toggle (rendered in this page's
+   * own fixed top-overlay) and <app-event-calendar>'s grid (rendered below,
+   * scrollable) stay in sync. */
+  readonly calendarGranularity = signal<CalendarGranularity>('month');
   /** IDs of events the logged-in user attends - a plain search result has no
    * per-event relation of its own (see buildEventCardView), so the heart on
    * each card is driven by this separately-fetched set instead. */
@@ -200,6 +214,7 @@ export class EventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWillEnt
     addIcons({
       optionsOutline,
       calendarOutline,
+      listOutline,
       chevronDownOutline,
       addCircleOutline,
       bookmarkOutline,
@@ -391,6 +406,10 @@ export class EventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWillEnt
 
   goToFullFilters(): void {
     this.router.navigateByUrl('/explorer-filters');
+  }
+
+  toggleViewMode(): void {
+    this.viewMode.update((mode) => (mode === 'list' ? 'calendar' : 'list'));
   }
 
   goToCreateEvent(): void {

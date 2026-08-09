@@ -4,7 +4,8 @@
 
 // Matches the notification bell next to it and the rest of the app's header
 // icons (app-text-strong) instead of ion-button's default primary color.
-.create-event-button {
+.create-event-button,
+.view-mode-button {
   --color: var(--ion-color-primary);
 }
 
@@ -175,6 +176,13 @@
   // from the real overlay height via ResizeObserver - a fixed guess here
   // drifts as soon as a pill wraps or a translation runs longer.
   padding: 16px 16px 24px;
+}
+
+.favorites-calendar {
+  // Same measured-overlay padding-top as .favorites-list (see
+  // listTopPadding) - <app-event-calendar> handles its own internal spacing
+  // beyond that.
+  padding: 0 16px 24px;
 }
 
 .loading-row {
