@@ -6,10 +6,19 @@
     "cancel": "Cancel·la"
   },
   "tabs": {
+    "home": "Inici",
     "explorer": "Explorar",
     "events": "Esdeveniments",
-    "favorites": "Preferits",
+    "favorites": "Favorits",
     "profile": "Perfil"
+  },
+  "home": {
+    "greeting": "Hola, {{name}}",
+    "subtitle": "Què vols fer avui?",
+    "exploreDesc": "Descobreix esdeveniments de ball a prop teu, directament sobre el mapa",
+    "eventsDesc": "Consulta tots els esdeveniments disponibles, en llistat o calendari, com prefereixis",
+    "favoritesDesc": "Revisa els esdeveniments que has desat, en llistat o calendari",
+    "profileDesc": "Gestiona el teu perfil, les teves preferències i el teu compte"
   },
   "settings": {
     "title": "Ajustos",
@@ -26,18 +35,20 @@
   },
   "welcome": {
     "title": "Tour de benvinguda",
+    "homeTitle": "Inici",
+    "homeBody": "El teu panell d'accés ràpid: des d'aquí arribes a Explorar, Esdeveniments, Favorits i Perfil sense perdre't res.",
     "exploreTitle": "Explorar",
-    "exploreBody": "Descobreix esdeveniments de ball a prop teu al mapa, amb filtres per estil, tipus, data i preu.",
+    "exploreBody": "Descobreix esdeveniments de ball a prop teu al mapa, amb filtres per estil, tipus, data i preu. Toca el mapa per moure el centre de cerca i canvia a vista satèl·lit quan vulguis.",
     "eventsTitle": "Esdeveniments",
-    "eventsBody": "Consulta tots els esdeveniments en format llista i ordena'ls com prefereixis.",
-    "favoritesTitle": "Preferits",
-    "favoritesBody": "Aquí veuràs els esdeveniments que organitzes i als quals assisteixes.",
+    "eventsBody": "Consulta tots els esdeveniments en format llista o calendari, i ordena'ls com prefereixis.",
+    "favoritesTitle": "Favorits",
+    "favoritesBody": "Aquí veuràs els esdeveniments que organitzes i als quals assisteixes, també en format llista o calendari.",
     "profileTitle": "Perfil",
     "profileBody": "Edita les teves dades, les teves preferències i consulta les teves estadístiques.",
     "tipsTitle": "Trucs ràpids",
     "tipsSubtitle": "Alguns consells més que et vindran bé.",
     "tipFollow": "Segueix altres usuaris per assabentar-te dels seus nous esdeveniments.",
-    "tipAttend": "Prem \"Assistir\" en un esdeveniment per apuntar-t'hi i que aparegui al teu perfil.",
+    "tipAttend": "Toca la icona del cor en un esdeveniment per apuntar-t'hi i que aparegui als teus favorits.",
     "tipReuse": "Reutilitza un esdeveniment passat per crear ràpidament la seva propera edició, des del botó \"Reutilitza\" en un esdeveniment finalitzat.",
     "tipNotifications": "La campana t'avisa de nous seguidors, canvis en esdeveniments i més.",
     "tipPreferences": "Si veus pocs esdeveniments, revisa les teves preferències de cerca (estil, tipus, ubicació, distància, estat...): com més obertes, més esdeveniments t'apareixeran.",

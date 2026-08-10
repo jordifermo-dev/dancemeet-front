@@ -6,10 +6,19 @@
     "cancel": "Cancel"
   },
   "tabs": {
+    "home": "Home",
     "explorer": "Explore",
     "events": "Events",
     "favorites": "Favourites",
     "profile": "Profile"
+  },
+  "home": {
+    "greeting": "Hi, {{name}}",
+    "subtitle": "What would you like to do today?",
+    "exploreDesc": "Discover dance events near you, right on the map",
+    "eventsDesc": "Browse all available events, in list or calendar view — whichever you prefer",
+    "favoritesDesc": "Check the events you've saved, in list or calendar view",
+    "profileDesc": "Manage your profile, preferences and account"
   },
   "settings": {
     "title": "Settings",
@@ -26,18 +35,20 @@
   },
   "welcome": {
     "title": "Welcome tour",
+    "homeTitle": "Home",
+    "homeBody": "Your quick-access panel: reach Explore, Events, Favourites and Profile from one place.",
     "exploreTitle": "Explore",
-    "exploreBody": "Discover dance events near you on the map, with filters by style, type, date and price.",
+    "exploreBody": "Discover dance events near you on the map, with filters by style, type, date and price. Tap the map to move the search centre, and switch to satellite view whenever you like.",
     "eventsTitle": "Events",
-    "eventsBody": "Browse every event as a list and sort it however you like.",
+    "eventsBody": "Browse every event as a list or calendar, and sort it however you like.",
     "favoritesTitle": "Favourites",
-    "favoritesBody": "See the events you organise and the ones you're attending.",
+    "favoritesBody": "See the events you organise and the ones you're attending, also as a list or calendar.",
     "profileTitle": "Profile",
     "profileBody": "Edit your details and preferences, and check your stats.",
     "tipsTitle": "Quick tips",
     "tipsSubtitle": "A few more tips worth knowing.",
     "tipFollow": "Follow other users to hear about their new events.",
-    "tipAttend": "Tap \"Attend\" on an event to join it and have it show up on your profile.",
+    "tipAttend": "Tap the heart icon on an event to join it and have it show up in your favourites.",
     "tipReuse": "Reuse a past event to quickly create its next edition, from the \"Reuse\" button on a finished event.",
     "tipNotifications": "The bell tells you about new followers, event changes and more.",
     "tipPreferences": "Seeing few events? Check your search preferences (style, type, location, distance, status...) - the more open they are, the more events show up.",

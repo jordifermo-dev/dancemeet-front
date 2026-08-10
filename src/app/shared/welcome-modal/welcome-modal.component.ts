@@ -20,6 +20,7 @@ import { EventCardView } from '../event-card/event-card.model';
 import { DISCIPLINE_ICON_FILES, EVENT_TYPE_ICON_FILES, STATUS_ICON_FILES, STATUS_LABEL_KEYS } from '../icon-catalog';
 import { mapEmbedUrl } from '../maps';
 import { DISCIPLINE_NAMES, EVENT_STATUSES, EVENT_TYPE_NAMES } from '../../models';
+import { HOME_MENU_ITEMS } from '../../pages/home/home.page';
 
 // Central Barcelona - a real, recognizable place, at a zoom wide enough to
 // show a real chunk of the metro area (matching the reference screenshot),
@@ -28,7 +29,7 @@ const EXPLORER_MAP_LAT = 41.3874;
 const EXPLORER_MAP_LNG = 2.1686;
 const EXPLORER_MAP_ZOOM = 11;
 
-export type WelcomeSlideKind = 'explorer' | 'events' | 'favorites' | 'profile' | 'tips';
+export type WelcomeSlideKind = 'home' | 'explorer' | 'events' | 'favorites' | 'profile' | 'tips';
 
 interface WelcomeSlide {
   kind: WelcomeSlideKind;
@@ -38,6 +39,7 @@ interface WelcomeSlide {
 }
 
 const SLIDES: WelcomeSlide[] = [
+  { kind: 'home', icon: 'assets/icons/tabs/home.svg', titleKey: 'welcome.homeTitle', descriptionKey: 'welcome.homeBody' },
   { kind: 'explorer', icon: 'assets/icons/tabs/explorer.svg', titleKey: 'welcome.exploreTitle', descriptionKey: 'welcome.exploreBody' },
   { kind: 'events', icon: 'assets/icons/tabs/events.svg', titleKey: 'welcome.eventsTitle', descriptionKey: 'welcome.eventsBody' },
   { kind: 'favorites', icon: 'assets/icons/tabs/favorites.svg', titleKey: 'welcome.favoritesTitle', descriptionKey: 'welcome.favoritesBody' },
@@ -194,6 +196,7 @@ export class WelcomeModalComponent {
     mapEmbedUrl(EXPLORER_MAP_LAT, EXPLORER_MAP_LNG, EXPLORER_MAP_ZOOM, 'roadmap'),
   );
   readonly demoCards = DEMO_CARDS;
+  readonly homeMenuItems = HOME_MENU_ITEMS;
   readonly explorerMapPins = EXPLORER_MAP_PINS;
   readonly profileEventTypes = PROFILE_EVENT_TYPES;
   readonly profileDisciplines = PROFILE_DISCIPLINES;

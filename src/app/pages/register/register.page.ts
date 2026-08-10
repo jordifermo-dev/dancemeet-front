@@ -404,7 +404,7 @@ export class RegisterPage implements OnInit {
       this.authService.syncProfile(user);
       this.authService.pendingSocialSignup.set(null);
       this.onboarding.maybeShowWelcome();
-      this.router.navigateByUrl('/tabs/explorer');
+      this.router.navigateByUrl('/tabs/home');
     } catch (err: any) {
       this.errorMessage.set(
         err?.error?.message ?? this.translate.instant('register.registrationFailed'),

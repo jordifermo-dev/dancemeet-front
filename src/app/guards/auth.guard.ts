@@ -23,5 +23,5 @@ export const publicGuard: CanActivateFn = async () => {
   if (!authService.isLoggedIn()) {
     return true;
   }
-  return router.parseUrl('/tabs/explorer');
+  return router.parseUrl('/tabs/home');
 };

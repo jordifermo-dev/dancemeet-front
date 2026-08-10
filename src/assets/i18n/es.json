@@ -6,10 +6,19 @@
     "cancel": "Cancelar"
   },
   "tabs": {
+    "home": "Inicio",
     "explorer": "Explorar",
     "events": "Eventos",
     "favorites": "Favoritos",
     "profile": "Perfil"
+  },
+  "home": {
+    "greeting": "Hola, {{name}}",
+    "subtitle": "¿Qué quieres hacer hoy?",
+    "exploreDesc": "Descubre eventos de baile cerca de ti, directamente sobre el mapa",
+    "eventsDesc": "Consulta todos los eventos disponibles, en listado o calendario, como prefieras",
+    "favoritesDesc": "Revisa los eventos que has guardado, en listado o calendario",
+    "profileDesc": "Gestiona tu perfil, tus preferencias y tu cuenta"
   },
   "settings": {
     "title": "Ajustes",
@@ -26,18 +35,20 @@
   },
   "welcome": {
     "title": "Tour de bienvenida",
+    "homeTitle": "Inicio",
+    "homeBody": "Tu panel de acceso rápido: desde aquí llegas a Explorar, Eventos, Favoritos y Perfil sin perderte nada.",
     "exploreTitle": "Explorar",
-    "exploreBody": "Descubre eventos de baile cerca de ti en el mapa, con filtros por estilo, tipo, fecha y precio.",
+    "exploreBody": "Descubre eventos de baile cerca de ti en el mapa, con filtros por estilo, tipo, fecha y precio. Toca el mapa para mover el centro de búsqueda y cambia a vista satélite cuando quieras.",
     "eventsTitle": "Eventos",
-    "eventsBody": "Consulta todos los eventos en formato lista y ordénalos como prefieras.",
+    "eventsBody": "Consulta todos los eventos en formato lista o calendario, y ordénalos como prefieras.",
     "favoritesTitle": "Favoritos",
-    "favoritesBody": "Aquí verás los eventos que organizas y a los que asistes.",
+    "favoritesBody": "Aquí verás los eventos que organizas y a los que asistes, también en formato lista o calendario.",
     "profileTitle": "Perfil",
     "profileBody": "Edita tus datos, tus preferencias y consulta tus estadísticas.",
     "tipsTitle": "Trucos rápidos",
     "tipsSubtitle": "Algunos consejos más que te vendrán bien.",
     "tipFollow": "Sigue a otros usuarios para enterarte de sus nuevos eventos.",
-    "tipAttend": "Pulsa \"Asistir\" en un evento para apuntarte y que aparezca en tu perfil.",
+    "tipAttend": "Toca el icono del corazón en un evento para apuntarte y que aparezca en tus favoritos.",
     "tipReuse": "Reutiliza un evento pasado para crear rápidamente su próxima edición, desde el botón \"Reutilizar\" en un evento finalizado.",
     "tipNotifications": "La campana te avisa de nuevos seguidores, cambios en eventos y más.",
     "tipPreferences": "Si ves pocos eventos, revisa tus preferencias de búsqueda (estilo, tipo, ubicación, distancia, estado...): cuanto más abiertas, más eventos te aparecerán.",

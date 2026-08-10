@@ -99,7 +99,7 @@ export class LoginPage implements OnInit, AfterViewInit {
         return;
       }
       this.onboarding.maybeShowWelcome();
-      this.router.navigateByUrl('/tabs/explorer');
+      this.router.navigateByUrl('/tabs/home');
     } catch (err) {
       this.errorMessage.set(firebaseErrorMessage(err, this.translate));
     } finally {
@@ -127,7 +127,7 @@ export class LoginPage implements OnInit, AfterViewInit {
     try {
       await this.authService.loginWithEmail(email.trim(), password);
       this.onboarding.maybeShowWelcome();
-      this.router.navigateByUrl('/tabs/explorer');
+      this.router.navigateByUrl('/tabs/home');
     } catch (err) {
       this.errorMessage.set(firebaseErrorMessage(err, this.translate));
     } finally {

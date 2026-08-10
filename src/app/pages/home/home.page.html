@@ -1,0 +1,34 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-title>{{ 'tabs.home' | translate }}</ion-title>
+    <ion-buttons slot="end">
+      <app-notification-bell></app-notification-bell>
+      <ion-button class="settings-button" routerLink="/settings">
+        <ion-icon slot="icon-only" name="settings-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="home-content">
+  <div class="home-container">
+    <img class="home-logo" src="icons/icon-192x192.png" alt="DanceMeet" />
+
+    <h1 class="home-greeting">{{ 'home.greeting' | translate: { name: firstName() } }} 👋</h1>
+    <p class="home-subtitle">{{ 'home.subtitle' | translate }}</p>
+
+    <div class="home-menu">
+      @for (item of menuItems; track item.routerLink) {
+        <a class="home-menu-item" [routerLink]="item.routerLink">
+          <span class="home-menu-icon-wrap">
+            <img class="home-menu-icon" [src]="item.iconUrl" alt="" aria-hidden="true" />
+          </span>
+          <span class="home-menu-text">
+            <span class="home-menu-title">{{ item.titleKey | translate }}</span>
+            <span class="home-menu-description">{{ item.descriptionKey | translate }}</span>
+          </span>
+        </a>
+      }
+    </div>
+  </div>
+</ion-content>

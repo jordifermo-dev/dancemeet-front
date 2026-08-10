@@ -22,6 +22,21 @@
 
               <div class="welcome-mockup" [class]="'welcome-mockup-' + slide.kind">
                 @switch (slide.kind) {
+                  @case ('home') {
+                    <div class="mockup-home-menu">
+                      @for (item of homeMenuItems; track item.routerLink) {
+                        <div class="mockup-home-item">
+                          <span class="mockup-home-icon-wrap">
+                            <img [src]="item.iconUrl" alt="" aria-hidden="true" />
+                          </span>
+                          <span class="mockup-home-text">
+                            <span class="mockup-home-title">{{ item.titleKey | translate }}</span>
+                            <span class="mockup-home-description">{{ item.descriptionKey | translate }}</span>
+                          </span>
+                        </div>
+                      }
+                    </div>
+                  }
                   @case ('explorer') {
                     <div class="mockup-map mockup-map-tall">
                       <iframe class="mockup-map-iframe" [src]="explorerMapUrl" loading="lazy" title="Map preview"></iframe>

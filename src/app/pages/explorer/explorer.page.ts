@@ -27,11 +27,13 @@ import {
   refreshOutline,
   checkmarkOutline,
   closeOutline,
+  layersOutline,
 } from 'ionicons/icons';
 import { DisciplineService } from '../../services/discipline.service';
 import { EventTypeService } from '../../services/event-type.service';
 import { EventService } from '../../services/event.service';
 import { EventListRefreshService } from '../../services/event-list-refresh.service';
+import { GeocodingService } from '../../services/geocoding.service';
 import { GoogleMapsLoaderService } from '../../shared/google-maps-loader.service';
 import { Discipline, DISCIPLINE_NAMES, EventType, EVENT_TYPE_NAMES, EventStatus, EVENT_STATUSES, PriceOption, Event as DanceEvent } from '../../models';
 import { disciplineIconUrl, sortByNameOrder, STATUS_LABEL_KEYS } from '../../shared/icon-catalog';
@@ -48,7 +50,7 @@ import {
   quickDateChipItems,
   statusChipItems,
 } from '../../shared/chip-grid/chip-grid-presets';
-import { NIGHT_MAP_STYLES } from '../../shared/maps';
+import { MapType, NIGHT_MAP_STYLES } from '../../shared/maps';
 import { createApplyFlash } from '../../shared/success-flash';
 import { ThemeService } from '../../services/theme.service';
 import { ExplorerFiltersService, DateQuickOption } from './explorer-filters.service';
@@ -129,6 +131,7 @@ export class ExplorerPage implements OnInit, ViewWillEnter {
   private readonly refreshNotifier = inject(EventListRefreshService);
   private readonly mapsLoader = inject(GoogleMapsLoaderService);
   private readonly themeService = inject(ThemeService);
+  private readonly geocodingService = inject(GeocodingService);
   private readonly router = inject(Router);
   readonly filters = inject(ExplorerFiltersService);
 
@@ -147,6 +150,8 @@ export class ExplorerPage implements OnInit, ViewWillEnter {
   readonly priceOptions = PRICE_OPTIONS;
 
   readonly locatingMe = signal(false);
+  readonly droppingPin = signal(false);
+  readonly mapType = signal<MapType>('roadmap');
 
   /** An empty discipline or event-type selection now filters down to zero
    * events (see explorer-filters.service.ts) rather than being ignored, so an
@@ -173,6 +178,10 @@ export class ExplorerPage implements OnInit, ViewWillEnter {
     // two-finger touch gesture on a real device), floating right above our
     // zoom buttons.
     rotateControl: false,
+    // Plain 'satellite' is bare imagery with no place/street labels in the
+    // Maps JS API - 'hybrid' is what "Satélite" actually means in the
+    // consumer Google Maps app (satellite imagery *with* labels overlaid).
+    mapTypeId: this.mapType() === 'satellite' ? 'hybrid' : 'roadmap',
     styles: this.themeService.isDark() ? NIGHT_MAP_STYLES : undefined,
   }));
 
@@ -229,6 +238,7 @@ export class ExplorerPage implements OnInit, ViewWillEnter {
       refreshOutline,
       checkmarkOutline,
       closeOutline,
+      layersOutline,
     });
 
     // Re-run the search whenever any applied filter, the location, the radius
@@ -344,6 +354,42 @@ export class ExplorerPage implements OnInit, ViewWillEnter {
       },
       () => this.locatingMe.set(false),
     );
+  }
+
+  toggleMapType(): void {
+    this.mapType.update((type) => (type === 'roadmap' ? 'satellite' : 'roadmap'));
+  }
+
+  /** Tapping the map (outside an event marker, which has its own mapClick and
+   * never bubbles here) drops/moves the search-center pin, same as
+   * centerOnMyLocation() but from a tapped point instead of the GPS - also
+   * reverse-geocodes so city/address stay in sync, matching the location
+   * filter's own tap-to-pin behavior. */
+  onMapClick(event: google.maps.MapMouseEvent): void {
+    if (!event.latLng) {
+      return;
+    }
+    const lat = event.latLng.lat();
+    const lng = event.latLng.lng();
+    this.filters.appliedLatitude.set(lat);
+    this.filters.appliedLongitude.set(lng);
+    this.filters.draftLatitude.set(lat);
+    this.filters.draftLongitude.set(lng);
+    this.droppingPin.set(true);
+    this.geocodingService.reverse(lat, lng).subscribe({
+      next: (result) => {
+        if (result?.city) {
+          this.filters.appliedCity.set(result.city);
+          this.filters.draftCity.set(result.city);
+        }
+        if (result?.formattedAddress) {
+          this.filters.appliedAddress.set(result.formattedAddress);
+          this.filters.draftAddress.set(result.formattedAddress);
+        }
+        this.droppingPin.set(false);
+      },
+      error: () => this.droppingPin.set(false),
+    });
   }
 
   // --- Individual quick filter modals ----------------------------------
