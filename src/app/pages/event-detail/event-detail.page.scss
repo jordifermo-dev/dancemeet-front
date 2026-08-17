@@ -348,11 +348,39 @@ a.info-row {
 .toggle-row {
   --padding-start: 0;
   --inner-padding-end: 0;
+  // ion-item's own default vertical padding/min-height made this row read as
+  // having a bigger gap above/below it than Fecha's plain-div rows, even
+  // though .group-label's margin-top below is the same 20px - tightened so
+  // Precio's rhythm actually matches instead of just sharing the same number.
+  --padding-top: 4px;
+  --padding-bottom: 4px;
+  --min-height: 0;
+}
+
+// Same 20px rhythm as .group-label elsewhere in this section (Precio's own
+// "Precio (€)" label under the Evento gratuito toggle) - Repetir/Inicio-Fin/
+// Horario used to sit flush against each other with no vertical breathing
+// room, the only section in the page that didn't follow this spacing.
+app-recurrence-quick-picker {
+  display: block;
+  margin-top: 4px;
+}
+
+.series-info {
+  margin: 20px 0 2px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ion-color-primary);
 }
 
 .date-range-row {
   display: flex;
   gap: 16px;
+  margin-top: 20px;
+}
+
+.time-range-field {
+  margin-top: 20px;
 }
 
 .date-field {

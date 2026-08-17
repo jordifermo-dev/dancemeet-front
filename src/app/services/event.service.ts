@@ -2,7 +2,16 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { CreateEventPayload, Event, EventSearchParams, EventWithCreatorName, UpdateEventPayload } from '../models';
+import {
+  CreateEventPayload,
+  CreateEventSeriesPayload,
+  Event,
+  EventSearchParams,
+  EventWithCreatorName,
+  PatchEventSeriesPayload,
+  RecurrenceRule,
+  UpdateEventPayload,
+} from '../models';
 
 @Injectable({ providedIn: 'root' })
 export class EventService {
@@ -19,6 +28,30 @@ export class EventService {
 
   updateEvent(id: string, payload: UpdateEventPayload): Observable<{ success: boolean }> {
     return this.http.put<{ success: boolean }>(`${this.baseUrl}/${id}`, payload);
+  }
+
+  createSeries(payload: CreateEventSeriesPayload): Observable<{ seriesId: string; events: Event[] }> {
+    return this.http.post<{ seriesId: string; events: Event[] }>(`${this.baseUrl}/series`, payload);
+  }
+
+  getSeries(seriesId: string): Observable<Event[]> {
+    return this.http.get<Event[]>(`${this.baseUrl}/series/${seriesId}`);
+  }
+
+  updateSeries(seriesId: string, patch: PatchEventSeriesPayload): Observable<{ modifiedCount: number }> {
+    return this.http.patch<{ modifiedCount: number }>(`${this.baseUrl}/series/${seriesId}`, patch);
+  }
+
+  deleteSeries(seriesId: string): Observable<{ deletedCount: number }> {
+    return this.http.delete<{ deletedCount: number }>(`${this.baseUrl}/series/${seriesId}`);
+  }
+
+  /** Turns an already-saved single event into the first instance of a new
+   * series - keeps its id, generates the rest. */
+  attachRecurrence(eventId: string, recurrence: RecurrenceRule): Observable<{ seriesId: string; events: Event[] }> {
+    return this.http.patch<{ seriesId: string; events: Event[] }>(`${this.baseUrl}/${eventId}/recurrence`, {
+      recurrence,
+    });
   }
 
   search(params: EventSearchParams): Observable<EventWithCreatorName[]> {

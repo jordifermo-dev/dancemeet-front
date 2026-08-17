@@ -1,0 +1,71 @@
+// Same sheet padding every other bottom-sheet modal in the app uses (e.g.
+// sort-options-modal.component.scss) - this was missing here entirely, which
+// is why the "Repetir"/"Periodicidad personalizada" titles sat flush against
+// the top of their sheets instead of matching everywhere else.
+.filter-sheet {
+  padding: 20px 20px 16px;
+
+  // The "Personalizar…" sheet's own Aplicar button, right after
+  // <app-recurrence-editor> - same 22px rhythm as that component's own rows.
+  > ion-button {
+    margin-top: 22px;
+  }
+}
+
+.field-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+// Matches every other date/time modal's sub-label (see recurrence-editor
+// .field-label's own comment).
+.field-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ion-color-medium);
+}
+
+.repeat-trigger {
+  appearance: none;
+  border: none;
+  background: transparent;
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--ion-color-primary);
+  padding: 2px 4px;
+  border-radius: 8px;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--ion-color-primary);
+    outline-offset: 2px;
+  }
+}
+
+// Same list/row treatment as sort-options-modal.component.scss (the
+// existing "Ordenar" selector used throughout the app) - selection reads as
+// bold + teal text, no checkmark/background pill.
+.sort-options-list {
+  display: flex;
+  flex-direction: column;
+  margin-top: 4px;
+}
+
+.sort-option {
+  appearance: none;
+  border: none;
+  background: transparent;
+  text-align: left;
+  padding: 14px 4px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--app-text-strong);
+  cursor: pointer;
+
+  &.selected {
+    color: var(--ion-color-primary);
+    font-weight: 700;
+  }
+}

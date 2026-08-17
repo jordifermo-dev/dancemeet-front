@@ -78,9 +78,9 @@ export class ExplorerFiltersService {
   readonly draftAddress = signal<string>('');
 
   private readonly initialRange = this.quickDateRange('today');
-  readonly appliedDateFrom = signal<number>(this.initialRange.from);
+  readonly appliedDateFrom = signal<number | undefined>(this.initialRange.from);
   readonly appliedDateTo = signal<number | undefined>(this.initialRange.to);
-  readonly draftDateFrom = signal<number>(this.initialRange.from);
+  readonly draftDateFrom = signal<number | undefined>(this.initialRange.from);
   readonly draftDateTo = signal<number | undefined>(this.initialRange.to);
 
   /** Which quick-date pill (if any) the current draft range exactly matches -
@@ -99,7 +99,10 @@ export class ExplorerFiltersService {
 
   /** <ion-datetime> bindings for the "Desde"/"Hasta" calendar pickers - kept
    * as computed ISO strings so the templates don't need to convert. */
-  readonly draftDateFromIso = computed(() => this.toDateOnlyIso(this.draftDateFrom()));
+  readonly draftDateFromIso = computed(() => {
+    const from = this.draftDateFrom();
+    return from !== undefined ? this.toDateOnlyIso(from) : null;
+  });
   readonly draftDateToIso = computed(() => {
     const to = this.draftDateTo();
     return to !== undefined ? this.toDateOnlyIso(to) : null;
@@ -240,9 +243,23 @@ export class ExplorerFiltersService {
   setDraftDateToIso(iso: string): void {
     const to = this.endOfDayFromIso(iso);
     this.draftDateTo.set(to);
-    if (to < this.draftDateFrom()) {
+    const from = this.draftDateFrom();
+    if (from !== undefined && to < from) {
       this.draftDateFrom.set(this.startOfDayFromIso(iso));
     }
+  }
+
+  /** Symmetric to the existing "Sin límite" clear on draftDateTo - each
+   * consuming page used to redeclare an identical clearDraftDateTo() of its
+   * own (explorer/events/favorites/user-events/explorer-filters pages);
+   * centralized here alongside its new draftDateFrom counterpart instead of
+   * adding a 6th copy-pasted method. */
+  clearDraftDateFrom(): void {
+    this.draftDateFrom.set(undefined);
+  }
+
+  clearDraftDateTo(): void {
+    this.draftDateTo.set(undefined);
   }
 
   applyDate(): void {
@@ -262,15 +279,18 @@ export class ExplorerFiltersService {
     const to = this.draftDateTo();
     this.appliedDateFrom.set(from);
     this.appliedDateTo.set(to);
-    this.persistToProfile({ eventDateFrom: from, eventDateTo: to ?? null });
+    this.persistToProfile({ eventDateFrom: from ?? null, eventDateTo: to ?? null });
   }
 
   /** No saved eventDateFrom means the user never set a preference (true for
    * every new registration - see register.page.ts), so the default is today
-   * onward with no end date. */
+   * onward with no end date. An explicitly saved `null` (as opposed to
+   * `undefined`) means the user picked "Sin límite" and saved it - seeded
+   * back as undefined, same "no lower bound" meaning draftDateFrom already
+   * gives that value everywhere else. */
   private seedDateFromProfile(user: User): void {
-    if (user.eventDateFrom !== undefined && user.eventDateFrom !== null) {
-      const from = user.eventDateFrom;
+    if (user.eventDateFrom !== undefined) {
+      const from = user.eventDateFrom ?? undefined;
       const to = user.eventDateTo ?? undefined;
       this.appliedDateFrom.set(from);
       this.draftDateFrom.set(from);
@@ -530,7 +550,7 @@ export class ExplorerFiltersService {
       disciplineIds,
       eventTypeIds,
       statusIds: statuses,
-      eventDateFrom: dateFrom,
+      eventDateFrom: dateFrom ?? null,
       eventDateTo: dateTo ?? null,
     });
   }

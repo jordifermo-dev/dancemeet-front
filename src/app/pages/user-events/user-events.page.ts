@@ -719,6 +719,10 @@ export class UserEventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWil
     }
   }
 
+  clearDraftDateFrom(): void {
+    this.draftDateFrom.set(undefined);
+  }
+
   clearDraftDateTo(): void {
     this.draftDateTo.set(undefined);
   }

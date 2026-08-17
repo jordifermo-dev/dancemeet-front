@@ -1,0 +1,128 @@
+.recurrence-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  padding: 4px 0 8px;
+}
+
+.field-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+// Same size/weight/color as .date-field-label below (and every other
+// "Inicio"/"Fin"/"Desde"/"Hasta" style sub-label across the app, e.g.
+// event-detail.page.scss's own .date-field-label) - one consistent
+// sub-label treatment across every date/time modal instead of each
+// component picking its own size.
+.field-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ion-color-medium);
+}
+
+.interval-stepper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  button {
+    appearance: none;
+    border: 1.5px solid var(--ion-color-primary);
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    color: var(--ion-color-primary);
+    cursor: pointer;
+  }
+}
+
+.interval-value {
+  min-width: 20px;
+  text-align: center;
+  font-weight: 700;
+}
+
+.frequency-toggle {
+  display: flex;
+  gap: 6px;
+
+  button {
+    appearance: none;
+    border: 1.5px solid var(--ion-color-primary);
+    border-radius: 999px;
+    padding: 5px 12px;
+    background: var(--ion-background-color);
+    color: var(--ion-color-primary);
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+
+    &.active {
+      background: var(--ion-color-primary-fill);
+      color: var(--ion-color-primary-contrast);
+      border-color: transparent;
+    }
+  }
+}
+
+.nth-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.nth-chip {
+  appearance: none;
+  border: 1.5px solid var(--ion-color-primary);
+  border-radius: 999px;
+  padding: 5px 12px;
+  background: var(--ion-background-color);
+  color: var(--ion-color-primary);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+
+  &.active {
+    background: var(--ion-color-primary-fill);
+    color: var(--ion-color-primary-contrast);
+    border-color: transparent;
+  }
+}
+
+.date-range-row {
+  display: flex;
+  gap: 24px;
+  padding-top: 2px;
+}
+
+.date-field {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.date-field-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ion-color-medium);
+}
+
+.recurrence-preview {
+  margin: 4px 0 0;
+  font-size: 0.85rem;
+  color: var(--ion-color-medium-shade);
+
+  &.warning {
+    color: var(--ion-color-danger);
+    font-weight: 600;
+  }
+}

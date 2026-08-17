@@ -273,9 +273,13 @@
           <div class="date-value-row">
             <ion-icon name="calendar-outline"></ion-icon>
             <app-date-picker-field
-              [value]="filters.draftDateFrom()"
+              [value]="filters.draftDateFrom() ?? filters.draftDateTo() ?? nowTimestamp"
+              [isUnset]="filters.draftDateFrom() === undefined"
+              [unsetLabel]="'explorer.noStartDate' | translate"
+              [showUnsetToggle]="true"
               titleKey="explorer.dateFrom"
               (dateChange)="onDraftDateFromChange($event)"
+              (unsetToggle)="$event && filters.clearDraftDateFrom()"
             ></app-date-picker-field>
           </div>
         </div>
@@ -284,19 +288,15 @@
           <div class="date-value-row">
             <ion-icon name="calendar-outline"></ion-icon>
             <app-date-picker-field
-              [value]="filters.draftDateTo() ?? filters.draftDateFrom()"
+              [value]="filters.draftDateTo() ?? filters.draftDateFrom() ?? nowTimestamp"
               [isUnset]="filters.draftDateTo() === undefined"
               [unsetLabel]="'explorer.noEndDate' | translate"
+              [showUnsetToggle]="true"
               titleKey="explorer.dateTo"
               (dateChange)="onDraftDateToChange($event)"
+              (unsetToggle)="$event && clearDraftDateTo()"
             ></app-date-picker-field>
           </div>
-          @if (filters.draftDateTo() !== undefined) {
-            <button type="button" class="date-clear-link" (click)="clearDraftDateTo()">
-              <ion-icon name="close-outline"></ion-icon>
-              {{ 'explorer.noEndDate' | translate }}
-            </button>
-          }
         </div>
       </div>
 

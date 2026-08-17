@@ -46,9 +46,11 @@
         <app-date-picker-field
           [value]="dateFromValue"
           [isUnset]="dateFromIsUnset"
-          [unsetLabel]="'explorer.noEndDate' | translate"
+          [unsetLabel]="'explorer.noStartDate' | translate"
+          [showUnsetToggle]="true"
           titleKey="explorer.dateFrom"
           (dateChange)="dateFromChange.emit($event)"
+          (unsetToggle)="$event && clearDateFrom.emit()"
         ></app-date-picker-field>
       </div>
     </div>
@@ -60,16 +62,12 @@
           [value]="dateToValue"
           [isUnset]="dateToIsUnset"
           [unsetLabel]="'explorer.noEndDate' | translate"
+          [showUnsetToggle]="true"
           titleKey="explorer.dateTo"
           (dateChange)="dateToChange.emit($event)"
+          (unsetToggle)="$event && clearDateTo.emit()"
         ></app-date-picker-field>
       </div>
-      @if (!dateToIsUnset) {
-        <button type="button" class="date-clear-link" (click)="clearDateTo.emit()">
-          <ion-icon name="close-outline"></ion-icon>
-          {{ 'explorer.noEndDate' | translate }}
-        </button>
-      }
     </div>
   </div>
 </app-filter-section>

@@ -162,11 +162,13 @@
           [relationChips]="relationChips()"
           [dateFromValue]="draftDateFrom() ?? nowTimestamp"
           [dateToValue]="draftDateTo() ?? draftDateFrom() ?? nowTimestamp"
+          [dateFromIsUnset]="draftDateFrom() === undefined"
           [dateToIsUnset]="draftDateTo() === undefined"
           [applied]="genericApplyFlash.active()"
           (chipToggle)="onGenericFilterChipToggle($event)"
           (dateFromChange)="onDraftDateFromChange($event)"
           (dateToChange)="onDraftDateToChange($event)"
+          (clearDateFrom)="clearDraftDateFrom()"
           (clearDateTo)="clearDraftDateTo()"
           (reset)="clearGenericFilter()"
           (apply)="applyGenericFilter()"
@@ -398,8 +400,12 @@
             <ion-icon name="calendar-outline"></ion-icon>
             <app-date-picker-field
               [value]="draftDateFrom() ?? nowTimestamp"
+              [isUnset]="draftDateFrom() === undefined"
+              [unsetLabel]="'explorer.noStartDate' | translate"
+              [showUnsetToggle]="true"
               titleKey="explorer.dateFrom"
               (dateChange)="onDraftDateFromChange($event)"
+              (unsetToggle)="$event && clearDraftDateFrom()"
             ></app-date-picker-field>
           </div>
         </div>
@@ -411,16 +417,12 @@
               [value]="draftDateTo() ?? draftDateFrom() ?? nowTimestamp"
               [isUnset]="draftDateTo() === undefined"
               [unsetLabel]="'explorer.noEndDate' | translate"
+              [showUnsetToggle]="true"
               titleKey="explorer.dateTo"
               (dateChange)="onDraftDateToChange($event)"
+              (unsetToggle)="$event && clearDraftDateTo()"
             ></app-date-picker-field>
           </div>
-          @if (draftDateTo() !== undefined) {
-            <button type="button" class="date-clear-link" (click)="clearDraftDateTo()">
-              <ion-icon name="close-outline"></ion-icon>
-              {{ 'explorer.noEndDate' | translate }}
-            </button>
-          }
         </div>
       </div>
 

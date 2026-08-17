@@ -151,6 +151,9 @@ export class ExplorerPage implements OnInit, ViewWillEnter {
 
   readonly locatingMe = signal(false);
   readonly droppingPin = signal(false);
+  /** Fallback seed for <app-date-picker-field>'s [value] when draftDateFrom/
+   * draftDateTo are both unset ("Sin límite" both ends). */
+  readonly nowTimestamp = Date.now();
   readonly mapType = signal<MapType>('roadmap');
 
   /** An empty discipline or event-type selection now filters down to zero

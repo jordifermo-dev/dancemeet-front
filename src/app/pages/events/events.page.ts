@@ -135,6 +135,9 @@ export class EventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWillEnt
   private readonly ngZone = inject(NgZone);
   private readonly sortPreference = inject(SortPreferenceService);
   readonly filters = inject(ExplorerFiltersService);
+  /** Fallback seed for <app-date-picker-field>'s [value] when draftDateFrom/
+   * draftDateTo are both unset ("Sin límite" both ends). */
+  readonly nowTimestamp = Date.now();
 
   @ViewChild('topOverlay') private topOverlayRef?: ElementRef<HTMLDivElement>;
   private overlayResizeObserver?: ResizeObserver;

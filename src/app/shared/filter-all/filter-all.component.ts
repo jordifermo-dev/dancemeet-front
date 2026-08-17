@@ -58,12 +58,11 @@ export class FilterAllComponent {
    * handlers, this just passes the current value through. */
   @Input({ required: true }) dateFromValue!: number;
   @Input({ required: true }) dateToValue!: number;
-  /** User-events only - unlike everywhere else, its date range can genuinely
-   * have no lower bound (defaults to showing every past+upcoming event), so
-   * its "Desde" button needs the same "unset" placeholder Hasta already has -
-   * without it, an unbound picker just falls back to showing whatever
-   * today's date happens to be, which reads as a real applied filter value
-   * instead of "no filter". */
+  /** "Desde" can have no lower bound (search/filter every event regardless
+   * of how old), same "unset" placeholder pattern Hasta already had - without
+   * it, an unbound picker just falls back to showing whatever today's date
+   * happens to be, which reads as a real applied filter value instead of "no
+   * filter". */
   @Input() dateFromIsUnset = false;
   @Input() dateToIsUnset = false;
 
@@ -73,6 +72,7 @@ export class FilterAllComponent {
   @Output() readonly chipToggle = new EventEmitter<FilterAllChipEvent>();
   @Output() readonly dateFromChange = new EventEmitter<Event>();
   @Output() readonly dateToChange = new EventEmitter<Event>();
+  @Output() readonly clearDateFrom = new EventEmitter<void>();
   @Output() readonly clearDateTo = new EventEmitter<void>();
   @Output() readonly saveAsPreference = new EventEmitter<void>();
   @Output() readonly reset = new EventEmitter<void>();

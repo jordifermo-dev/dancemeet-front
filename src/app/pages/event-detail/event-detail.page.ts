@@ -58,6 +58,7 @@ import { LanguageService } from '../../services/language.service';
 import { CitySuggestion, GeocodingService } from '../../services/geocoding.service';
 import {
   CreateEventPayload,
+  CreateEventSeriesPayload,
   Discipline,
   DISCIPLINE_NAMES,
   EventType,
@@ -65,6 +66,7 @@ import {
   EventStatus,
   EVENT_STATUSES,
   EventWithCreatorName,
+  RecurrenceRule,
   SocialLinks,
   UpdateEventPayload,
 } from '../../models';
@@ -78,13 +80,15 @@ import {
   sortByNameOrder,
 } from '../../shared/icon-catalog';
 import { MapType } from '../../shared/maps';
-import { formatEventDateRange, formatEventDateOnly } from '../../shared/event-date-format';
+import { formatEventDateRange, formatEventDateOnly, INTL_LOCALES } from '../../shared/event-date-format';
 import { buildGoogleCalendarUrl, buildIcs, downloadIcs } from '../../shared/calendar-export';
 import { LocationPickerComponent } from '../../shared/location-picker/location-picker.component';
 import { PhotoEditorComponent } from '../../shared/photo-editor/photo-editor.component';
 import { FilterSheetHeaderComponent } from '../../shared/filter-sheet-header/filter-sheet-header.component';
 import { FilterActionsRowComponent } from '../../shared/filter-actions-row/filter-actions-row.component';
 import { ChipGridComponent } from '../../shared/chip-grid/chip-grid.component';
+import { TimeRangePickerComponent } from '../../shared/time-range-picker/time-range-picker.component';
+import { RecurrenceQuickPickerComponent } from '../../shared/recurrence-quick-picker/recurrence-quick-picker.component';
 import { disciplineChipItems, eventTypeChipItems, statusChipItems } from '../../shared/chip-grid/chip-grid-presets';
 import { SOCIAL_URL_PATTERNS } from '../../shared/social-link-patterns';
 import {
@@ -234,6 +238,8 @@ function withTimePart(base: number, timeValue: string): number {
     FilterSheetHeaderComponent,
     FilterActionsRowComponent,
     ChipGridComponent,
+    TimeRangePickerComponent,
+    RecurrenceQuickPickerComponent,
   ],
 })
 export class EventDetailPage implements ComponentWithUnsavedChanges {
@@ -558,6 +564,12 @@ export class EventDetailPage implements ComponentWithUnsavedChanges {
   readonly editStatusChips = computed(() => statusChipItems(this.editableStatusOptions, [this.editStatus()]));
   readonly editDateFrom = signal(Date.now());
   readonly editDateTo = signal(Date.now() + DEFAULT_EVENT_DURATION_MS);
+  /** Only ever set in create mode (see the "Repetir" field, shown only while
+   * isCreateMode()) - non-null means saveEdit() calls createSeries() instead
+   * of createEvent(), with editDateFrom/editDateTo contributing only their
+   * time-of-day (the "Fecha inicio/fin" date buttons hide themselves while
+   * this is set - see event-detail.page.html). */
+  readonly recurrenceRule = signal<RecurrenceRule | null>(null);
   // <ion-datetime-button>'s own date-target slot stopped reflecting further
   // value changes after the first render when that value was set
   // programmatically (confirmed with device logging: the computed label was
@@ -566,14 +578,6 @@ export class EventDetailPage implements ComponentWithUnsavedChanges {
   // ourselves rather than relying on ion-datetime-button's built-in trigger.
   readonly showDateFromPicker = signal(false);
   readonly showDateToPicker = signal(false);
-  // Same reasoning as the date pickers above, plus a Chromium/Android-
-  // specific issue of its own: a native <input type="time">'s dropdown is
-  // drawn by the browser itself, not by our CSS, and can render clipped past
-  // the screen edge when the field sits near it or inside a scrolling
-  // container - confirmed on-device. A controlled ion-datetime in a modal
-  // keeps the picker fully within the app's own layout.
-  readonly showTimeFromPicker = signal(false);
-  readonly showTimeToPicker = signal(false);
   readonly editAddress = signal('');
   readonly editCity = signal('');
   readonly editLatitude = signal(0);
@@ -584,20 +588,17 @@ export class EventDetailPage implements ComponentWithUnsavedChanges {
 
   readonly editDateFromIso = computed(() => new Date(this.editDateFrom()).toISOString());
   readonly editDateToIso = computed(() => new Date(this.editDateTo()).toISOString());
+  // ion-datetime's own year picker defaults to starting at 1926 - narrows it
+  // to a sensible window around today instead.
+  readonly dateMinIso = `${new Date().getFullYear() - 10}-01-01`;
+  readonly dateMaxIso = `${new Date().getFullYear() + 5}-12-31`;
+  // ion-datetime's month/weekday names follow its own `locale` input, which
+  // defaults to the device's system locale rather than the app's own
+  // language selection.
+  readonly dateLocaleTag = computed(() => INTL_LOCALES[this.languageService.currentLang() ?? 'es']);
   // Text for the plain-<button> date triggers above (see showDateFromPicker).
   readonly editDateFromLabel = computed(() => formatEventDateOnly(this.editDateFrom(), this.languageService.currentLang()));
   readonly editDateToLabel = computed(() => formatEventDateOnly(this.editDateTo(), this.languageService.currentLang()));
-
-  // Text for the plain-<button> time triggers (see showTimeFromPicker above).
-  readonly editTimeFromValue = computed(() => formatTimeInputValue(this.editDateFrom()));
-  readonly editTimeToValue = computed(() => formatTimeInputValue(this.editDateTo()));
-  // ion-datetime's value for presentation="time" is still a full ISO string -
-  // the date part is irrelevant (only hours/minutes are picked/read back) so
-  // it's fixed to an arbitrary day, kept purely local (no "Z"/offset) so
-  // onTimeFromChange/onTimeToChange can read the hours/minutes back with
-  // plain getHours()/getMinutes() and get exactly what was picked.
-  readonly editTimeFromIso = computed(() => `1970-01-01T${this.editTimeFromValue()}:00`);
-  readonly editTimeToIso = computed(() => `1970-01-01T${this.editTimeToValue()}:00`);
 
   // null (not 0) means "nothing picked yet" - editLatitude/editLongitude
   // default to plain 0, which is otherwise indistinguishable from a real
@@ -1441,7 +1442,7 @@ export class EventDetailPage implements ComponentWithUnsavedChanges {
     // missing field, this isn't "fix it and tap Guardar again", it's "your
     // edits can't be saved as-is", so it gets its own modal (Ignorar/Corregir
     // fecha) instead of joining the generic missing-fields list.
-    if (this.editDateFrom() < Date.now()) {
+    if (!this.recurrenceRule() && this.editDateFrom() < Date.now()) {
       this.showDateInvalidModal.set(true);
       return;
     }
@@ -1512,6 +1513,34 @@ export class EventDetailPage implements ComponentWithUnsavedChanges {
         this.saving.set(false);
         return;
       }
+      const rule = this.recurrenceRule();
+      if (rule) {
+        // status isn't part of CreateEventSeriesPayload - every instance is
+        // created 'published' (see EventService.createEventSeries, backend).
+        const { status: _status, eventDateFrom: _from, eventDateTo: _to, ...seriesFields } = commonFields;
+        const seriesPayload: CreateEventSeriesPayload = {
+          ...seriesFields,
+          creatorId: me.id,
+          recurrence: rule,
+          timeFrom: formatTimeInputValue(this.editDateFrom()),
+          timeTo: formatTimeInputValue(this.editDateTo()),
+        };
+        this.eventService.createSeries(seriesPayload).subscribe({
+          next: ({ events }) => {
+            this.saving.set(false);
+            this.isEditMode.set(false);
+            this.refreshNotifier.notifyEventCreated();
+            const first = events[0];
+            if (this.originUrl) {
+              this.router.navigateByUrl(this.originUrl, { replaceUrl: true });
+            } else if (first) {
+              this.router.navigate(['/events', first.id], { replaceUrl: true });
+            }
+          },
+          error: () => this.saving.set(false),
+        });
+        return;
+      }
       const payload: CreateEventPayload = { ...commonFields, creatorId: me.id };
       this.eventService.createEvent(payload).subscribe({
         next: (created) => {
@@ -1552,20 +1581,43 @@ export class EventDetailPage implements ComponentWithUnsavedChanges {
       return;
     }
     const payload: UpdateEventPayload = commonFields;
+    const rule = this.recurrenceRule();
     this.eventService.updateEvent(event.id, payload).subscribe({
       next: () => {
         this.event.set({ ...event, ...payload });
-        this.savedFlash.trigger();
-        // Keeps the form (and its now-disabled Save button, still reading
-        // "saving") on screen just long enough to read "Guardado ✓" before
-        // collapsing back to view mode - flipping isEditMode immediately
-        // would yank the confirmation away before anyone could see it.
-        setTimeout(() => {
-          this.saving.set(false);
-          this.isEditMode.set(false);
-        }, 900);
+        // Editing an event with no seriesId of its own can turn it into the
+        // first instance of a brand-new series - see the "Repetir" field
+        // shown below when !event().seriesId. Field edits above are saved
+        // first so the newly-generated instances copy the up-to-date content.
+        if (rule && !event.seriesId) {
+          this.eventService.attachRecurrence(event.id, rule).subscribe({
+            next: ({ events }) => {
+              const first = events[0];
+              if (first) {
+                this.event.set({ ...this.event()!, ...first });
+              }
+              this.recurrenceRule.set(null);
+              this.finishSaveEdit();
+            },
+            error: () => this.finishSaveEdit(),
+          });
+          return;
+        }
+        this.finishSaveEdit();
       },
       error: () => this.saving.set(false),
     });
+  }
+
+  /** Shared tail of saveEdit()'s edit-mode branch - keeps the form (and its
+   * now-disabled Save button, still reading "saving") on screen just long
+   * enough to read "Guardado ✓" before collapsing back to view mode,
+   * whether or not attachRecurrence() also ran. */
+  private finishSaveEdit(): void {
+    this.savedFlash.trigger();
+    setTimeout(() => {
+      this.saving.set(false);
+      this.isEditMode.set(false);
+    }, 900);
   }
 }

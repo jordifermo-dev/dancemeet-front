@@ -4,7 +4,8 @@ export type NotificationType =
   | 'event_updated'
   | 'event_reminder_today'
   | 'following_new_event'
-  | 'preference_new_event';
+  | 'preference_new_event'
+  | 'recurring_series_created';
 
 export interface AppNotification {
   id: string;

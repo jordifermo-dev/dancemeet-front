@@ -1,0 +1,83 @@
+<div class="recurrence-editor">
+  <div class="field-row">
+    <span class="field-label">{{ 'eventDetail.repeatsEveryLabel' | translate }}</span>
+    <div class="interval-stepper">
+      <button type="button" (click)="onIntervalStep(-1)">
+        <ion-icon name="remove-outline"></ion-icon>
+      </button>
+      <span class="interval-value">{{ rule().interval }}</span>
+      <button type="button" (click)="onIntervalStep(1)">
+        <ion-icon name="add-outline"></ion-icon>
+      </button>
+    </div>
+    <div class="frequency-toggle">
+      <button
+        type="button"
+        [class.active]="rule().frequency === 'weekly'"
+        (click)="setFrequency('weekly')"
+      >{{ 'eventDetail.repeatWeekly' | translate }}</button>
+      <button
+        type="button"
+        [class.active]="rule().frequency === 'monthlyNthWeekday'"
+        (click)="setFrequency('monthlyNthWeekday')"
+      >{{ 'eventDetail.repeatMonthly' | translate }}</button>
+    </div>
+  </div>
+
+  @if (rule().frequency === 'weekly') {
+    <div class="field-row">
+      <span class="field-label">{{ 'eventDetail.repeatsOnLabel' | translate }}</span>
+    </div>
+    <app-weekday-picker
+      [selectedWeekdays]="weeklyWeekdays()"
+      (selectedWeekdaysChange)="setWeeklyWeekdays($event)"
+    ></app-weekday-picker>
+  } @else {
+    <div class="field-row">
+      <span class="field-label">{{ 'eventDetail.repeatsOnLabel' | translate }}</span>
+    </div>
+    <app-weekday-picker
+      [selectedWeekdays]="monthlyWeekdays()"
+      (selectedWeekdaysChange)="setMonthlyWeekdays($event)"
+    ></app-weekday-picker>
+
+    <div class="field-row">
+      <span class="field-label">{{ 'eventDetail.nthWeekdayModeLabel' | translate }}</span>
+    </div>
+    <div class="nth-chip-row">
+      @for (nth of nthOptions; track nth) {
+        <button
+          type="button"
+          class="nth-chip"
+          [class.active]="monthlyNths().includes(nth)"
+          (click)="toggleNth(nth)"
+        >{{ nthLabelKey(nth) | translate }}</button>
+      }
+    </div>
+  }
+
+  <div class="date-range-row">
+    <div class="date-field">
+      <span class="date-field-label">{{ 'explorer.dateFrom' | translate }}</span>
+      <app-date-picker-field
+        [value]="rule().dateFrom"
+        titleKey="explorer.dateFrom"
+        (dateChange)="onDateFromChange($event)"
+      ></app-date-picker-field>
+    </div>
+    <div class="date-field">
+      <span class="date-field-label">{{ 'eventDetail.untilLabel' | translate }}</span>
+      <app-date-picker-field
+        [value]="untilValue()"
+        [isUnset]="isUnlimited()"
+        [unsetLabel]="'eventDetail.noEndLimit' | translate"
+        [showUnsetToggle]="true"
+        titleKey="eventDetail.untilLabel"
+        (dateChange)="onUntilChange($event)"
+        (unsetToggle)="toggleNoLimit()"
+      ></app-date-picker-field>
+    </div>
+  </div>
+
+  <p class="recurrence-preview" [class.warning]="isTooLong()">{{ previewLabel() }}</p>
+</div>

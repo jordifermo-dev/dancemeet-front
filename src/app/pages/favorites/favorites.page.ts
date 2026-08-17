@@ -664,6 +664,10 @@ export class FavoritesPage implements OnInit, AfterViewInit, OnDestroy, ViewWill
     }
   }
 
+  clearDraftDateFrom(): void {
+    this.draftDateFrom.set(undefined);
+  }
+
   clearDraftDateTo(): void {
     this.draftDateTo.set(undefined);
   }

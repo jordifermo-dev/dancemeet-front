@@ -1,3 +1,10 @@
+.date-picker-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
 .date-picker-trigger {
   appearance: none;
   border: none;
@@ -16,10 +23,45 @@
   }
 }
 
+.unset-toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.unset-toggle {
+  --track-background-checked: var(--ion-color-primary-fill);
+  height: 20px;
+  width: 36px;
+}
+
+.unset-toggle-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--ion-color-medium);
+}
+
 .date-picker-sheet {
   padding: 20px 20px 16px;
 
   ion-datetime {
     width: 100%;
   }
+}
+
+// Same outline-pill treatment as every other small standalone button in the
+// app (recurrence editor's frequency/nth chips) - as plain text it read as a
+// section subtitle instead of something tappable.
+.today-button {
+  appearance: none;
+  align-self: flex-start;
+  border: 1.5px solid var(--ion-color-primary);
+  border-radius: 999px;
+  background: var(--ion-background-color);
+  color: var(--ion-color-primary);
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 5px 14px;
+  margin-bottom: 8px;
+  cursor: pointer;
 }

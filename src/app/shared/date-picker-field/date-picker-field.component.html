@@ -1,6 +1,18 @@
-<button type="button" class="date-picker-trigger" (click)="isOpen.set(true)">
-  {{ isUnset ? unsetLabel : label() }}
-</button>
+<div class="date-picker-field">
+  <button type="button" class="date-picker-trigger" (click)="isOpen.set(true)">
+    {{ isUnset() ? unsetLabel() : label() }}
+  </button>
+  @if (showUnsetToggle()) {
+    <span class="unset-toggle-row">
+      <ion-toggle
+        class="unset-toggle"
+        [checked]="isUnset()"
+        (ionChange)="onUnsetToggle($event)"
+      ></ion-toggle>
+      <span class="unset-toggle-label">{{ unsetLabel() }}</span>
+    </span>
+  }
+</div>
 
 <ion-modal
   [keepContentsMounted]="true"
@@ -11,19 +23,24 @@
 >
   <ng-template>
     <div class="date-picker-sheet">
-      <app-filter-sheet-header [titleKey]="titleKey" (closed)="picker.cancel(true)"></app-filter-sheet-header>
+      <app-filter-sheet-header [titleKey]="titleKey()" (closed)="cancel()"></app-filter-sheet-header>
+      <button type="button" class="today-button" (click)="goToToday()">{{ 'eventDetail.goToToday' | translate }}</button>
       <ion-datetime
         #picker
         presentation="date"
+        firstDayOfWeek="1"
+        [locale]="localeTag()"
         [value]="valueIso()"
+        [min]="minIso"
+        [max]="maxIso"
         (ionChange)="onChange($event)"
       ></ion-datetime>
       <app-filter-actions-row>
-        <ion-button expand="block" fill="outline" color="primary" (click)="picker.cancel(true)">
+        <ion-button expand="block" fill="outline" color="primary" (click)="cancel()">
           <ion-icon slot="start" name="close-outline"></ion-icon>
           {{ 'common.cancel' | translate }}
         </ion-button>
-        <ion-button expand="block" class="btn-fill" color="primary" (click)="picker.confirm(true)">
+        <ion-button expand="block" class="btn-fill" color="primary" (click)="apply()">
           <ion-icon slot="start" name="checkmark-outline"></ion-icon>
           {{ 'profile.apply' | translate }}
         </ion-button>

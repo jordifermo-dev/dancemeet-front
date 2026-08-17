@@ -30,7 +30,7 @@ export interface User {
   latitude: number;
   longitude: number;
   distanceRange: number;
-  eventDateFrom?: number;
+  eventDateFrom?: number | null;
   eventDateTo?: number | null;
   /** Notification types the user has turned off - empty means every type is
    * enabled (the default), all six means "no notifications at all". */

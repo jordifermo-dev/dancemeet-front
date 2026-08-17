@@ -5,6 +5,7 @@ export const ALL_NOTIFICATION_TYPES: NotificationType[] = [
   'event_reminder_today',
   'following_new_event',
   'preference_new_event',
+  'recurring_series_created',
   'event_attendee',
   'new_follower',
 ];
@@ -16,6 +17,7 @@ export const NOTIFICATION_TYPE_ICONS: Record<NotificationType, string> = {
   event_reminder_today: 'today-outline',
   following_new_event: 'calendar-outline',
   preference_new_event: 'sparkles-outline',
+  recurring_series_created: 'repeat-outline',
 };
 
 export const NOTIFICATION_TYPE_LABEL_KEYS: Record<NotificationType, string> = {
@@ -25,4 +27,5 @@ export const NOTIFICATION_TYPE_LABEL_KEYS: Record<NotificationType, string> = {
   event_reminder_today: 'notifications.typeEventReminderToday',
   following_new_event: 'notifications.typeFollowingNewEvent',
   preference_new_event: 'notifications.typePreferenceNewEvent',
+  recurring_series_created: 'notifications.typeRecurringSeriesCreated',
 };

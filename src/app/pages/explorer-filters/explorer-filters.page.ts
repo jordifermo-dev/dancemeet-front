@@ -48,6 +48,9 @@ export class ExplorerFiltersPage implements OnInit {
   readonly statusChips = computed(() => statusChipItems(this.statusOptions, this.filters.draftStatuses()));
   readonly priceChips = computed(() => priceChipItems(this.priceOptions, this.filters.draftPriceOptions()));
   readonly quickDateChips = computed(() => quickDateChipItems(this.filters.draftActiveQuickDate()));
+  /** Fallback seed for <app-filter-all>'s date fields when draftDateFrom/
+   * draftDateTo are both unset ("Sin límite" both ends). */
+  readonly nowTimestamp = Date.now();
 
   constructor() {
     addIcons({ calendarOutline });

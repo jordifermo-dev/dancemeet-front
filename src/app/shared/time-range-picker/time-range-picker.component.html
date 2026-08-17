@@ -1,0 +1,49 @@
+<button type="button" class="time-range-trigger" (click)="isOpen.set(true)">
+  {{ fromLabel() }} - {{ toLabel() }}
+</button>
+
+<ion-modal
+  [keepContentsMounted]="true"
+  [isOpen]="isOpen()"
+  [initialBreakpoint]="0.6"
+  [breakpoints]="[0, 0.6]"
+  (didDismiss)="isOpen.set(false)"
+>
+  <ng-template>
+    <div class="time-range-sheet">
+      <app-filter-sheet-header [titleKey]="titleKey()" (closed)="isOpen.set(false)"></app-filter-sheet-header>
+      <div class="time-range-columns">
+        <div class="time-range-column">
+          <span class="time-range-label">{{ 'eventDetail.dateFromLabel' | translate }}</span>
+          <ion-datetime
+            #fromPicker
+            presentation="time"
+            [locale]="localeTag()"
+            [value]="fromIso()"
+            (ionChange)="onFromChange($event)"
+          ></ion-datetime>
+        </div>
+        <div class="time-range-column">
+          <span class="time-range-label">{{ 'eventDetail.dateToLabel' | translate }}</span>
+          <ion-datetime
+            #toPicker
+            presentation="time"
+            [locale]="localeTag()"
+            [value]="toIso()"
+            (ionChange)="onToChange($event)"
+          ></ion-datetime>
+        </div>
+      </div>
+      <app-filter-actions-row>
+        <ion-button expand="block" fill="outline" color="primary" (click)="cancel()">
+          <ion-icon slot="start" name="close-outline"></ion-icon>
+          {{ 'common.cancel' | translate }}
+        </ion-button>
+        <ion-button expand="block" class="btn-fill" color="primary" (click)="apply()">
+          <ion-icon slot="start" name="checkmark-outline"></ion-icon>
+          {{ 'profile.apply' | translate }}
+        </ion-button>
+      </app-filter-actions-row>
+    </div>
+  </ng-template>
+</ion-modal>

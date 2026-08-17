@@ -1,0 +1,59 @@
+<div class="field-row">
+  <span class="field-label">{{ 'eventDetail.repeatLabel' | translate }}</span>
+  <button type="button" class="repeat-trigger" (click)="openPresets()">
+    {{ summaryKey() | translate }}
+  </button>
+</div>
+
+<ion-modal
+  [isOpen]="isPresetOpen()"
+  [initialBreakpoint]="0.45"
+  [breakpoints]="[0, 0.45, 0.7]"
+  (didDismiss)="isPresetOpen.set(false)"
+>
+  <ng-template>
+    <div class="filter-sheet">
+      <app-filter-sheet-header titleKey="eventDetail.repeatLabel" (closed)="isPresetOpen.set(false)"></app-filter-sheet-header>
+      <div class="sort-options-list">
+        <button type="button" class="sort-option" [class.selected]="activePreset() === 'none'" (click)="selectPreset('none')">
+          {{ 'eventDetail.repeatNone' | translate }}
+        </button>
+        <button type="button" class="sort-option" [class.selected]="activePreset() === 'weekly'" (click)="selectPreset('weekly')">
+          {{ 'eventDetail.repeatWeekly' | translate }}
+        </button>
+        <button type="button" class="sort-option" [class.selected]="activePreset() === 'monthly'" (click)="selectPreset('monthly')">
+          {{ 'eventDetail.repeatMonthly' | translate }}
+        </button>
+        <button type="button" class="sort-option" (click)="selectPreset('custom')">
+          {{ 'eventDetail.repeatCustom' | translate }}
+        </button>
+      </div>
+      <app-filter-actions-row>
+        <ion-button expand="block" fill="outline" color="primary" (click)="isPresetOpen.set(false)">
+          <ion-icon slot="start" name="close-outline"></ion-icon>
+          {{ 'common.cancel' | translate }}
+        </ion-button>
+      </app-filter-actions-row>
+    </div>
+  </ng-template>
+</ion-modal>
+
+<ion-modal
+  [isOpen]="isCustomOpen()"
+  [initialBreakpoint]="0.9"
+  [breakpoints]="[0, 0.9]"
+  (didDismiss)="closeCustom()"
+>
+  <ng-template>
+    <div class="filter-sheet">
+      <app-filter-sheet-header titleKey="eventDetail.recurrenceTitle" (closed)="closeCustom()"></app-filter-sheet-header>
+      @if (recurrence(); as rule) {
+        <app-recurrence-editor [rule]="rule" (ruleChange)="onRuleChange($event)"></app-recurrence-editor>
+      }
+      <ion-button expand="block" class="btn-fill" (click)="closeCustom()">
+        <ion-icon slot="start" name="checkmark-outline"></ion-icon>
+        {{ 'profile.apply' | translate }}
+      </ion-button>
+    </div>
+  </ng-template>
+</ion-modal>

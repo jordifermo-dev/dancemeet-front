@@ -113,40 +113,55 @@
 
       <section class="section">
         <h2>{{ 'explorer.dateFilterLabel' | translate }}</h2>
-        <div class="date-range-row">
-          <div class="date-field">
-            <span class="date-field-label">{{ 'eventDetail.dateFromLabel' | translate }}</span>
-            <div class="date-value-row">
-              <span class="date-value-group">
-                <ion-icon name="calendar-outline"></ion-icon>
-                <button type="button" class="date-picker-trigger" (click)="showDateFromPicker.set(true)">
-                  {{ editDateFromLabel() }}
-                </button>
-              </span>
-              <span class="date-value-group">
-                <ion-icon name="time-outline"></ion-icon>
-                <button type="button" class="date-picker-trigger" (click)="showTimeFromPicker.set(true)">
-                  {{ editTimeFromValue() }}
-                </button>
-              </span>
+        @if (!event()?.seriesId) {
+          <app-recurrence-quick-picker
+            [recurrence]="recurrenceRule()"
+            [anchorDate]="editDateFrom()"
+            (recurrenceChange)="recurrenceRule.set($event)"
+          ></app-recurrence-quick-picker>
+        }
+        @if (event()?.seriesId) {
+          <p class="series-info">{{ 'eventDetail.seriesInfo' | translate: { index: event()!.seriesIndex, total: event()!.seriesTotal } }}</p>
+        }
+        @if (!recurrenceRule()) {
+          <div class="date-range-row">
+            <div class="date-field">
+              <span class="date-field-label">{{ 'eventDetail.dateFromLabel' | translate }}</span>
+              <div class="date-value-row">
+                <span class="date-value-group">
+                  <ion-icon name="calendar-outline"></ion-icon>
+                  <button type="button" class="date-picker-trigger" (click)="showDateFromPicker.set(true)">
+                    {{ editDateFromLabel() }}
+                  </button>
+                </span>
+              </div>
+            </div>
+            <div class="date-field">
+              <span class="date-field-label">{{ 'eventDetail.dateToLabel' | translate }}</span>
+              <div class="date-value-row">
+                <span class="date-value-group">
+                  <ion-icon name="calendar-outline"></ion-icon>
+                  <button type="button" class="date-picker-trigger" (click)="showDateToPicker.set(true)">
+                    {{ editDateToLabel() }}
+                  </button>
+                </span>
+              </div>
             </div>
           </div>
-          <div class="date-field">
-            <span class="date-field-label">{{ 'eventDetail.dateToLabel' | translate }}</span>
-            <div class="date-value-row">
-              <span class="date-value-group">
-                <ion-icon name="calendar-outline"></ion-icon>
-                <button type="button" class="date-picker-trigger" (click)="showDateToPicker.set(true)">
-                  {{ editDateToLabel() }}
-                </button>
-              </span>
-              <span class="date-value-group">
-                <ion-icon name="time-outline"></ion-icon>
-                <button type="button" class="date-picker-trigger" (click)="showTimeToPicker.set(true)">
-                  {{ editTimeToValue() }}
-                </button>
-              </span>
-            </div>
+        }
+        <div class="date-field time-range-field">
+          <span class="date-field-label">{{ 'eventDetail.timeRangeLabel' | translate }}</span>
+          <div class="date-value-row">
+            <span class="date-value-group">
+              <ion-icon name="time-outline"></ion-icon>
+              <app-time-range-picker
+                [valueFrom]="editDateFrom()"
+                [valueTo]="editDateTo()"
+                titleKey="eventDetail.timeRangeLabel"
+                (fromChange)="onTimeFromChange($event)"
+                (toChange)="onTimeToChange($event)"
+              ></app-time-range-picker>
+            </span>
           </div>
         </div>
       </section>
@@ -441,7 +456,11 @@
         #eventDetailDateFromPicker
         id="eventDetailDateFrom"
         presentation="date"
+        firstDayOfWeek="1"
+        [locale]="dateLocaleTag()"
         [value]="editDateFromIso()"
+        [min]="dateMinIso"
+        [max]="dateMaxIso"
         (ionChange)="onDateFromChange($event)"
       ></ion-datetime>
       <app-filter-actions-row>
@@ -475,7 +494,11 @@
         #eventDetailDateToPicker
         id="eventDetailDateTo"
         presentation="date"
+        firstDayOfWeek="1"
+        [locale]="dateLocaleTag()"
         [value]="editDateToIso()"
+        [min]="dateMinIso"
+        [max]="dateMaxIso"
         (ionChange)="onDateToChange($event)"
       ></ion-datetime>
       <app-filter-actions-row>
@@ -484,75 +507,6 @@
           {{ 'common.cancel' | translate }}
         </ion-button>
         <ion-button expand="block" class="btn-fill" color="primary" (click)="eventDetailDateToPicker.confirm(true)">
-          <ion-icon slot="start" name="checkmark-outline"></ion-icon>
-          {{ 'profile.apply' | translate }}
-        </ion-button>
-      </app-filter-actions-row>
-    </div>
-  </ng-template>
-</ion-modal>
-
-<ion-modal
-  class="picker-modal"
-  [keepContentsMounted]="true"
-  [isOpen]="showTimeFromPicker()"
-  [initialBreakpoint]="0.75"
-  [breakpoints]="[0, 0.75]"
-  (didDismiss)="showTimeFromPicker.set(false)"
->
-  <ng-template>
-    <div class="filter-sheet">
-      <app-filter-sheet-header
-        titleKey="eventDetail.dateFromLabel"
-        (closed)="eventDetailTimeFromPicker.cancel(true)"
-      ></app-filter-sheet-header>
-      <ion-datetime
-        #eventDetailTimeFromPicker
-        id="eventDetailTimeFrom"
-        presentation="time"
-        [value]="editTimeFromIso()"
-        (ionChange)="onTimeFromChange($event)"
-      ></ion-datetime>
-      <app-filter-actions-row>
-        <ion-button expand="block" fill="outline" color="primary" (click)="eventDetailTimeFromPicker.cancel(true)">
-          <ion-icon slot="start" name="close-outline"></ion-icon>
-          {{ 'common.cancel' | translate }}
-        </ion-button>
-        <ion-button expand="block" class="btn-fill" color="primary" (click)="eventDetailTimeFromPicker.confirm(true)">
-          <ion-icon slot="start" name="checkmark-outline"></ion-icon>
-          {{ 'profile.apply' | translate }}
-        </ion-button>
-      </app-filter-actions-row>
-    </div>
-  </ng-template>
-</ion-modal>
-<ion-modal
-  class="picker-modal"
-  [keepContentsMounted]="true"
-  [isOpen]="showTimeToPicker()"
-  [initialBreakpoint]="0.75"
-  [breakpoints]="[0, 0.75]"
-  (didDismiss)="showTimeToPicker.set(false)"
->
-  <ng-template>
-    <div class="filter-sheet">
-      <app-filter-sheet-header
-        titleKey="eventDetail.dateToLabel"
-        (closed)="eventDetailTimeToPicker.cancel(true)"
-      ></app-filter-sheet-header>
-      <ion-datetime
-        #eventDetailTimeToPicker
-        id="eventDetailTimeTo"
-        presentation="time"
-        [value]="editTimeToIso()"
-        (ionChange)="onTimeToChange($event)"
-      ></ion-datetime>
-      <app-filter-actions-row>
-        <ion-button expand="block" fill="outline" color="primary" (click)="eventDetailTimeToPicker.cancel(true)">
-          <ion-icon slot="start" name="close-outline"></ion-icon>
-          {{ 'common.cancel' | translate }}
-        </ion-button>
-        <ion-button expand="block" class="btn-fill" color="primary" (click)="eventDetailTimeToPicker.confirm(true)">
           <ion-icon slot="start" name="checkmark-outline"></ion-icon>
           {{ 'profile.apply' | translate }}
         </ion-button>

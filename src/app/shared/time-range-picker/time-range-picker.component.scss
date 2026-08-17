@@ -1,0 +1,44 @@
+.time-range-trigger {
+  appearance: none;
+  border: none;
+  background: transparent;
+  font: inherit;
+  font-size: 0.95rem;
+  color: var(--ion-text-color);
+  padding: 2px 4px;
+  border-radius: 8px;
+  text-align: left;
+  cursor: pointer;
+
+  &:focus-visible {
+    outline: 2px solid var(--ion-color-primary);
+    outline-offset: 2px;
+  }
+}
+
+.time-range-sheet {
+  padding: 20px 20px 16px;
+}
+
+.time-range-columns {
+  display: flex;
+  gap: 12px;
+}
+
+.time-range-column {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+
+  ion-datetime {
+    width: 100%;
+  }
+}
+
+.time-range-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ion-color-medium);
+}
