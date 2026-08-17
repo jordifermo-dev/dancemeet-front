@@ -30,7 +30,8 @@ import { FavoriteService } from '../../services/favorite.service';
 import { DisciplineService } from '../../services/discipline.service';
 import { EventTypeService } from '../../services/event-type.service';
 import { Discipline, EventType, EVENT_STATUSES, SocialLinks, User } from '../../models';
-import { formatSocialUrl, SocialIconKey, socialIconUrl, STATUS_LABEL_KEYS } from '../../shared/icon-catalog';
+import { SocialIconKey, socialIconUrl, STATUS_LABEL_KEYS } from '../../shared/icon-catalog';
+import { ALL_SOCIAL_NETWORKS, SOCIAL_NETWORK_LABEL_KEYS, SocialNetworkKey } from '../../shared/social-networks';
 import { MapType } from '../../shared/maps';
 import { LocationPickerComponent } from '../../shared/location-picker/location-picker.component';
 import { buildVCard, downloadVCard } from '../../shared/vcard';
@@ -48,8 +49,6 @@ interface SocialLinkRow {
   key: keyof SocialLinks;
   url: string;
 }
-
-const SOCIAL_LINK_ORDER: (keyof SocialLinks)[] = ['instagram', 'facebook', 'tiktok', 'youtube', 'website'];
 
 @Component({
   selector: 'app-user-detail',
@@ -142,7 +141,7 @@ export class UserDetailPage {
     if (!links) {
       return [];
     }
-    return SOCIAL_LINK_ORDER.filter((key) => !!links[key]).map((key) => ({ key, url: links[key]! }));
+    return ALL_SOCIAL_NETWORKS.filter((key) => !!links[key]).map((key) => ({ key, url: links[key]! }));
   });
 
   readonly selectedDisciplines = computed(() => {
@@ -201,7 +200,10 @@ export class UserDetailPage {
   });
 
   readonly socialIconUrl = socialIconUrl;
-  readonly formatSocialUrl = formatSocialUrl;
+
+  socialNetworkLabelKey(key: SocialNetworkKey): string {
+    return SOCIAL_NETWORK_LABEL_KEYS[key];
+  }
 
   readonly showConfirmModal = signal(false);
   readonly confirmTitleKey = signal('');

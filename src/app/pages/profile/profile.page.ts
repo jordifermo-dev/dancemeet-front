@@ -174,6 +174,8 @@ export class ProfilePage implements OnInit, ViewWillEnter, ComponentWithUnsavedC
       tiktok: ['', Validators.pattern(SOCIAL_URL_PATTERNS.tiktok)],
       youtube: ['', Validators.pattern(SOCIAL_URL_PATTERNS.youtube)],
       website: [''],
+      whatsapp: ['', Validators.pattern(SOCIAL_URL_PATTERNS.whatsapp)],
+      pinterest: ['', Validators.pattern(SOCIAL_URL_PATTERNS.pinterest)],
     }),
   });
 
@@ -331,6 +333,8 @@ export class ProfilePage implements OnInit, ViewWillEnter, ComponentWithUnsavedC
         tiktok: user.socialLinks?.tiktok ?? '',
         youtube: user.socialLinks?.youtube ?? '',
         website: user.socialLinks?.website ?? '',
+        whatsapp: user.socialLinks?.whatsapp ?? '',
+        pinterest: user.socialLinks?.pinterest ?? '',
       },
     });
     this.editAddress.set(user.address ?? '');
@@ -369,7 +373,7 @@ export class ProfilePage implements OnInit, ViewWillEnter, ComponentWithUnsavedC
     this.accountForm.reset({
       name: '',
       phone: '',
-      socialLinks: { instagram: '', facebook: '', tiktok: '', youtube: '', website: '' },
+      socialLinks: { instagram: '', facebook: '', tiktok: '', youtube: '', website: '', whatsapp: '', pinterest: '' },
     });
     this.editAddress.set('');
     this.editCity.set('');

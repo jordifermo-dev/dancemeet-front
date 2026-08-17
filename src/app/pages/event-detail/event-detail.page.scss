@@ -338,6 +338,31 @@ a.info-row {
   flex-direction: column;
 }
 
+// Icon-only links (just enough to open the network, no full URL text) -
+// replaces the old full-row-per-link layout on an event that's being
+// *visited*, where showing the whole path added noise without adding value.
+.social-icon-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  padding: 4px 0;
+}
+
+.social-icon-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--ion-color-light);
+
+  ion-icon {
+    width: 24px;
+    height: 24px;
+  }
+}
+
 .empty-message {
   font-size: 0.82rem;
   color: var(--ion-color-medium);

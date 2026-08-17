@@ -100,11 +100,16 @@
       <section class="section">
         <h2>{{ 'profile.socialLinksLabel' | translate }}</h2>
         @if (socialLinks().length) {
-          <div class="social-links">
+          <div class="social-icon-links">
             @for (link of socialLinks(); track link.key) {
-              <a class="info-row" [href]="link.url" target="_blank" rel="noopener">
+              <a
+                class="social-icon-link"
+                [href]="link.url"
+                target="_blank"
+                rel="noopener"
+                [attr.aria-label]="socialNetworkLabelKey(link.key) | translate"
+              >
                 <ion-icon [src]="socialIconUrl(link.key)"></ion-icon>
-                <span>{{ formatSocialUrl(link.url) }}</span>
               </a>
             }
           </div>

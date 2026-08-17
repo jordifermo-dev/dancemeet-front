@@ -7,6 +7,8 @@ export interface SocialLinks {
   tiktok?: string;
   youtube?: string;
   website?: string;
+  whatsapp?: string;
+  pinterest?: string;
 }
 
 /** One row of a followers/following list. */

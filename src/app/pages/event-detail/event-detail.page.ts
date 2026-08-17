@@ -73,7 +73,6 @@ import {
 import {
   disciplineIconUrl,
   eventTypeIconUrl,
-  formatSocialUrl,
   socialIconUrl,
   statusIconUrl,
   STATUS_LABEL_KEYS,
@@ -170,8 +169,6 @@ interface SocialLinkRow {
   key: keyof SocialLinks;
   url: string;
 }
-
-const SOCIAL_LINK_ORDER: (keyof SocialLinks)[] = ['instagram', 'facebook', 'tiktok', 'youtube', 'website'];
 
 function pad2(value: number): string {
   return value.toString().padStart(2, '0');
@@ -371,7 +368,7 @@ export class EventDetailPage implements ComponentWithUnsavedChanges {
     if (!links) {
       return [];
     }
-    return SOCIAL_LINK_ORDER.filter((key) => !!links[key]).map((key) => ({ key, url: links[key]! }));
+    return ALL_SOCIAL_NETWORKS.filter((key) => !!links[key]).map((key) => ({ key, url: links[key]! }));
   });
 
   readonly zoomLevel = signal(15);
@@ -430,6 +427,8 @@ export class EventDetailPage implements ComponentWithUnsavedChanges {
         tiktok: raw.tiktok,
         youtube: raw.youtube,
         website: raw.website,
+        whatsapp: raw.whatsapp,
+        pinterest: raw.pinterest,
       },
       typeIds: [...this.editTypeIds()].sort(),
       disciplineIds: [...this.editDisciplineIds()].sort(),
@@ -467,6 +466,8 @@ export class EventDetailPage implements ComponentWithUnsavedChanges {
       !raw.tiktok &&
       !raw.youtube &&
       !raw.website &&
+      !raw.whatsapp &&
+      !raw.pinterest &&
       !this.editAddress() &&
       !this.editCity()
     );
@@ -528,7 +529,6 @@ export class EventDetailPage implements ComponentWithUnsavedChanges {
     this.pendingLeaveResolve?.(true);
     this.pendingLeaveResolve = null;
   }
-  readonly formatSocialUrl = formatSocialUrl;
 
   /** Edit mode - reference implementation for CreateEventDto/UpdateEventDto.
    * Simple flat fields live on this form; single-select category pickers and
@@ -553,6 +553,8 @@ export class EventDetailPage implements ComponentWithUnsavedChanges {
     tiktok: ['', Validators.pattern(SOCIAL_URL_PATTERNS.tiktok)],
     youtube: ['', Validators.pattern(SOCIAL_URL_PATTERNS.youtube)],
     website: [''],
+    whatsapp: ['', Validators.pattern(SOCIAL_URL_PATTERNS.whatsapp)],
+    pinterest: ['', Validators.pattern(SOCIAL_URL_PATTERNS.pinterest)],
   });
 
   readonly editTypeIds = signal<string[]>([]);
@@ -672,6 +674,12 @@ export class EventDetailPage implements ComponentWithUnsavedChanges {
     }
     if (this.editForm.controls.youtube.invalid) {
       messages.push('eventDetail.validationYoutube');
+    }
+    if (this.editForm.controls.whatsapp.invalid) {
+      messages.push('eventDetail.validationWhatsapp');
+    }
+    if (this.editForm.controls.pinterest.invalid) {
+      messages.push('eventDetail.validationPinterest');
     }
     return messages;
   });
@@ -1406,6 +1414,8 @@ export class EventDetailPage implements ComponentWithUnsavedChanges {
       tiktok: event.socialLinks?.tiktok ?? '',
       youtube: event.socialLinks?.youtube ?? '',
       website: event.socialLinks?.website ?? '',
+      whatsapp: event.socialLinks?.whatsapp ?? '',
+      pinterest: event.socialLinks?.pinterest ?? '',
     });
     this.activeSocialNetworks.set(ALL_SOCIAL_NETWORKS.filter((key) => !!event.socialLinks?.[key]));
     this.editTypeIds.set([...event.typeIds]);
@@ -1485,6 +1495,8 @@ export class EventDetailPage implements ComponentWithUnsavedChanges {
       tiktok: formValue.tiktok || undefined,
       youtube: formValue.youtube || undefined,
       website: formValue.website || undefined,
+      whatsapp: formValue.whatsapp || undefined,
+      pinterest: formValue.pinterest || undefined,
     };
     const commonFields = {
       title: formValue.title,

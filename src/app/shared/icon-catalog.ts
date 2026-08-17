@@ -47,7 +47,7 @@ export function statusIconUrl(id: EventStatus): string {
   return `/assets/icons/status/${STATUS_ICON_FILES[id]}`;
 }
 
-export type SocialIconKey = 'email' | 'phone' | 'instagram' | 'facebook' | 'tiktok' | 'youtube' | 'website';
+export type SocialIconKey = 'email' | 'phone' | 'instagram' | 'facebook' | 'tiktok' | 'youtube' | 'website' | 'whatsapp' | 'pinterest';
 
 export function socialIconUrl(key: SocialIconKey): string {
   return `/assets/icons/social/${key}.svg`;
