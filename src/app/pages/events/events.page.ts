@@ -83,6 +83,7 @@ import { EVENT_SORT_OPTIONS, EventSortMode, sortEvents } from '../../shared/even
 import { SortPreferenceService } from '../../services/sort-preference.service';
 import { ExplorerFiltersService, DateQuickOption } from '../explorer/explorer-filters.service';
 import { createApplyFlash } from '../../shared/success-flash';
+import { SeriesAttendConfirmComponent } from '../../shared/series-attend-confirm/series-attend-confirm.component';
 
 const STATUS_OPTIONS = EVENT_STATUSES.map((id) => ({ id, labelKey: STATUS_LABEL_KEYS[id] }));
 const PRICE_OPTIONS: { id: PriceOption; labelKey: string }[] = [
@@ -121,6 +122,7 @@ const PRICE_OPTIONS: { id: PriceOption; labelKey: string }[] = [
     DatePickerFieldComponent,
     EventCalendarComponent,
     CalendarGranularityToggleComponent,
+    SeriesAttendConfirmComponent,
   ],
 })
 export class EventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWillEnter {
@@ -285,12 +287,85 @@ export class EventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWillEnt
     });
   }
 
+  /** Set instead of immediately toggling when the tapped card belongs to a
+   * recurring series - see onAttendToggle below and
+   * <app-series-attend-confirm>'s own doc comment. */
+  readonly pendingSeriesToggle = signal<{ eventId: string; seriesId: string; wasAttending: boolean } | null>(null);
+
   /** <app-event-card>'s (attendToggle) - it already refuses to emit for the
    * organizer's own event or a finished/cancelled one, so this only ever
-   * needs to flip between attending and not. */
+   * needs to flip between attending and not. A series instance asks "this
+   * day or the whole series?" first instead of assuming. */
   onAttendToggle(eventId: string): void {
+    if (this.attendBusyIds().has(eventId)) {
+      return;
+    }
+    const event = this.events().find((e) => e.id === eventId);
+    if (event?.seriesId) {
+      this.pendingSeriesToggle.set({ eventId, seriesId: event.seriesId, wasAttending: this.attendedEventIds().has(eventId) });
+      return;
+    }
+    this.toggleSingleAttend(eventId);
+  }
+
+  confirmSeriesDayOnly(): void {
+    const pending = this.pendingSeriesToggle();
+    this.pendingSeriesToggle.set(null);
+    if (pending) {
+      this.toggleSingleAttend(pending.eventId);
+    }
+  }
+
+  confirmSeriesWhole(): void {
+    const pending = this.pendingSeriesToggle();
     const userId = this.authService.currentUser()?.id;
-    if (!userId || this.attendBusyIds().has(eventId)) {
+    this.pendingSeriesToggle.set(null);
+    if (!pending || !userId) {
+      return;
+    }
+    this.attendBusyIds.update((ids) => new Set(ids).add(pending.eventId));
+    const seriesEventIds = this.events()
+      .filter((e) => e.seriesId === pending.seriesId)
+      .map((e) => e.id);
+    const request$ = pending.wasAttending
+      ? this.favoriteService.removeSeriesFromFavorites(userId, pending.seriesId)
+      : this.favoriteService.addSeriesToFavorites(userId, pending.seriesId);
+    request$.subscribe({
+      next: () => {
+        this.attendedEventIds.update((ids) => {
+          const next = new Set(ids);
+          for (const id of seriesEventIds) {
+            if (pending.wasAttending) {
+              next.delete(id);
+            } else {
+              next.add(id);
+            }
+          }
+          return next;
+        });
+        this.attendBusyIds.update((ids) => {
+          const next = new Set(ids);
+          next.delete(pending.eventId);
+          return next;
+        });
+      },
+      error: () => {
+        this.attendBusyIds.update((ids) => {
+          const next = new Set(ids);
+          next.delete(pending.eventId);
+          return next;
+        });
+      },
+    });
+  }
+
+  cancelSeriesToggle(): void {
+    this.pendingSeriesToggle.set(null);
+  }
+
+  private toggleSingleAttend(eventId: string): void {
+    const userId = this.authService.currentUser()?.id;
+    if (!userId) {
       return;
     }
     this.attendBusyIds.update((ids) => new Set(ids).add(eventId));

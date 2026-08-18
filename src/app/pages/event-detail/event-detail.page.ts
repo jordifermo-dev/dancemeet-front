@@ -88,8 +88,9 @@ import { FilterActionsRowComponent } from '../../shared/filter-actions-row/filte
 import { ChipGridComponent } from '../../shared/chip-grid/chip-grid.component';
 import { TimeRangePickerComponent } from '../../shared/time-range-picker/time-range-picker.component';
 import { RecurrenceQuickPickerComponent } from '../../shared/recurrence-quick-picker/recurrence-quick-picker.component';
+import { SeriesAttendConfirmComponent } from '../../shared/series-attend-confirm/series-attend-confirm.component';
 import { disciplineChipItems, eventTypeChipItems, statusChipItems } from '../../shared/chip-grid/chip-grid-presets';
-import { SOCIAL_URL_PATTERNS } from '../../shared/social-link-patterns';
+import { normalizeSocialUrl, SOCIAL_URL_PATTERNS, SOCIAL_URL_PREFIXES } from '../../shared/social-link-patterns';
 import {
   ALL_SOCIAL_NETWORKS,
   SOCIAL_NETWORK_ERROR_KEYS,
@@ -237,6 +238,7 @@ function withTimePart(base: number, timeValue: string): number {
     ChipGridComponent,
     TimeRangePickerComponent,
     RecurrenceQuickPickerComponent,
+    SeriesAttendConfirmComponent,
   ],
 })
 export class EventDetailPage implements ComponentWithUnsavedChanges {
@@ -396,8 +398,18 @@ export class EventDetailPage implements ComponentWithUnsavedChanges {
     this.showAddSocialSheet.set(false);
   }
 
+  /** Pre-fills the domain part (e.g. "https://instagram.com/") so the user
+   * only has to type their handle after it - setValue (not patchValue) keeps
+   * the control pristine/untouched, so this doesn't trip the field into an
+   * "invalid, must be an instagram.com link" state before anyone's typed
+   * anything. */
   addSocialNetwork(key: SocialNetworkKey): void {
     this.activeSocialNetworks.update((keys) => (keys.includes(key) ? keys : [...keys, key]));
+    const control = this.editForm.controls[key];
+    const prefix = SOCIAL_URL_PREFIXES[key];
+    if (prefix && !control.value) {
+      control.setValue(prefix);
+    }
     this.showAddSocialSheet.set(false);
   }
 
@@ -406,6 +418,19 @@ export class EventDetailPage implements ComponentWithUnsavedChanges {
   removeSocialNetwork(key: SocialNetworkKey): void {
     this.editForm.controls[key].reset('');
     this.activeSocialNetworks.update((keys) => keys.filter((k) => k !== key));
+  }
+
+  /** Reduces a pasted full URL (e.g. "https://www.instagram.com/nick" typed
+   * or pasted over the pre-filled prefix) back down to "prefix + handle" -
+   * see normalizeSocialUrl's own doc comment for what it does and doesn't
+   * catch. Runs on blur rather than every keystroke so it never fights an
+   * actively-typing cursor. */
+  onSocialUrlBlur(key: SocialNetworkKey): void {
+    const control = this.editForm.controls[key];
+    const normalized = normalizeSocialUrl(key, control.value);
+    if (normalized !== control.value) {
+      control.setValue(normalized);
+    }
   }
 
   /** Serializes every field the edit form actually saves (see saveEdit's
@@ -1205,13 +1230,67 @@ export class EventDetailPage implements ComponentWithUnsavedChanges {
 
   // --- Attend (favorite as attendee) ---------------------------------------
 
+  /** Set instead of immediately toggling when this event belongs to a
+   * recurring series - see toggleAttend below and
+   * <app-series-attend-confirm>'s own doc comment. */
+  readonly pendingSeriesToggle = signal<{ wasAttending: boolean } | null>(null);
+
   /** Same Favorite record the Favorites tab and Profile's "Eventos" stat
    * already read from - toggling this here just creates/removes that row,
-   * everything downstream picks it up with no extra wiring. */
+   * everything downstream picks it up with no extra wiring. A series
+   * instance asks "this day or the whole series?" first instead of assuming. */
   toggleAttend(): void {
     const event = this.event();
     const me = this.authService.currentUser();
     if (!event || !me || event.creatorId === me.id || this.attendLoading() || this.isEventOver()) {
+      return;
+    }
+    if (event.seriesId) {
+      this.pendingSeriesToggle.set({ wasAttending: this.isAttending() });
+      return;
+    }
+    this.toggleSingleAttend();
+  }
+
+  confirmSeriesDayOnly(): void {
+    this.pendingSeriesToggle.set(null);
+    this.toggleSingleAttend();
+  }
+
+  confirmSeriesWhole(): void {
+    const pending = this.pendingSeriesToggle();
+    const event = this.event();
+    const me = this.authService.currentUser();
+    this.pendingSeriesToggle.set(null);
+    if (!pending || !event?.seriesId || !me) {
+      return;
+    }
+    this.attendLoading.set(true);
+    const wasAttending = pending.wasAttending;
+    const request$ = wasAttending
+      ? this.favoriteService.removeSeriesFromFavorites(me.id, event.seriesId)
+      : this.favoriteService.addSeriesToFavorites(me.id, event.seriesId);
+    request$.subscribe({
+      next: () => {
+        this.attendeesCount.update((count) => Math.max(0, count + (wasAttending ? -1 : 1)));
+        this.attendFlash.trigger();
+        setTimeout(() => {
+          this.isAttending.set(!wasAttending);
+          this.attendLoading.set(false);
+        }, 900);
+      },
+      error: () => this.attendLoading.set(false),
+    });
+  }
+
+  cancelSeriesToggle(): void {
+    this.pendingSeriesToggle.set(null);
+  }
+
+  private toggleSingleAttend(): void {
+    const event = this.event();
+    const me = this.authService.currentUser();
+    if (!event || !me) {
       return;
     }
     this.attendLoading.set(true);

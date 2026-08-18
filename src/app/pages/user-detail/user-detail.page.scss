@@ -140,22 +140,24 @@ a.info-row {
 .social-icon-links {
   display: flex;
   flex-wrap: wrap;
-  gap: 14px;
+  gap: 18px;
   padding: 4px 0;
 }
 
+// No wrapper box/background - the source SVGs (src/assets/icons/social/*)
+// already bake in their own full-bleed colored circle, unlike disciplines/
+// event-types/status which rely on a clipping wrapper to become circular.
+// Adding one here just doubled up as a visible halo behind the icon's own
+// circle. 26px matches .contact-icon/.social-link-icon (profile.page.scss),
+// the app's own existing bare-icon convention for this exact icon set.
 .social-icon-link {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  background: var(--ion-color-light);
 
   ion-icon {
-    width: 24px;
-    height: 24px;
+    width: 26px;
+    height: 26px;
   }
 }
 

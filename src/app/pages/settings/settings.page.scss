@@ -129,6 +129,12 @@
   margin-top: 28px;
 }
 
+// Same gap as .welcome-guide-button above, between "Cerrar sesión" and the
+// app-info group above it.
+.logout-button {
+  margin-top: 28px;
+}
+
 // Same confirmation-sheet look as profile.page.scss's identical rule.
 .filter-sheet {
   padding: 20px 20px 16px;

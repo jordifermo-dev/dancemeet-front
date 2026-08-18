@@ -46,7 +46,7 @@
   <div class="calendar-agenda">
     @if (agendaCardViews().length === 0) {
       <div class="agenda-empty">
-        <p>{{ 'calendar.emptyDay' | translate }}</p>
+        <p>{{ (effectiveSelectedDate() === null ? 'calendar.noDaySelected' : 'calendar.emptyDay') | translate }}</p>
       </div>
     } @else {
       @for (view of agendaCardViews(); track view.id) {

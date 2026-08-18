@@ -64,7 +64,7 @@ import {
   priceChipItems,
   statusChipItems,
 } from '../../shared/chip-grid/chip-grid-presets';
-import { SOCIAL_URL_PATTERNS } from '../../shared/social-link-patterns';
+import { normalizeSocialUrl, SOCIAL_URL_PATTERNS, SOCIAL_URL_PREFIXES } from '../../shared/social-link-patterns';
 import { createSuccessFlash } from '../../shared/success-flash';
 import {
   ALL_SOCIAL_NETWORKS,
@@ -311,8 +311,18 @@ export class ProfilePage implements OnInit, ViewWillEnter, ComponentWithUnsavedC
     this.showAddSocialSheet.set(false);
   }
 
+  /** Pre-fills the domain part (e.g. "https://instagram.com/") so the user
+   * only has to type their handle after it - setValue (not patchValue) keeps
+   * the control pristine/untouched, so this doesn't trip the field into an
+   * "invalid, must be an instagram.com link" state before anyone's typed
+   * anything. */
   addSocialNetwork(key: SocialNetworkKey): void {
     this.activeSocialNetworks.update((keys) => (keys.includes(key) ? keys : [...keys, key]));
+    const control = this.accountForm.controls.socialLinks.controls[key];
+    const prefix = SOCIAL_URL_PREFIXES[key];
+    if (prefix && !control.value) {
+      control.setValue(prefix);
+    }
     this.showAddSocialSheet.set(false);
   }
 
@@ -321,6 +331,19 @@ export class ProfilePage implements OnInit, ViewWillEnter, ComponentWithUnsavedC
   removeSocialNetwork(key: SocialNetworkKey): void {
     this.accountForm.controls.socialLinks.controls[key].reset('');
     this.activeSocialNetworks.update((keys) => keys.filter((k) => k !== key));
+  }
+
+  /** Reduces a pasted full URL (e.g. "https://www.instagram.com/nick" typed
+   * or pasted over the pre-filled prefix) back down to "prefix + handle" -
+   * see normalizeSocialUrl's own doc comment for what it does and doesn't
+   * catch. Runs on blur rather than every keystroke so it never fights an
+   * actively-typing cursor. */
+  onSocialUrlBlur(key: SocialNetworkKey): void {
+    const control = this.accountForm.controls.socialLinks.controls[key];
+    const normalized = normalizeSocialUrl(key, control.value);
+    if (normalized !== control.value) {
+      control.setValue(normalized);
+    }
   }
 
   private populateFromUser(user: User): void {

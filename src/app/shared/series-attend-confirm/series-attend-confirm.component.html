@@ -1,0 +1,26 @@
+<ion-modal
+  [isOpen]="isOpen()"
+  [initialBreakpoint]="0.42"
+  [breakpoints]="[0, 0.42]"
+  (didDismiss)="cancelled.emit()"
+>
+  <ng-template>
+    <div class="filter-sheet">
+      <app-filter-sheet-header
+        [titleKey]="removing() ? 'eventCard.seriesRemoveTitle' : 'eventCard.seriesAddTitle'"
+        (closed)="cancelled.emit()"
+      ></app-filter-sheet-header>
+      <p>{{ (removing() ? 'eventCard.seriesRemoveMessage' : 'eventCard.seriesAddMessage') | translate }}</p>
+      <app-filter-actions-row>
+        <ion-button expand="block" fill="outline" color="primary" (click)="dayOnly.emit()">
+          <ion-icon slot="start" name="today-outline"></ion-icon>
+          {{ 'eventCard.seriesThisDayOnly' | translate }}
+        </ion-button>
+        <ion-button expand="block" class="btn-fill" (click)="wholeSeries.emit()">
+          <ion-icon slot="start" name="repeat-outline"></ion-icon>
+          {{ 'eventCard.seriesWholeSeries' | translate }}
+        </ion-button>
+      </app-filter-actions-row>
+    </div>
+  </ng-template>
+</ion-modal>

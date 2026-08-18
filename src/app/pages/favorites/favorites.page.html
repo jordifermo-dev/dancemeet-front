@@ -439,3 +439,11 @@
     </div>
   </ng-template>
 </ion-modal>
+
+<app-series-attend-confirm
+  [isOpen]="pendingSeriesToggle() !== null"
+  [removing]="true"
+  (dayOnly)="confirmSeriesDayOnly()"
+  (wholeSeries)="confirmSeriesWhole()"
+  (cancelled)="cancelSeriesToggle()"
+></app-series-attend-confirm>

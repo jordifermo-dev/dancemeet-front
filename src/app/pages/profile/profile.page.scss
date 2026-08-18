@@ -247,6 +247,11 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
+  // 7 networks no longer fit in the sheet's collapsed breakpoint on shorter
+  // screens even with the taller breakpoints above - lets the list itself
+  // scroll to reach the last options instead of just clipping them.
+  overflow-y: auto;
+  max-height: 100%;
 }
 
 .social-picker-option {

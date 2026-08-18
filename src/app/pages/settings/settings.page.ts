@@ -30,6 +30,7 @@ import {
   notificationsOutline,
   notificationsOffOutline,
   closeOutline,
+  repeatOutline,
 } from 'ionicons/icons';
 import { AuthService } from '../../services/auth.service';
 import { UserService } from '../../services/user.service';
@@ -113,6 +114,7 @@ export class SettingsPage {
       notificationsOutline,
       notificationsOffOutline,
       closeOutline,
+      repeatOutline,
     });
   }
 

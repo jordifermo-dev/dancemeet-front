@@ -68,7 +68,7 @@
               [src]="socialIconUrl(key)"
               [attr.aria-label]="socialNetworkLabelKey(key) | translate"
             ></ion-icon>
-            <ion-input [formControlName]="key"></ion-input>
+            <ion-input [formControlName]="key" (ionBlur)="onSocialUrlBlur(key)"></ion-input>
             <button
               type="button"
               class="remove-social-button"
@@ -78,7 +78,7 @@
               <ion-icon name="trash-outline"></ion-icon>
             </button>
           </div>
-          @if (editForm.controls[key].invalid && socialNetworkErrorKey(key); as errorKey) {
+          @if (editForm.controls[key].invalid && editForm.controls[key].touched && socialNetworkErrorKey(key); as errorKey) {
             <p class="social-link-error">{{ errorKey | translate }}</p>
           }
         }
@@ -397,9 +397,10 @@
 </ion-modal>
 
 <ion-modal
+  [keepContentsMounted]="true"
   [isOpen]="showAddSocialSheet()"
-  [initialBreakpoint]="0.4"
-  [breakpoints]="[0, 0.4]"
+  [initialBreakpoint]="0.6"
+  [breakpoints]="[0, 0.6, 0.9]"
   (didDismiss)="closeAddSocialSheet()"
 >
   <ng-template>
@@ -620,3 +621,11 @@
     </div>
   </ng-template>
 </ion-modal>
+
+<app-series-attend-confirm
+  [isOpen]="pendingSeriesToggle() !== null"
+  [removing]="pendingSeriesToggle()?.wasAttending ?? false"
+  (dayOnly)="confirmSeriesDayOnly()"
+  (wholeSeries)="confirmSeriesWhole()"
+  (cancelled)="cancelSeriesToggle()"
+></app-series-attend-confirm>

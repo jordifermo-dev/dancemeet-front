@@ -245,10 +245,17 @@
     "month": "Mes",
     "week": "Setmana",
     "day": "Dia",
-    "emptyDay": "No hi ha esdeveniments aquest dia."
+    "emptyDay": "No hi ha esdeveniments aquest dia.",
+    "noDaySelected": "Selecciona un dia per veure els seus esdeveniments."
   },
   "eventCard": {
-    "free": "Gratuït"
+    "free": "Gratuït",
+    "seriesAddTitle": "Esdeveniment recurrent",
+    "seriesAddMessage": "Aquest esdeveniment es repeteix diverses vegades. Vols assistir només aquest dia o a tota la sèrie?",
+    "seriesRemoveTitle": "Esdeveniment recurrent",
+    "seriesRemoveMessage": "Aquest esdeveniment es repeteix diverses vegades. Vols deixar d'assistir només aquest dia o a tota la sèrie?",
+    "seriesThisDayOnly": "Només aquest dia",
+    "seriesWholeSeries": "Tota la sèrie"
   },
   "favorites": {
     "empty": "No tens cap esdeveniment desat.",

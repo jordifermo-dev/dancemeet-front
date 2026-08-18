@@ -39,4 +39,16 @@ export class FavoriteService {
   removeFromFavorites(userId: string, eventId: string): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl}/${userId}/${eventId}/remove`);
   }
+
+  /** Favorites/un-favorites every instance of a recurring series at once -
+   * see event-detail.page.ts's/favorites.page.ts's own doc comments on
+   * why toggling one instance of a series prompts "this day only or the
+   * whole series?" instead of just toggling that one instance. */
+  addSeriesToFavorites(userId: string, seriesId: string): Observable<void> {
+    return this.http.post<void>(`${this.baseUrl}/${userId}/series/${seriesId}/add`, {});
+  }
+
+  removeSeriesFromFavorites(userId: string, seriesId: string): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/${userId}/series/${seriesId}/remove`);
+  }
 }

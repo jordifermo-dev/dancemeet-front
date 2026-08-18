@@ -245,10 +245,17 @@
     "month": "Month",
     "week": "Week",
     "day": "Day",
-    "emptyDay": "No events on this day."
+    "emptyDay": "No events on this day.",
+    "noDaySelected": "Select a day to see its events."
   },
   "eventCard": {
-    "free": "Free"
+    "free": "Free",
+    "seriesAddTitle": "Recurring event",
+    "seriesAddMessage": "This event repeats several times. Do you want to attend just this day, or the whole series?",
+    "seriesRemoveTitle": "Recurring event",
+    "seriesRemoveMessage": "This event repeats several times. Do you want to stop attending just this day, or the whole series?",
+    "seriesThisDayOnly": "Just this day",
+    "seriesWholeSeries": "Whole series"
   },
   "favorites": {
     "empty": "You don't have any saved events.",

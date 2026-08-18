@@ -223,14 +223,45 @@ export class EventCalendarComponent implements AfterViewInit, OnDestroy {
     if (!this.canGoPrev()) {
       return;
     }
-    this.anchorDate.set(this.clampToRange(this.targetAnchor(-1)));
+    this.moveAnchor(this.clampToRange(this.targetAnchor(-1)));
   }
 
   goNext(): void {
     if (!this.canGoNext()) {
       return;
     }
-    this.anchorDate.set(this.clampToRange(this.targetAnchor(1)));
+    this.moveAnchor(this.clampToRange(this.targetAnchor(1)));
+  }
+
+  /** Navigating away from the period a tapped day belongs to leaves that
+   * day's agenda list showing underneath a grid that's moved on - clearing
+   * the selection instead hides the list until a day in the newly-visible
+   * period gets tapped, same as most calendar apps. Day granularity has no
+   * separate selection to invalidate (effectiveSelectedDate reads the anchor
+   * directly there), so this only ever matters for month/week. */
+  private moveAnchor(nextAnchor: number): void {
+    this.anchorDate.set(nextAnchor);
+    if (!this.isSelectedDateInPeriod(nextAnchor)) {
+      this.selectedDate.set(null);
+    }
+  }
+
+  private isSelectedDateInPeriod(anchor: number): boolean {
+    const selected = this.selectedDate();
+    if (selected === null) {
+      return true;
+    }
+    switch (this.granularity()) {
+      case 'month': {
+        const a = new Date(anchor);
+        const s = new Date(selected);
+        return a.getFullYear() === s.getFullYear() && a.getMonth() === s.getMonth();
+      }
+      case 'week':
+        return buildWeekGrid(anchor).includes(selected);
+      case 'day':
+        return true;
+    }
   }
 
   onAttendToggle(eventId: string): void {

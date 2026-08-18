@@ -70,7 +70,7 @@
       <ion-icon slot="start" name="help-circle-outline"></ion-icon>
       {{ (shareHintResetFlash.active() ? 'settings.shareHintResetDone' : 'settings.shareHintReset') | translate }}
     </ion-button>
-    <ion-button expand="block" color="primary" fill="outline" (click)="confirmLogout.set(true)">
+    <ion-button expand="block" color="primary" fill="outline" class="logout-button" (click)="confirmLogout.set(true)">
       <ion-icon slot="start" name="log-out-outline"></ion-icon>
       {{ 'profile.logout' | translate }}
     </ion-button>

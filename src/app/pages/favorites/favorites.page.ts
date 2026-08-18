@@ -55,6 +55,7 @@ import { NotificationBellComponent } from '../../shared/notification-bell/notifi
 import { EventCardView } from '../../shared/event-card/event-card.model';
 import { buildEventCardView } from '../../shared/event-card/build-event-card-view';
 import { EventCalendarComponent } from '../../shared/event-calendar/event-calendar.component';
+import { SeriesAttendConfirmComponent } from '../../shared/series-attend-confirm/series-attend-confirm.component';
 import { CalendarGranularityToggleComponent } from '../../shared/event-calendar/calendar-granularity-toggle.component';
 import { CalendarGranularity } from '../../shared/event-calendar/event-calendar.model';
 import { recoverAttendState } from '../../shared/attend-toggle';
@@ -117,6 +118,7 @@ const MAX_ZOOM = 20;
     LocationPickerComponent,
     EventCalendarComponent,
     CalendarGranularityToggleComponent,
+    SeriesAttendConfirmComponent,
   ],
 })
 export class FavoritesPage implements OnInit, AfterViewInit, OnDestroy, ViewWillEnter {
@@ -404,14 +406,64 @@ export class FavoritesPage implements OnInit, AfterViewInit, OnDestroy, ViewWill
    * with a "not found" error. */
   private readonly attendBusyIds = signal<Set<string>>(new Set());
 
+  /** Set instead of immediately toggling when the tapped card belongs to a
+   * recurring series - see onAttendToggle below and
+   * <app-series-attend-confirm>'s own doc comment. */
+  readonly pendingSeriesToggle = signal<{ eventId: string; seriesId: string } | null>(null);
+
   /** <app-event-card>'s (attendToggle) - it already refuses to emit for the
    * organizer's own event or a finished/cancelled one, so every card here
    * that can fire this is currently attending (that's the only way a
    * non-organizer event lands in this list); un-attending removes it from
-   * the list entirely, since it's no longer one of "my" events. */
+   * the list entirely, since it's no longer one of "my" events. A series
+   * instance asks "this day or the whole series?" first instead of assuming. */
   onAttendToggle(eventId: string): void {
+    if (this.attendBusyIds().has(eventId)) {
+      return;
+    }
+    const event = this.allEvents().find((e) => e.id === eventId);
+    if (event?.seriesId) {
+      this.pendingSeriesToggle.set({ eventId, seriesId: event.seriesId });
+      return;
+    }
+    this.removeSingleFromFavorites(eventId);
+  }
+
+  confirmSeriesDayOnly(): void {
+    const pending = this.pendingSeriesToggle();
+    this.pendingSeriesToggle.set(null);
+    if (pending) {
+      this.removeSingleFromFavorites(pending.eventId);
+    }
+  }
+
+  confirmSeriesWhole(): void {
+    const pending = this.pendingSeriesToggle();
     const userId = this.authService.currentUser()?.id;
-    if (!userId || this.attendBusyIds().has(eventId)) {
+    this.pendingSeriesToggle.set(null);
+    if (!pending || !userId) {
+      return;
+    }
+    this.attendBusyIds.update((ids) => new Set(ids).add(pending.eventId));
+    this.favoriteService.removeSeriesFromFavorites(userId, pending.seriesId).subscribe({
+      next: () => this.allEvents.update((events) => events.filter((event) => event.seriesId !== pending.seriesId)),
+      error: () => {
+        this.attendBusyIds.update((ids) => {
+          const next = new Set(ids);
+          next.delete(pending.eventId);
+          return next;
+        });
+      },
+    });
+  }
+
+  cancelSeriesToggle(): void {
+    this.pendingSeriesToggle.set(null);
+  }
+
+  private removeSingleFromFavorites(eventId: string): void {
+    const userId = this.authService.currentUser()?.id;
+    if (!userId) {
       return;
     }
     this.attendBusyIds.update((ids) => new Set(ids).add(eventId));
