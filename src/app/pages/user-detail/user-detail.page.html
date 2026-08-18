@@ -181,9 +181,7 @@
 >
   <ng-template>
     <div class="filter-sheet">
-      <div class="filter-sheet-header">
-        <h2>{{ confirmTitleKey() | translate }}</h2>
-      </div>
+      <app-filter-sheet-header [titleKey]="confirmTitleKey()" (closed)="confirmModalCancel()"></app-filter-sheet-header>
       <p>{{ confirmMessage() }}</p>
       <app-filter-actions-row>
         <ion-button expand="block" fill="outline" color="primary" (click)="confirmModalCancel()">

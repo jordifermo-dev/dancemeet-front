@@ -53,11 +53,6 @@ export function socialIconUrl(key: SocialIconKey): string {
   return `/assets/icons/social/${key}.svg`;
 }
 
-/** Shortens a social link for display, e.g. "https://www.instagram.com/x" -> "instagram.com/x". */
-export function formatSocialUrl(url: string): string {
-  return url.replace(/^https?:\/\//i, '').replace(/^www\./i, '').replace(/\/$/, '');
-}
-
 /** Puts API results back into the app's canonical display order (API order isn't guaranteed to match). */
 export function sortByNameOrder<T extends { name: string }>(items: T[], order: readonly string[]): T[] {
   return [...items].sort((a, b) => {

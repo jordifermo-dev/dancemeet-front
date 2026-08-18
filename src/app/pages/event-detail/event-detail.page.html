@@ -426,9 +426,7 @@
 >
   <ng-template>
     <div class="filter-sheet">
-      <div class="filter-sheet-header">
-        <h2>{{ 'profile.unsavedChangesTitle' | translate }}</h2>
-      </div>
+      <app-filter-sheet-header titleKey="profile.unsavedChangesTitle" (closed)="onUnsavedChangesModalDismiss()"></app-filter-sheet-header>
       <p>{{ 'profile.unsavedChangesMessage' | translate }}</p>
       <app-filter-actions-row>
         <ion-button expand="block" fill="outline" color="primary" (click)="confirmDiscardChanges()">

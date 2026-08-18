@@ -37,6 +37,7 @@ import { LocationPickerComponent } from '../../shared/location-picker/location-p
 import { buildVCard, downloadVCard } from '../../shared/vcard';
 import { createSuccessFlash } from '../../shared/success-flash';
 import { FilterActionsRowComponent } from '../../shared/filter-actions-row/filter-actions-row.component';
+import { FilterSheetHeaderComponent } from '../../shared/filter-sheet-header/filter-sheet-header.component';
 import { ChipGridComponent } from '../../shared/chip-grid/chip-grid.component';
 import { disciplineChipItems, eventTypeChipItems, statusChipItems } from '../../shared/chip-grid/chip-grid-presets';
 
@@ -68,6 +69,7 @@ interface SocialLinkRow {
     IonModal,
     TranslatePipe,
     FilterActionsRowComponent,
+    FilterSheetHeaderComponent,
     ChipGridComponent,
     LocationPickerComponent,
   ],

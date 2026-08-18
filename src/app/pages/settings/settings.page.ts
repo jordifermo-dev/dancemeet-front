@@ -48,6 +48,7 @@ import { createSuccessFlash } from '../../shared/success-flash';
 import { firebaseErrorMessage } from '../../shared/firebase-error-message';
 import { passwordsMatchValidator, STRONG_PASSWORD_PATTERN } from '../../shared/password-validators';
 import { FilterActionsRowComponent } from '../../shared/filter-actions-row/filter-actions-row.component';
+import { FilterSheetHeaderComponent } from '../../shared/filter-sheet-header/filter-sheet-header.component';
 
 /** Single settings screen consolidating what used to be spread across three
  * places: the "how the app works" tour replay (was a button on Profile), the
@@ -75,6 +76,7 @@ import { FilterActionsRowComponent } from '../../shared/filter-actions-row/filte
     TranslatePipe,
     ReactiveFormsModule,
     FilterActionsRowComponent,
+    FilterSheetHeaderComponent,
   ],
 })
 export class SettingsPage {

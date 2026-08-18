@@ -97,9 +97,7 @@
 >
   <ng-template>
     <div class="filter-sheet">
-      <div class="filter-sheet-header">
-        <h2>{{ 'settings.logoutConfirmTitle' | translate }}</h2>
-      </div>
+      <app-filter-sheet-header titleKey="settings.logoutConfirmTitle" (closed)="confirmLogout.set(false)"></app-filter-sheet-header>
       <p>{{ 'settings.logoutConfirmMessage' | translate }}</p>
       <app-filter-actions-row>
         <ion-button expand="block" fill="outline" color="primary" (click)="confirmLogout.set(false)">
@@ -123,9 +121,7 @@
 >
   <ng-template>
     <div class="filter-sheet">
-      <div class="filter-sheet-header">
-        <h2>{{ 'settings.changePasswordTitle' | translate }}</h2>
-      </div>
+      <app-filter-sheet-header titleKey="settings.changePasswordTitle" (closed)="closeChangePassword()"></app-filter-sheet-header>
       <form [formGroup]="changePasswordForm" (ngSubmit)="submitChangePassword()">
         <p class="field-label">{{ 'settings.currentPasswordLabel' | translate }}</p>
         <ion-input [type]="showCurrentPassword() ? 'text' : 'password'" formControlName="currentPassword">
