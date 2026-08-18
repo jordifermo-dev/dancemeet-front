@@ -46,9 +46,17 @@
                   (click)="toggleConfirmPasswordVisibility()"
                 ></ion-icon>
               </ion-input>
-              @if (accountForm.errors?.['passwordsMismatch'] && accountForm.get('confirmPassword')?.dirty) {
+              @if (accountForm.controls.password.invalid && accountForm.controls.password.dirty) {
+                <ion-text color="danger">
+                  <p>{{ 'register.passwordTooWeak' | translate }}</p>
+                </ion-text>
+              } @else if (accountForm.errors?.['passwordsMismatch'] && accountForm.get('confirmPassword')?.dirty) {
                 <ion-text color="danger">
                   <p>{{ 'register.passwordsMismatch' | translate }}</p>
+                </ion-text>
+              } @else {
+                <ion-text color="medium">
+                  <p>{{ 'register.passwordHint' | translate }}</p>
                 </ion-text>
               }
             }

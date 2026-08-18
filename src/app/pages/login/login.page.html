@@ -42,6 +42,9 @@
             (click)="togglePasswordVisibility()"
           ></ion-icon>
         </ion-input>
+        <button type="button" class="forgot-password-link" (click)="openForgotPassword()">
+          {{ 'login.forgotPassword' | translate }}
+        </button>
 
         @if (errorMessage()) {
           <ion-text color="danger">
@@ -66,3 +69,57 @@
     </p>
   </div>
 </ion-content>
+
+<ion-modal
+  [isOpen]="showForgotPassword()"
+  [initialBreakpoint]="0.5"
+  [breakpoints]="[0, 0.5]"
+  (didDismiss)="closeForgotPassword()"
+>
+  <ng-template>
+    <div class="filter-sheet">
+      <app-filter-sheet-header titleKey="login.forgotPasswordTitle" (closed)="closeForgotPassword()"></app-filter-sheet-header>
+      @if (forgotPasswordSent()) {
+        <ion-text color="medium">
+          <p>{{ 'login.forgotPasswordSent' | translate }}</p>
+        </ion-text>
+        <ion-button expand="block" class="btn-fill" (click)="closeForgotPassword()">
+          {{ 'common.cancel' | translate }}
+        </ion-button>
+      } @else {
+        <ion-text color="medium">
+          <p>{{ 'login.forgotPasswordMessage' | translate }}</p>
+        </ion-text>
+        <form [formGroup]="forgotPasswordForm" (ngSubmit)="submitForgotPassword()">
+          <p class="group-label">{{ 'login.emailLabel' | translate }}<span class="required-marker">*</span></p>
+          <ion-input
+            type="email"
+            autocomplete="off"
+            [placeholder]="'login.emailPlaceholder' | translate"
+            formControlName="email"
+          ></ion-input>
+          @if (forgotPasswordError()) {
+            <ion-text color="danger">
+              <p>{{ forgotPasswordError() }}</p>
+            </ion-text>
+          }
+          <app-filter-actions-row>
+            <ion-button expand="block" fill="outline" color="primary" type="button" (click)="closeForgotPassword()">
+              <ion-icon slot="start" name="close-outline"></ion-icon>
+              {{ 'common.cancel' | translate }}
+            </ion-button>
+            <ion-button
+              expand="block"
+              class="btn-fill"
+              type="submit"
+              [disabled]="forgotPasswordForm.invalid || forgotPasswordSaving()"
+            >
+              <ion-icon slot="start" name="send-outline"></ion-icon>
+              {{ 'login.forgotPasswordSubmit' | translate }}
+            </ion-button>
+          </app-filter-actions-row>
+        </form>
+      }
+    </div>
+  </ng-template>
+</ion-modal>

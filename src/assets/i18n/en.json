@@ -31,7 +31,13 @@
     "shareHintReset": "Show the events share hint again",
     "shareHintResetDone": "Done ✓",
     "logoutConfirmTitle": "Log out?",
-    "logoutConfirmMessage": "You'll need to sign in again to access your account."
+    "logoutConfirmMessage": "You'll need to sign in again to access your account.",
+    "changePasswordButton": "Change password",
+    "changePasswordTitle": "Change password",
+    "currentPasswordLabel": "Current password",
+    "newPasswordLabel": "New password",
+    "confirmNewPasswordLabel": "Repeat new password",
+    "changePasswordSubmit": "Save"
   },
   "welcome": {
     "title": "Welcome tour",
@@ -105,13 +111,20 @@
     "passwordPlaceholder": "Your password",
     "submit": "Continue",
     "noAccount": "Don't have an account?",
-    "registerLink": "Sign up"
+    "registerLink": "Sign up",
+    "forgotPassword": "Forgot your password?",
+    "forgotPasswordTitle": "Reset password",
+    "forgotPasswordMessage": "Enter your email and, if it has an account, we'll send you a link to create a new password.",
+    "forgotPasswordSent": "If an account exists with that email, we've sent a link to reset the password. Check your inbox (and spam folder).",
+    "forgotPasswordSubmit": "Send link"
   },
   "register": {
     "title": "Sign up",
     "nameLabel": "Name",
     "namePlaceholder": "What's your name?",
-    "passwordPlaceholder": "At least 6 characters",
+    "passwordPlaceholder": "Create a password",
+    "passwordHint": "At least 8 characters, with an uppercase letter, a lowercase letter, a number and a special character (! @ # $ % & * ? ...).",
+    "passwordTooWeak": "The password must be at least 8 characters, with an uppercase letter, a lowercase letter, a number and a special character.",
     "confirmPasswordLabel": "Repeat password",
     "confirmPasswordPlaceholder": "Confirm your password",
     "passwordsMismatch": "Passwords don't match.",
@@ -395,6 +408,7 @@
     "auth/invalid-credential": "Incorrect email or password.",
     "auth/email-already-in-use": "An account with that email already exists.",
     "auth/weak-password": "Your password must be at least 6 characters long.",
+    "auth/password-does-not-meet-requirements": "The password doesn't meet the requirements. Use an allowed special character, e.g.: ! @ # $ % & * ? .",
     "auth/popup-closed-by-user": "You closed the window before finishing sign-in.",
     "auth/cancelled-popup-request": "A sign-in window is already open.",
     "auth/network-request-failed": "Couldn't connect. Please check your connection.",

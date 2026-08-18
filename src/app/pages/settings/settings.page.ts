@@ -1,5 +1,6 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import {
   IonHeader,
   IonToolbar,
@@ -11,8 +12,9 @@ import {
   IonToggle,
   IonButton,
   IonModal,
+  IonInput,
 } from '@ionic/angular/standalone';
-import { TranslatePipe } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { addIcons } from 'ionicons';
 import {
   helpCircleOutline,
@@ -31,6 +33,9 @@ import {
   notificationsOffOutline,
   closeOutline,
   repeatOutline,
+  keyOutline,
+  eyeOutline,
+  eyeOffOutline,
 } from 'ionicons/icons';
 import { AuthService } from '../../services/auth.service';
 import { UserService } from '../../services/user.service';
@@ -40,6 +45,8 @@ import { ThemeService, ThemeMode } from '../../services/theme.service';
 import { NotificationType } from '../../models';
 import { ALL_NOTIFICATION_TYPES, NOTIFICATION_TYPE_ICONS, NOTIFICATION_TYPE_LABEL_KEYS } from '../../shared/notification-types';
 import { createSuccessFlash } from '../../shared/success-flash';
+import { firebaseErrorMessage } from '../../shared/firebase-error-message';
+import { passwordsMatchValidator, STRONG_PASSWORD_PATTERN } from '../../shared/password-validators';
 import { FilterActionsRowComponent } from '../../shared/filter-actions-row/filter-actions-row.component';
 
 /** Single settings screen consolidating what used to be spread across three
@@ -64,7 +71,9 @@ import { FilterActionsRowComponent } from '../../shared/filter-actions-row/filte
     IonToggle,
     IonButton,
     IonModal,
+    IonInput,
     TranslatePipe,
+    ReactiveFormsModule,
     FilterActionsRowComponent,
   ],
 })
@@ -74,6 +83,8 @@ export class SettingsPage {
   private readonly onboarding = inject(OnboardingService);
   private readonly themeService = inject(ThemeService);
   private readonly router = inject(Router);
+  private readonly translate = inject(TranslateService);
+  private readonly fb = inject(FormBuilder);
 
   readonly allTypes = ALL_NOTIFICATION_TYPES;
   readonly typeIcons = NOTIFICATION_TYPE_ICONS;
@@ -88,8 +99,24 @@ export class SettingsPage {
   readonly enableAllFlash = createSuccessFlash();
   readonly disableAllFlash = createSuccessFlash();
   readonly shareHintResetFlash = createSuccessFlash();
+  readonly changePasswordFlash = createSuccessFlash();
 
   readonly confirmLogout = signal(false);
+
+  readonly showChangePassword = signal(false);
+  readonly changePasswordSaving = signal(false);
+  readonly changePasswordError = signal<string | null>(null);
+  readonly showCurrentPassword = signal(false);
+  readonly showNewPassword = signal(false);
+  readonly showConfirmNewPassword = signal(false);
+  readonly changePasswordForm = this.fb.nonNullable.group(
+    {
+      currentPassword: ['', Validators.required],
+      newPassword: ['', [Validators.required, Validators.pattern(STRONG_PASSWORD_PATTERN)]],
+      confirmNewPassword: ['', Validators.required],
+    },
+    { validators: [passwordsMatchValidator('newPassword', 'confirmNewPassword')] },
+  );
 
   readonly disabledTypes = signal<Set<NotificationType>>(
     new Set(this.authService.currentUser()?.disabledNotificationTypes ?? []),
@@ -115,6 +142,9 @@ export class SettingsPage {
       notificationsOffOutline,
       closeOutline,
       repeatOutline,
+      keyOutline,
+      eyeOutline,
+      eyeOffOutline,
     });
   }
 
@@ -185,7 +215,45 @@ export class SettingsPage {
    * through unsavedChangesGuard, so any pending profile edits were already
    * resolved before Settings could even be opened. */
   async logout(): Promise<void> {
+    this.confirmLogout.set(false);
     await this.authService.logout();
     this.router.navigateByUrl('/login');
+  }
+
+  /** Only an email/password account has a password to change - a
+   * Google/Apple/Microsoft-only sign-in has nothing here. */
+  canChangePassword(): boolean {
+    return this.authService.hasPasswordProvider();
+  }
+
+  openChangePassword(): void {
+    this.changePasswordForm.reset({ currentPassword: '', newPassword: '', confirmNewPassword: '' });
+    this.changePasswordError.set(null);
+    this.showCurrentPassword.set(false);
+    this.showNewPassword.set(false);
+    this.showConfirmNewPassword.set(false);
+    this.showChangePassword.set(true);
+  }
+
+  closeChangePassword(): void {
+    this.showChangePassword.set(false);
+  }
+
+  async submitChangePassword(): Promise<void> {
+    if (this.changePasswordForm.invalid) {
+      return;
+    }
+    const { currentPassword, newPassword } = this.changePasswordForm.getRawValue();
+    this.changePasswordSaving.set(true);
+    this.changePasswordError.set(null);
+    try {
+      await this.authService.changePassword(currentPassword, newPassword);
+      this.changePasswordSaving.set(false);
+      this.changePasswordFlash.trigger();
+      setTimeout(() => this.showChangePassword.set(false), 900);
+    } catch (err) {
+      this.changePasswordSaving.set(false);
+      this.changePasswordError.set(firebaseErrorMessage(err, this.translate));
+    }
   }
 }

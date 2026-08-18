@@ -70,7 +70,19 @@
       <ion-icon slot="start" name="help-circle-outline"></ion-icon>
       {{ (shareHintResetFlash.active() ? 'settings.shareHintResetDone' : 'settings.shareHintReset') | translate }}
     </ion-button>
-    <ion-button expand="block" color="primary" fill="outline" class="logout-button" (click)="confirmLogout.set(true)">
+    @if (canChangePassword()) {
+      <ion-button expand="block" fill="outline" class="change-password-button" (click)="openChangePassword()">
+        <ion-icon slot="start" name="key-outline"></ion-icon>
+        {{ 'settings.changePasswordButton' | translate }}
+      </ion-button>
+    }
+    <ion-button
+      expand="block"
+      color="primary"
+      fill="outline"
+      [class.logout-button]="!canChangePassword()"
+      (click)="confirmLogout.set(true)"
+    >
       <ion-icon slot="start" name="log-out-outline"></ion-icon>
       {{ 'profile.logout' | translate }}
     </ion-button>
@@ -99,6 +111,71 @@
           {{ 'profile.logout' | translate }}
         </ion-button>
       </app-filter-actions-row>
+    </div>
+  </ng-template>
+</ion-modal>
+
+<ion-modal
+  [isOpen]="showChangePassword()"
+  [initialBreakpoint]="0.7"
+  [breakpoints]="[0, 0.7]"
+  (didDismiss)="closeChangePassword()"
+>
+  <ng-template>
+    <div class="filter-sheet">
+      <div class="filter-sheet-header">
+        <h2>{{ 'settings.changePasswordTitle' | translate }}</h2>
+      </div>
+      <form [formGroup]="changePasswordForm" (ngSubmit)="submitChangePassword()">
+        <p class="field-label">{{ 'settings.currentPasswordLabel' | translate }}</p>
+        <ion-input [type]="showCurrentPassword() ? 'text' : 'password'" formControlName="currentPassword">
+          <ion-icon
+            slot="end"
+            [name]="showCurrentPassword() ? 'eye-off-outline' : 'eye-outline'"
+            (click)="showCurrentPassword.set(!showCurrentPassword())"
+          ></ion-icon>
+        </ion-input>
+        <p class="field-label">{{ 'settings.newPasswordLabel' | translate }}</p>
+        <ion-input [type]="showNewPassword() ? 'text' : 'password'" formControlName="newPassword">
+          <ion-icon
+            slot="end"
+            [name]="showNewPassword() ? 'eye-off-outline' : 'eye-outline'"
+            (click)="showNewPassword.set(!showNewPassword())"
+          ></ion-icon>
+        </ion-input>
+        <p class="field-label">{{ 'settings.confirmNewPasswordLabel' | translate }}</p>
+        <ion-input [type]="showConfirmNewPassword() ? 'text' : 'password'" formControlName="confirmNewPassword">
+          <ion-icon
+            slot="end"
+            [name]="showConfirmNewPassword() ? 'eye-off-outline' : 'eye-outline'"
+            (click)="showConfirmNewPassword.set(!showConfirmNewPassword())"
+          ></ion-icon>
+        </ion-input>
+        @if (changePasswordForm.controls.newPassword.invalid && changePasswordForm.controls.newPassword.dirty) {
+          <p class="field-error">{{ 'register.passwordTooWeak' | translate }}</p>
+        } @else if (changePasswordForm.errors?.['passwordsMismatch'] && changePasswordForm.controls.confirmNewPassword.dirty) {
+          <p class="field-error">{{ 'register.passwordsMismatch' | translate }}</p>
+        } @else if (changePasswordError()) {
+          <p class="field-error">{{ changePasswordError() }}</p>
+        } @else {
+          <p class="field-hint">{{ 'register.passwordHint' | translate }}</p>
+        }
+        <app-filter-actions-row>
+          <ion-button expand="block" fill="outline" color="primary" type="button" (click)="closeChangePassword()">
+            <ion-icon slot="start" name="close-outline"></ion-icon>
+            {{ 'common.cancel' | translate }}
+          </ion-button>
+          <ion-button
+            expand="block"
+            class="btn-fill"
+            type="submit"
+            [disabled]="changePasswordForm.invalid || changePasswordSaving()"
+          >
+            <ion-icon slot="start" [name]="changePasswordFlash.active() ? 'checkmark-outline' : 'key-outline'"></ion-icon>
+            {{ (changePasswordFlash.active() ? 'eventDetail.savedButton' : 'settings.changePasswordSubmit') | translate }}
+          </ion-button>
+        </app-filter-actions-row>
+      </form>
     </div>
   </ng-template>
 </ion-modal>

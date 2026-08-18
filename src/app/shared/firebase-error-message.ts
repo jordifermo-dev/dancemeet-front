@@ -7,6 +7,7 @@ const KNOWN_CODES = new Set([
   'auth/invalid-credential',
   'auth/email-already-in-use',
   'auth/weak-password',
+  'auth/password-does-not-meet-requirements',
   'auth/popup-closed-by-user',
   'auth/cancelled-popup-request',
   'auth/network-request-failed',

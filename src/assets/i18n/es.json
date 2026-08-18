@@ -31,7 +31,13 @@
     "shareHintReset": "Volver a mostrar el aviso de compartir eventos",
     "shareHintResetDone": "Hecho ✓",
     "logoutConfirmTitle": "¿Cerrar sesión?",
-    "logoutConfirmMessage": "Tendrás que volver a iniciar sesión para acceder a tu cuenta."
+    "logoutConfirmMessage": "Tendrás que volver a iniciar sesión para acceder a tu cuenta.",
+    "changePasswordButton": "Cambiar contraseña",
+    "changePasswordTitle": "Cambiar contraseña",
+    "currentPasswordLabel": "Contraseña actual",
+    "newPasswordLabel": "Nueva contraseña",
+    "confirmNewPasswordLabel": "Repite la nueva contraseña",
+    "changePasswordSubmit": "Guardar"
   },
   "welcome": {
     "title": "Tour de bienvenida",
@@ -105,13 +111,20 @@
     "passwordPlaceholder": "Tu contraseña",
     "submit": "Continuar",
     "noAccount": "¿No tienes cuenta?",
-    "registerLink": "Regístrate"
+    "registerLink": "Regístrate",
+    "forgotPassword": "¿Has olvidado tu contraseña?",
+    "forgotPasswordTitle": "Recuperar contraseña",
+    "forgotPasswordMessage": "Escribe tu email y, si tiene una cuenta asociada, te enviaremos un enlace para crear una nueva contraseña.",
+    "forgotPasswordSent": "Si existe una cuenta con ese email, te hemos enviado un enlace para restablecer la contraseña. Revisa tu bandeja de entrada (y spam).",
+    "forgotPasswordSubmit": "Enviar enlace"
   },
   "register": {
     "title": "Registro",
     "nameLabel": "Nombre",
     "namePlaceholder": "¿Cómo te llamas?",
-    "passwordPlaceholder": "Mínimo 6 caracteres",
+    "passwordPlaceholder": "Crea una contraseña",
+    "passwordHint": "Mínimo 8 caracteres, con mayúscula, minúscula, número y carácter especial (! @ # $ % & * ? ...).",
+    "passwordTooWeak": "La contraseña debe tener al menos 8 caracteres, con mayúscula, minúscula, número y carácter especial.",
     "confirmPasswordLabel": "Repite la contraseña",
     "confirmPasswordPlaceholder": "Confirma tu contraseña",
     "passwordsMismatch": "Las contraseñas no coinciden.",
@@ -395,6 +408,7 @@
     "auth/invalid-credential": "Email o contraseña incorrectos.",
     "auth/email-already-in-use": "Ya existe una cuenta con ese email.",
     "auth/weak-password": "La contraseña debe tener al menos 6 caracteres.",
+    "auth/password-does-not-meet-requirements": "La contraseña no cumple los requisitos. Usa un carácter especial permitido, por ejemplo: ! @ # $ % & * ? .",
     "auth/popup-closed-by-user": "Has cerrado la ventana antes de completar el inicio de sesión.",
     "auth/cancelled-popup-request": "Ya hay una ventana de inicio de sesión abierta.",
     "auth/network-request-failed": "No se ha podido conectar. Comprueba tu conexión.",

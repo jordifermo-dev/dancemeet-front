@@ -31,7 +31,13 @@
     "shareHintReset": "Torna a mostrar l'avís de compartir esdeveniments",
     "shareHintResetDone": "Fet ✓",
     "logoutConfirmTitle": "Tancar sessió?",
-    "logoutConfirmMessage": "Hauràs de tornar a iniciar sessió per accedir al teu compte."
+    "logoutConfirmMessage": "Hauràs de tornar a iniciar sessió per accedir al teu compte.",
+    "changePasswordButton": "Canvia la contrasenya",
+    "changePasswordTitle": "Canvia la contrasenya",
+    "currentPasswordLabel": "Contrasenya actual",
+    "newPasswordLabel": "Nova contrasenya",
+    "confirmNewPasswordLabel": "Repeteix la nova contrasenya",
+    "changePasswordSubmit": "Desa"
   },
   "welcome": {
     "title": "Tour de benvinguda",
@@ -105,13 +111,20 @@
     "passwordPlaceholder": "La teva contrasenya",
     "submit": "Continua",
     "noAccount": "No tens compte?",
-    "registerLink": "Registra't"
+    "registerLink": "Registra't",
+    "forgotPassword": "Has oblidat la contrasenya?",
+    "forgotPasswordTitle": "Recupera la contrasenya",
+    "forgotPasswordMessage": "Escriu el teu email i, si té un compte associat, t'enviarem un enllaç per crear una contrasenya nova.",
+    "forgotPasswordSent": "Si existeix un compte amb aquest email, t'hem enviat un enllaç per restablir la contrasenya. Revisa la teva safata d'entrada (i correu brossa).",
+    "forgotPasswordSubmit": "Envia l'enllaç"
   },
   "register": {
     "title": "Registre",
     "nameLabel": "Nom",
     "namePlaceholder": "Com et dius?",
-    "passwordPlaceholder": "Mínim 6 caràcters",
+    "passwordPlaceholder": "Crea una contrasenya",
+    "passwordHint": "Mínim 8 caràcters, amb majúscula, minúscula, número i caràcter especial (! @ # $ % & * ? ...).",
+    "passwordTooWeak": "La contrasenya ha de tenir com a mínim 8 caràcters, amb majúscula, minúscula, número i caràcter especial.",
     "confirmPasswordLabel": "Repeteix la contrasenya",
     "confirmPasswordPlaceholder": "Confirma la teva contrasenya",
     "passwordsMismatch": "Les contrasenyes no coincideixen.",
@@ -395,6 +408,7 @@
     "auth/invalid-credential": "Email o contrasenya incorrectes.",
     "auth/email-already-in-use": "Ja existeix un compte amb aquest email.",
     "auth/weak-password": "La contrasenya ha de tenir com a mínim 6 caràcters.",
+    "auth/password-does-not-meet-requirements": "La contrasenya no compleix els requisits. Fes servir un caràcter especial permès, per exemple: ! @ # $ % & * ? .",
     "auth/popup-closed-by-user": "Has tancat la finestra abans d'acabar l'inici de sessió.",
     "auth/cancelled-popup-request": "Ja hi ha una finestra d'inici de sessió oberta.",
     "auth/network-request-failed": "No s'ha pogut connectar. Comprova la teva connexió.",

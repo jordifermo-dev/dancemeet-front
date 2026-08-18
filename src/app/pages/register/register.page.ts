@@ -1,11 +1,5 @@
 import { Component, OnInit, inject, signal, computed } from '@angular/core';
-import {
-  AbstractControl,
-  FormBuilder,
-  ReactiveFormsModule,
-  ValidationErrors,
-  Validators,
-} from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { IonContent, IonButton, IonIcon, IonItem, IonInput, IonCheckbox, IonText } from '@ionic/angular/standalone';
@@ -29,6 +23,7 @@ import { CitySuggestion, GeocodingService } from '../../services/geocoding.servi
 import { CreateUserPayload, Discipline, DISCIPLINE_NAMES, EventType, EVENT_TYPE_NAMES } from '../../models';
 import { firebaseErrorMessage } from '../../shared/firebase-error-message';
 import { DISCIPLINE_ICON_FILES, sortByNameOrder } from '../../shared/icon-catalog';
+import { passwordsMatchValidator, STRONG_PASSWORD_PATTERN } from '../../shared/password-validators';
 import { MapType } from '../../shared/maps';
 import { ChipGridComponent } from '../../shared/chip-grid/chip-grid.component';
 import { LocationPickerComponent } from '../../shared/location-picker/location-picker.component';
@@ -50,14 +45,6 @@ const FALLBACK_EVENT_TYPES: EventType[] = EVENT_TYPE_NAMES.map((name) => ({
   name,
   createdAt: 0,
 }));
-
-function passwordsMatchValidator(control: AbstractControl): ValidationErrors | null {
-  const password = control.get('password')?.value;
-  const confirmPassword = control.get('confirmPassword')?.value;
-  return password && confirmPassword && password !== confirmPassword
-    ? { passwordsMismatch: true }
-    : null;
-}
 
 @Component({
   selector: 'app-register',
@@ -99,10 +86,10 @@ export class RegisterPage implements OnInit {
     {
       name: ['', [Validators.required, Validators.minLength(2)]],
       email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required, Validators.minLength(6)]],
+      password: ['', [Validators.required, Validators.pattern(STRONG_PASSWORD_PATTERN)]],
       confirmPassword: ['', [Validators.required]],
     },
-    { validators: [passwordsMatchValidator] },
+    { validators: [passwordsMatchValidator('password', 'confirmPassword')] },
   );
 
   /** Set when arriving here via AuthService.pendingSocialSignup (a Google/

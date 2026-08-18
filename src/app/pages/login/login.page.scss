@@ -110,6 +110,18 @@
   }
 }
 
+.forgot-password-link {
+  appearance: none;
+  background: none;
+  border: none;
+  align-self: flex-end;
+  margin-top: -6px;
+  padding: 4px 0;
+  color: var(--ion-color-primary);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
 .register-link {
   margin-top: 8px;
   margin-bottom: 8px;
@@ -122,5 +134,34 @@
     color: color-mix(in srgb, var(--ion-color-primary) 35%, white);
     font-weight: 600;
     text-decoration: none;
+  }
+}
+
+// Same confirmation-sheet look as settings.page.scss's identical rule.
+.filter-sheet {
+  padding: 20px 20px 16px;
+
+  p {
+    color: var(--ion-color-medium);
+    font-size: 0.9rem;
+    margin: 0 0 16px;
+  }
+
+  .group-label {
+    margin: 0 0 -4px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--ion-color-medium);
+  }
+
+  .required-marker {
+    color: var(--ion-color-primary);
+    margin-left: 2px;
+  }
+
+  form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
   }
 }

@@ -4,17 +4,21 @@ import { TranslateService } from '@ngx-translate/core';
 import { Capacitor } from '@capacitor/core';
 import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
 import {
+  EmailAuthProvider,
   GoogleAuthProvider,
   OAuthProvider,
   User as FirebaseUser,
   createUserWithEmailAndPassword,
   getRedirectResult,
   onAuthStateChanged,
+  reauthenticateWithCredential,
+  sendPasswordResetEmail,
   signInWithCredential,
   signInWithEmailAndPassword,
   signInWithPopup,
   signInWithRedirect,
   signOut,
+  updatePassword,
 } from 'firebase/auth';
 import { firebaseAuth } from './firebase';
 import { UserService } from './user.service';
@@ -244,8 +248,42 @@ export class AuthService {
     return firebaseAuth.currentUser ? firebaseAuth.currentUser.getIdToken() : null;
   }
 
+  /** True only for accounts that actually have an email/password credential -
+   * a Google/Apple/Microsoft-only account has nothing to "change" here. */
+  hasPasswordProvider(): boolean {
+    return (firebaseAuth.currentUser?.providerData ?? []).some((p) => p.providerId === 'password');
+  }
+
+  /** Firebase rejects updatePassword on anything but a "recent" sign-in -
+   * re-authenticating with the current password first satisfies that
+   * regardless of how long ago the session actually started, and doubles as
+   * the "current password" check itself (wrong current password surfaces as
+   * the same auth/wrong-password error re-auth would give). */
+  async changePassword(currentPassword: string, newPassword: string): Promise<void> {
+    const user = firebaseAuth.currentUser;
+    if (!user?.email) {
+      throw new Error(this.translate.instant('errors.noEmail'));
+    }
+    const credential = EmailAuthProvider.credential(user.email, currentPassword);
+    await reauthenticateWithCredential(user, credential);
+    await updatePassword(user, newPassword);
+  }
+
   async logout(): Promise<void> {
     await signOut(firebaseAuth);
     this.currentUser.set(null);
+  }
+
+  /** Firebase's own hosted "forgot password" flow - sends a reset link to
+   * whatever email is actually registered on that account. There's no way
+   * to redirect it to a different inbox (nor should there be - that'd be an
+   * account-takeover vector), so testing this against one of the seeded
+   * dummy accounts (userNNN@gmail.com) won't produce an email anyone here
+   * can read; only a real, owned mailbox will actually receive it. Doesn't
+   * reveal whether the email is registered (same UI regardless), matching
+   * Firebase's own email-enumeration-protection default. */
+  async resetPassword(email: string): Promise<void> {
+    firebaseAuth.languageCode = this.languageService.currentLang();
+    await sendPasswordResetEmail(firebaseAuth, email);
   }
 }

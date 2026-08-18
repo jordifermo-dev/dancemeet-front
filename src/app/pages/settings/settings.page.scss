@@ -129,10 +129,41 @@
   margin-top: 28px;
 }
 
-// Same gap as .welcome-guide-button above, between "Cerrar sesión" and the
-// app-info group above it.
+// Same gap as .welcome-guide-button above, between the account-actions group
+// (change password/log out) and the app-info group above it - only applied
+// directly to "Cerrar sesión" when there's no "Cambiar contraseña" button
+// ahead of it to carry the gap instead (Google/Apple/Microsoft-only accounts).
+.change-password-button,
 .logout-button {
   margin-top: 28px;
+}
+
+.field-label {
+  margin: 16px 0 6px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ion-color-medium);
+
+  &:first-child {
+    margin-top: 0;
+  }
+}
+
+.field-hint {
+  color: var(--ion-color-medium);
+  font-size: 0.78rem;
+  margin: 4px 0 0;
+}
+
+.field-error {
+  color: var(--ion-color-danger);
+  font-size: 0.82rem;
+  margin: 4px 0 0;
+}
+
+.filter-sheet form ion-icon[slot='end'] {
+  cursor: pointer;
+  color: var(--ion-color-primary);
 }
 
 // Same confirmation-sheet look as profile.page.scss's identical rule.
