@@ -4,10 +4,10 @@
     <ion-buttons slot="end">
       <ion-button
         class="view-mode-button"
-        (click)="toggleViewMode()"
-        [attr.aria-label]="(viewMode() === 'list' ? 'explorer.viewCalendar' : 'explorer.viewList') | translate"
+        (click)="filters.toggleViewMode()"
+        [attr.aria-label]="(filters.viewMode() === 'list' ? 'explorer.viewCalendar' : 'explorer.viewList') | translate"
       >
-        <ion-icon slot="icon-only" [name]="viewMode() === 'list' ? 'calendar-outline' : 'list-outline'"></ion-icon>
+        <ion-icon slot="icon-only" [name]="filters.viewMode() === 'list' ? 'calendar-outline' : 'list-outline'"></ion-icon>
       </ion-button>
       <app-notification-bell></app-notification-bell>
       <ion-button class="create-event-button" (click)="goToCreateEvent()">
@@ -24,59 +24,59 @@
         class="tgtg-searchbar"
         [placeholder]="'explorer.searchPlaceholder' | translate"
         [debounce]="0"
-        (ionInput)="onSearchChange($event.detail.value)"
+        (ionInput)="filters.onSearchChange($event.detail.value)"
       ></ion-searchbar>
-      <button type="button" class="icon-btn filter-all-btn" (click)="openGenericFilterModal()">
+      <button type="button" class="icon-btn filter-all-btn" (click)="filters.openGenericFilterModal()">
         <ion-icon name="options-outline"></ion-icon>
       </button>
-      <button type="button" class="icon-btn" (click)="openLocationModal()">
+      <button type="button" class="icon-btn" (click)="filters.openLocationModal()">
         <ion-icon name="location-outline"></ion-icon>
       </button>
     </div>
 
     <div class="filter-row">
-      <button type="button" class="pill" [class.active]="draftEventTypeIds().length < eventTypes().length" (click)="openEventTypeModal()">
+      <button type="button" class="pill" [class.active]="filters.draftEventTypeIds().length < filters.eventTypes().length" (click)="filters.openEventTypeModal()">
         {{ 'explorer.eventTypesFilterLabel' | translate }}
       </button>
-      <button type="button" class="pill" [class.active]="draftDisciplineIds().length < disciplines().length" (click)="openDisciplineModal()">
+      <button type="button" class="pill" [class.active]="filters.draftDisciplineIds().length < filters.disciplines().length" (click)="filters.openDisciplineModal()">
         {{ 'explorer.disciplinesFilterLabel' | translate }}
       </button>
-      <button type="button" class="pill" [class.active]="appliedStatuses().length < statusOptions.length" (click)="openStatusModal()">
+      <button type="button" class="pill" [class.active]="filters.appliedStatuses().length < filters.statusOptions.length" (click)="filters.openStatusModal()">
         {{ 'explorer.statusFilterLabel' | translate }}
       </button>
-      <button type="button" class="pill" (click)="openDateModal()">
+      <button type="button" class="pill" (click)="filters.openDateModal()">
         {{ 'explorer.dateFilterLabel' | translate }}
       </button>
       <button
         type="button"
         class="pill"
-        [class.active]="appliedPriceOptions().length < priceOptions.length"
-        (click)="openPriceModal()"
+        [class.active]="filters.appliedPriceOptions().length < filters.priceOptions.length"
+        (click)="filters.openPriceModal()"
       >
         {{ 'explorer.priceFilterLabel' | translate }}
       </button>
-      <button type="button" class="pill" [class.active]="appliedRelation().length < relationOptions.length" (click)="openRelationModal()">
+      <button type="button" class="pill" [class.active]="filters.appliedRelation().length < filters.relationOptions.length" (click)="filters.openRelationModal()">
         {{ 'favorites.relationFilterLabel' | translate }}
       </button>
     </div>
 
-    <button type="button" class="sort-row" (click)="openSortModal()">
+    <button type="button" class="sort-row" (click)="filters.openSortModal()">
       <span class="sort-row-label">{{ 'eventSort.label' | translate }}</span>
       <span class="sort-row-value">
-        {{ currentSortLabelKey() | translate }}
+        {{ filters.currentSortLabelKey() | translate }}
         <ion-icon name="chevron-down-outline"></ion-icon>
       </span>
     </button>
 
-    @if (viewMode() === 'calendar') {
-      <app-calendar-granularity-toggle [(granularity)]="calendarGranularity"></app-calendar-granularity-toggle>
+    @if (filters.viewMode() === 'calendar') {
+      <app-calendar-granularity-toggle [(granularity)]="filters.calendarGranularity"></app-calendar-granularity-toggle>
     }
   </div>
 
-  @if (viewMode() === 'list') {
-    <div class="favorites-list" [style.paddingTop.px]="listTopPadding()">
-      @if (loading()) {
-        <div class="loading-row">
+  @if (filters.viewMode() === 'list') {
+    <div class="favorites-list" [style.paddingTop.px]="filters.listTopPadding()">
+      @if (filters.loading()) {
+        <div class="filters.loading-row">
           <ion-spinner name="crescent"></ion-spinner>
         </div>
       } @else if (cardViews().length === 0) {
@@ -90,15 +90,15 @@
       }
     </div>
   } @else {
-    <div class="favorites-calendar" [style.paddingTop.px]="listTopPadding()">
+    <div class="favorites-calendar" [style.paddingTop.px]="filters.listTopPadding()">
       <app-event-calendar
         [events]="filteredEvents()"
-        [eventTypesById]="eventTypesById()"
-        [disciplinesById]="disciplinesById()"
-        [sortMode]="sortMode()"
-        [granularity]="calendarGranularity()"
-        [minDate]="appliedDateFrom() ?? null"
-        [maxDate]="appliedDateTo() ?? null"
+        [eventTypesById]="filters.eventTypesById()"
+        [disciplinesById]="filters.disciplinesById()"
+        [sortMode]="filters.sortMode()"
+        [granularity]="filters.calendarGranularity()"
+        [minDate]="filters.appliedDateFrom() ?? null"
+        [maxDate]="filters.appliedDateTo() ?? null"
         (attendToggle)="onAttendToggle($event)"
       ></app-event-calendar>
     </div>
@@ -107,28 +107,28 @@
 
 <!-- Sort sheet -->
 <ion-modal
-  [isOpen]="isSortModalOpen()"
+  [isOpen]="filters.isSortModalOpen()"
   [initialBreakpoint]="0.45"
   [breakpoints]="[0, 0.45, 0.7]"
-  (didDismiss)="isSortModalOpen.set(false)"
+  (didDismiss)="filters.isSortModalOpen.set(false)"
 >
   <ng-template>
     <div class="filter-sheet">
-      <app-filter-sheet-header titleKey="eventSort.label" (closed)="isSortModalOpen.set(false)"></app-filter-sheet-header>
+      <app-filter-sheet-header titleKey="eventSort.label" (closed)="filters.isSortModalOpen.set(false)"></app-filter-sheet-header>
       <div class="sort-options-list">
-        @for (option of sortOptions; track option.id) {
+        @for (option of filters.sortOptions; track option.id) {
           <button
             type="button"
             class="sort-option"
-            [class.selected]="sortMode() === option.id"
-            (click)="selectSort(option.id)"
+            [class.selected]="filters.sortMode() === option.id"
+            (click)="filters.selectSort(option.id)"
           >
             {{ option.labelKey | translate }}
           </button>
         }
       </div>
       <app-filter-actions-row>
-        <ion-button expand="block" fill="outline" color="primary" (click)="isSortModalOpen.set(false)">
+        <ion-button expand="block" fill="outline" color="primary" (click)="filters.isSortModalOpen.set(false)">
           <ion-icon slot="start" name="close-outline"></ion-icon>
           {{ 'common.cancel' | translate }}
         </ion-button>
@@ -139,39 +139,39 @@
 
 <!-- Generic filter sheet: every category together (mirrors the pills) -->
 <ion-modal
-  [isOpen]="isGenericFilterModalOpen()"
+  [isOpen]="filters.isGenericFilterModalOpen()"
   [initialBreakpoint]="0.9"
   [breakpoints]="[0, 0.9, 0.98]"
-  (didDismiss)="isGenericFilterModalOpen.set(false)"
+  (didDismiss)="filters.isGenericFilterModalOpen.set(false)"
 >
   <ng-template>
     <app-filter-sheet-header
       class="generic-filter-header"
       titleKey="explorer.filterAllTitle"
-      (closed)="isGenericFilterModalOpen.set(false)"
+      (closed)="filters.isGenericFilterModalOpen.set(false)"
     ></app-filter-sheet-header>
     <ion-content class="generic-filter-content">
       <div class="generic-filter-body">
         <app-filter-all
           [showRelation]="true"
-          [eventTypeChips]="eventTypeChips()"
-          [disciplineChips]="disciplineChips()"
-          [statusChips]="statusChips()"
-          [priceChips]="priceChips()"
-          [quickDateChips]="quickDateChips()"
-          [relationChips]="relationChips()"
-          [dateFromValue]="draftDateFrom() ?? nowTimestamp"
-          [dateToValue]="draftDateTo() ?? draftDateFrom() ?? nowTimestamp"
-          [dateFromIsUnset]="draftDateFrom() === undefined"
-          [dateToIsUnset]="draftDateTo() === undefined"
-          [applied]="genericApplyFlash.active()"
-          (chipToggle)="onGenericFilterChipToggle($event)"
-          (dateFromChange)="onDraftDateFromChange($event)"
-          (dateToChange)="onDraftDateToChange($event)"
-          (clearDateFrom)="clearDraftDateFrom()"
-          (clearDateTo)="clearDraftDateTo()"
-          (reset)="clearGenericFilter()"
-          (apply)="applyGenericFilter()"
+          [eventTypeChips]="filters.eventTypeChips()"
+          [disciplineChips]="filters.disciplineChips()"
+          [statusChips]="filters.statusChips()"
+          [priceChips]="filters.priceChips()"
+          [quickDateChips]="filters.quickDateChips()"
+          [relationChips]="filters.relationChips()"
+          [dateFromValue]="filters.draftDateFrom() ?? filters.nowTimestamp"
+          [dateToValue]="filters.draftDateTo() ?? filters.draftDateFrom() ?? filters.nowTimestamp"
+          [dateFromIsUnset]="filters.draftDateFrom() === undefined"
+          [dateToIsUnset]="filters.draftDateTo() === undefined"
+          [applied]="filters.genericApplyFlash.active()"
+          (chipToggle)="filters.onGenericFilterChipToggle($event)"
+          (dateFromChange)="filters.onDraftDateFromChange($event)"
+          (dateToChange)="filters.onDraftDateToChange($event)"
+          (clearDateFrom)="filters.clearDraftDateFrom()"
+          (clearDateTo)="filters.clearDraftDateTo()"
+          (reset)="filters.clearGenericFilter()"
+          (apply)="filters.applyGenericFilter()"
         ></app-filter-all>
       </div>
     </ion-content>
@@ -179,44 +179,44 @@
 </ion-modal>
 
 <!-- Location sheet: map, distance, city search, current location -->
-<ion-modal [isOpen]="isLocationModalOpen()" (didDismiss)="isLocationModalOpen.set(false)">
+<ion-modal [isOpen]="filters.isLocationModalOpen()" (didDismiss)="filters.isLocationModalOpen.set(false)">
   <ng-template>
     <div class="filter-sheet">
       <app-filter-sheet-header
         titleKey="explorer.locationModalTitle"
-        (closed)="isLocationModalOpen.set(false)"
+        (closed)="filters.isLocationModalOpen.set(false)"
       ></app-filter-sheet-header>
 
       <app-location-picker
         [editable]="true"
-        [lat]="draftLatitude()"
-        [lng]="draftLongitude()"
-        [zoom]="zoomLevel()"
-        [mapType]="mapType()"
-        [addressValue]="draftAddress()"
-        [citySuggestions]="citySuggestions()"
-        [locating]="locatingMe()"
-        [addressLine]="resolvedAddressLine()"
+        [lat]="filters.draftLatitude()"
+        [lng]="filters.draftLongitude()"
+        [zoom]="filters.zoomLevel()"
+        [mapType]="filters.mapType()"
+        [addressValue]="filters.draftAddress()"
+        [citySuggestions]="filters.citySuggestions()"
+        [locating]="filters.locatingMe()"
+        [addressLine]="filters.resolvedAddressLine()"
         [showDistance]="true"
-        [distanceValue]="draftDistanceRange()"
-        (zoomIn)="zoomIn()"
-        (zoomOut)="zoomOut()"
-        (mapTypeToggle)="toggleMapType()"
-        (addressInput)="onCityInput($event)"
-        (suggestionSelect)="selectCitySuggestion($event)"
-        (useCurrentLocation)="useCurrentLocation()"
-        (distanceChange)="onDistanceChange($event)"
-        (pinMoved)="onPinMoved($event)"
+        [distanceValue]="filters.draftDistanceRange()"
+        (filters.zoomIn)="filters.zoomIn()"
+        (filters.zoomOut)="filters.zoomOut()"
+        (mapTypeToggle)="filters.toggleMapType()"
+        (addressInput)="filters.onCityInput($event)"
+        (suggestionSelect)="filters.selectCitySuggestion($event)"
+        (filters.useCurrentLocation)="filters.useCurrentLocation()"
+        (distanceChange)="filters.onDistanceChange($event)"
+        (pinMoved)="filters.onPinMoved($event)"
       ></app-location-picker>
 
       <app-filter-actions-row>
-        <ion-button expand="block" fill="outline" color="primary" (click)="clearLocationFilter()">
+        <ion-button expand="block" fill="outline" color="primary" (click)="filters.clearLocationFilter()">
           <ion-icon slot="start" name="refresh-outline"></ion-icon>
           {{ 'explorer.resetFilters' | translate }}
         </ion-button>
-        <ion-button expand="block" class="btn-fill" (click)="applyLocationFilter()">
+        <ion-button expand="block" class="btn-fill" (click)="filters.applyLocationFilter()">
           <ion-icon slot="start" name="checkmark-outline"></ion-icon>
-          {{ (locationApplyFlash.active() ? 'profile.applied' : 'profile.apply') | translate }}
+          {{ (filters.locationApplyFlash.active() ? 'profile.applied' : 'profile.apply') | translate }}
         </ion-button>
       </app-filter-actions-row>
     </div>
@@ -225,29 +225,29 @@
 
 <!-- Event types filter -->
 <ion-modal
-  [isOpen]="isEventTypeModalOpen()"
+  [isOpen]="filters.isEventTypeModalOpen()"
   [initialBreakpoint]="0.67"
   [breakpoints]="[0, 0.67]"
-  (didDismiss)="isEventTypeModalOpen.set(false)"
+  (didDismiss)="filters.isEventTypeModalOpen.set(false)"
 >
   <ng-template>
     <div class="filter-sheet">
       <app-filter-sheet-header
         titleKey="explorer.eventTypesFilterLabel"
-        (closed)="isEventTypeModalOpen.set(false)"
+        (closed)="filters.isEventTypeModalOpen.set(false)"
       ></app-filter-sheet-header>
-      <app-chip-grid [items]="eventTypeChips()" (chipClick)="toggleDraftEventType($event)"></app-chip-grid>
-      @if (minSelectionWarning.isActive('eventTypes')) {
+      <app-chip-grid [items]="filters.eventTypeChips()" (chipClick)="filters.toggleDraftEventType($event)"></app-chip-grid>
+      @if (filters.minSelectionWarning.isActive('filters.eventTypes')) {
         <p class="min-selection-warning">{{ 'explorer.minSelectionWarning' | translate }}</p>
       }
       <app-filter-actions-row>
-        <ion-button expand="block" fill="outline" color="primary" (click)="clearEventTypeFilter()">
+        <ion-button expand="block" fill="outline" color="primary" (click)="filters.clearEventTypeFilter()">
           <ion-icon slot="start" name="refresh-outline"></ion-icon>
           {{ 'explorer.resetFilters' | translate }}
         </ion-button>
-        <ion-button expand="block" class="btn-fill" (click)="applyEventTypeFilter()">
+        <ion-button expand="block" class="btn-fill" (click)="filters.applyEventTypeFilter()">
           <ion-icon slot="start" name="checkmark-outline"></ion-icon>
-          {{ (eventTypeApplyFlash.active() ? 'profile.applied' : 'profile.apply') | translate }}
+          {{ (filters.eventTypeApplyFlash.active() ? 'profile.applied' : 'profile.apply') | translate }}
         </ion-button>
       </app-filter-actions-row>
     </div>
@@ -256,29 +256,29 @@
 
 <!-- Disciplines filter -->
 <ion-modal
-  [isOpen]="isDisciplineModalOpen()"
+  [isOpen]="filters.isDisciplineModalOpen()"
   [initialBreakpoint]="0.67"
   [breakpoints]="[0, 0.67]"
-  (didDismiss)="isDisciplineModalOpen.set(false)"
+  (didDismiss)="filters.isDisciplineModalOpen.set(false)"
 >
   <ng-template>
     <div class="filter-sheet">
       <app-filter-sheet-header
         titleKey="explorer.disciplinesFilterLabel"
-        (closed)="isDisciplineModalOpen.set(false)"
+        (closed)="filters.isDisciplineModalOpen.set(false)"
       ></app-filter-sheet-header>
-      <app-chip-grid [items]="disciplineChips()" (chipClick)="toggleDraftDiscipline($event)"></app-chip-grid>
-      @if (minSelectionWarning.isActive('disciplines')) {
+      <app-chip-grid [items]="filters.disciplineChips()" (chipClick)="filters.toggleDraftDiscipline($event)"></app-chip-grid>
+      @if (filters.minSelectionWarning.isActive('filters.disciplines')) {
         <p class="min-selection-warning">{{ 'explorer.minSelectionWarning' | translate }}</p>
       }
       <app-filter-actions-row>
-        <ion-button expand="block" fill="outline" color="primary" (click)="clearDisciplineFilter()">
+        <ion-button expand="block" fill="outline" color="primary" (click)="filters.clearDisciplineFilter()">
           <ion-icon slot="start" name="refresh-outline"></ion-icon>
           {{ 'explorer.resetFilters' | translate }}
         </ion-button>
-        <ion-button expand="block" class="btn-fill" (click)="applyDisciplineFilter()">
+        <ion-button expand="block" class="btn-fill" (click)="filters.applyDisciplineFilter()">
           <ion-icon slot="start" name="checkmark-outline"></ion-icon>
-          {{ (disciplineApplyFlash.active() ? 'profile.applied' : 'profile.apply') | translate }}
+          {{ (filters.disciplineApplyFlash.active() ? 'profile.applied' : 'profile.apply') | translate }}
         </ion-button>
       </app-filter-actions-row>
     </div>
@@ -287,29 +287,29 @@
 
 <!-- Status filter -->
 <ion-modal
-  [isOpen]="isStatusModalOpen()"
+  [isOpen]="filters.isStatusModalOpen()"
   [initialBreakpoint]="0.67"
   [breakpoints]="[0, 0.67]"
-  (didDismiss)="isStatusModalOpen.set(false)"
+  (didDismiss)="filters.isStatusModalOpen.set(false)"
 >
   <ng-template>
     <div class="filter-sheet">
       <app-filter-sheet-header
         titleKey="explorer.statusFilterLabel"
-        (closed)="isStatusModalOpen.set(false)"
+        (closed)="filters.isStatusModalOpen.set(false)"
       ></app-filter-sheet-header>
-      <app-chip-grid [items]="statusChips()" (chipClick)="toggleDraftStatus($event)"></app-chip-grid>
-      @if (minSelectionWarning.isActive('statuses')) {
+      <app-chip-grid [items]="filters.statusChips()" (chipClick)="filters.toggleDraftStatus($event)"></app-chip-grid>
+      @if (filters.minSelectionWarning.isActive('statuses')) {
         <p class="min-selection-warning">{{ 'explorer.minSelectionWarning' | translate }}</p>
       }
       <app-filter-actions-row>
-        <ion-button expand="block" fill="outline" color="primary" (click)="clearStatusFilter()">
+        <ion-button expand="block" fill="outline" color="primary" (click)="filters.clearStatusFilter()">
           <ion-icon slot="start" name="refresh-outline"></ion-icon>
           {{ 'explorer.resetFilters' | translate }}
         </ion-button>
-        <ion-button expand="block" class="btn-fill" (click)="applyStatusFilter()">
+        <ion-button expand="block" class="btn-fill" (click)="filters.applyStatusFilter()">
           <ion-icon slot="start" name="checkmark-outline"></ion-icon>
-          {{ (statusApplyFlash.active() ? 'profile.applied' : 'profile.apply') | translate }}
+          {{ (filters.statusApplyFlash.active() ? 'profile.applied' : 'profile.apply') | translate }}
         </ion-button>
       </app-filter-actions-row>
     </div>
@@ -318,29 +318,29 @@
 
 <!-- Relation filter (organize / attend) -->
 <ion-modal
-  [isOpen]="isRelationModalOpen()"
+  [isOpen]="filters.isRelationModalOpen()"
   [initialBreakpoint]="0.45"
   [breakpoints]="[0, 0.45, 0.7]"
-  (didDismiss)="isRelationModalOpen.set(false)"
+  (didDismiss)="filters.isRelationModalOpen.set(false)"
 >
   <ng-template>
     <div class="filter-sheet">
       <app-filter-sheet-header
         titleKey="favorites.relationFilterLabel"
-        (closed)="isRelationModalOpen.set(false)"
+        (closed)="filters.isRelationModalOpen.set(false)"
       ></app-filter-sheet-header>
-      <app-chip-grid [items]="relationChips()" (chipClick)="toggleDraftRelation($event)"></app-chip-grid>
-      @if (minSelectionWarning.isActive('relation')) {
+      <app-chip-grid [items]="filters.relationChips()" (chipClick)="filters.toggleDraftRelation($event)"></app-chip-grid>
+      @if (filters.minSelectionWarning.isActive('relation')) {
         <p class="min-selection-warning">{{ 'explorer.minSelectionWarning' | translate }}</p>
       }
       <app-filter-actions-row>
-        <ion-button expand="block" fill="outline" color="primary" (click)="clearRelationFilter()">
+        <ion-button expand="block" fill="outline" color="primary" (click)="filters.clearRelationFilter()">
           <ion-icon slot="start" name="refresh-outline"></ion-icon>
           {{ 'explorer.resetFilters' | translate }}
         </ion-button>
-        <ion-button expand="block" class="btn-fill" (click)="applyRelationFilter()">
+        <ion-button expand="block" class="btn-fill" (click)="filters.applyRelationFilter()">
           <ion-icon slot="start" name="checkmark-outline"></ion-icon>
-          {{ (relationApplyFlash.active() ? 'profile.applied' : 'profile.apply') | translate }}
+          {{ (filters.relationApplyFlash.active() ? 'profile.applied' : 'profile.apply') | translate }}
         </ion-button>
       </app-filter-actions-row>
     </div>
@@ -349,29 +349,29 @@
 
 <!-- Price filter (free / paid) -->
 <ion-modal
-  [isOpen]="isPriceModalOpen()"
+  [isOpen]="filters.isPriceModalOpen()"
   [initialBreakpoint]="0.45"
   [breakpoints]="[0, 0.45, 0.7]"
-  (didDismiss)="isPriceModalOpen.set(false)"
+  (didDismiss)="filters.isPriceModalOpen.set(false)"
 >
   <ng-template>
     <div class="filter-sheet">
       <app-filter-sheet-header
         titleKey="explorer.priceFilterLabel"
-        (closed)="isPriceModalOpen.set(false)"
+        (closed)="filters.isPriceModalOpen.set(false)"
       ></app-filter-sheet-header>
-      <app-chip-grid [items]="priceChips()" (chipClick)="toggleDraftPriceOption($event)"></app-chip-grid>
-      @if (minSelectionWarning.isActive('priceOptions')) {
+      <app-chip-grid [items]="filters.priceChips()" (chipClick)="filters.toggleDraftPriceOption($event)"></app-chip-grid>
+      @if (filters.minSelectionWarning.isActive('filters.priceOptions')) {
         <p class="min-selection-warning">{{ 'explorer.minSelectionWarning' | translate }}</p>
       }
       <app-filter-actions-row>
-        <ion-button expand="block" fill="outline" color="primary" (click)="clearPriceFilter()">
+        <ion-button expand="block" fill="outline" color="primary" (click)="filters.clearPriceFilter()">
           <ion-icon slot="start" name="refresh-outline"></ion-icon>
           {{ 'explorer.resetFilters' | translate }}
         </ion-button>
-        <ion-button expand="block" class="btn-fill" (click)="applyPriceFilter()">
+        <ion-button expand="block" class="btn-fill" (click)="filters.applyPriceFilter()">
           <ion-icon slot="start" name="checkmark-outline"></ion-icon>
-          {{ (priceApplyFlash.active() ? 'profile.applied' : 'profile.apply') | translate }}
+          {{ (filters.priceApplyFlash.active() ? 'profile.applied' : 'profile.apply') | translate }}
         </ion-button>
       </app-filter-actions-row>
     </div>
@@ -380,18 +380,18 @@
 
 <!-- Date filter -->
 <ion-modal
-  [isOpen]="isDateModalOpen()"
+  [isOpen]="filters.isDateModalOpen()"
   [initialBreakpoint]="0.67"
   [breakpoints]="[0, 0.67]"
-  (didDismiss)="isDateModalOpen.set(false)"
+  (didDismiss)="filters.isDateModalOpen.set(false)"
 >
   <ng-template>
     <div class="filter-sheet">
       <app-filter-sheet-header
         titleKey="explorer.dateFilterLabel"
-        (closed)="isDateModalOpen.set(false)"
+        (closed)="filters.isDateModalOpen.set(false)"
       ></app-filter-sheet-header>
-      <app-chip-grid [items]="quickDateChips()" (chipClick)="setDraftQuickDate($event)"></app-chip-grid>
+      <app-chip-grid [items]="filters.quickDateChips()" (chipClick)="filters.setDraftQuickDate($event)"></app-chip-grid>
 
       <div class="date-range-row">
         <div class="date-field">
@@ -399,13 +399,13 @@
           <div class="date-value-row">
             <ion-icon name="calendar-outline"></ion-icon>
             <app-date-picker-field
-              [value]="draftDateFrom() ?? nowTimestamp"
-              [isUnset]="draftDateFrom() === undefined"
+              [value]="filters.draftDateFrom() ?? filters.nowTimestamp"
+              [isUnset]="filters.draftDateFrom() === undefined"
               [unsetLabel]="'explorer.noStartDate' | translate"
               [showUnsetToggle]="true"
               titleKey="explorer.dateFrom"
-              (dateChange)="onDraftDateFromChange($event)"
-              (unsetToggle)="$event && clearDraftDateFrom()"
+              (dateChange)="filters.onDraftDateFromChange($event)"
+              (unsetToggle)="$event && filters.clearDraftDateFrom()"
             ></app-date-picker-field>
           </div>
         </div>
@@ -414,26 +414,26 @@
           <div class="date-value-row">
             <ion-icon name="calendar-outline"></ion-icon>
             <app-date-picker-field
-              [value]="draftDateTo() ?? draftDateFrom() ?? nowTimestamp"
-              [isUnset]="draftDateTo() === undefined"
+              [value]="filters.draftDateTo() ?? filters.draftDateFrom() ?? filters.nowTimestamp"
+              [isUnset]="filters.draftDateTo() === undefined"
               [unsetLabel]="'explorer.noEndDate' | translate"
               [showUnsetToggle]="true"
               titleKey="explorer.dateTo"
-              (dateChange)="onDraftDateToChange($event)"
-              (unsetToggle)="$event && clearDraftDateTo()"
+              (dateChange)="filters.onDraftDateToChange($event)"
+              (unsetToggle)="$event && filters.clearDraftDateTo()"
             ></app-date-picker-field>
           </div>
         </div>
       </div>
 
       <app-filter-actions-row>
-        <ion-button expand="block" fill="outline" color="primary" (click)="clearDateFilter()">
+        <ion-button expand="block" fill="outline" color="primary" (click)="filters.clearDateFilter()">
           <ion-icon slot="start" name="refresh-outline"></ion-icon>
           {{ 'explorer.resetFilters' | translate }}
         </ion-button>
-        <ion-button expand="block" class="btn-fill" (click)="applyDateFilter()">
+        <ion-button expand="block" class="btn-fill" (click)="filters.applyDateFilter()">
           <ion-icon slot="start" name="checkmark-outline"></ion-icon>
-          {{ (dateApplyFlash.active() ? 'profile.applied' : 'profile.apply') | translate }}
+          {{ (filters.dateApplyFlash.active() ? 'profile.applied' : 'profile.apply') | translate }}
         </ion-button>
       </app-filter-actions-row>
     </div>
