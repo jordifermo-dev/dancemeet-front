@@ -1,3 +1,5 @@
+@use '../../shared/styles/filter-sheet' as fs;
+
 .login-content {
   --padding-start: 24px;
   --padding-end: 24px;
@@ -139,11 +141,9 @@
 
 // Same confirmation-sheet look as settings.page.scss's identical rule.
 .filter-sheet {
-  padding: 20px 20px 16px;
+  @include fs.filter-sheet-base;
 
   p {
-    color: var(--ion-color-medium);
-    font-size: 0.9rem;
     margin: 0 0 16px;
   }
 

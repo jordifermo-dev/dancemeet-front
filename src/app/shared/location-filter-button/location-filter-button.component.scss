@@ -1,3 +1,5 @@
+@use '../styles/filter-sheet' as fs;
+
 .icon-btn {
   appearance: none;
   flex: 0 0 auto;
@@ -19,6 +21,6 @@
 }
 
 .filter-sheet {
-  padding: 20px 20px 16px;
+  @include fs.filter-sheet-base;
 }
 

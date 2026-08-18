@@ -1,3 +1,5 @@
+@use '../../shared/styles/filter-sheet' as fs;
+
 .explorer-content {
   --padding-start: 0;
   --padding-end: 0;
@@ -203,7 +205,7 @@
 // --- Shared bottom-sheet / chip styles, matching the rest of the app ---
 
 .filter-sheet {
-  padding: 20px 20px 16px;
+  @include fs.filter-sheet-base;
 }
 
 .city-suggestions {

@@ -1,9 +1,9 @@
+@use '../styles/filter-sheet' as fs;
+
 .filter-sheet {
-  padding: 20px 20px 16px;
+  @include fs.filter-sheet-base;
 
   p {
-    color: var(--ion-color-medium);
-    font-size: 0.9rem;
     margin: 0 0 20px;
   }
 }

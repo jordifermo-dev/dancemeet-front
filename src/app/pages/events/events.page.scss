@@ -1,3 +1,5 @@
+@use '../../shared/styles/filter-sheet' as fs;
+
 .events-content {
   --background: var(--ion-color-light);
 }
@@ -147,7 +149,7 @@
 // --- Shared bottom-sheet / chip styles, matching Explorer / Favorites ---
 
 .filter-sheet {
-  padding: 20px 20px 16px;
+  @include fs.filter-sheet-base;
 }
 
 .range-label {

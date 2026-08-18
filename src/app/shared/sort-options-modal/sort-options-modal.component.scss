@@ -1,5 +1,7 @@
+@use '../styles/filter-sheet' as fs;
+
 .filter-sheet {
-  padding: 20px 20px 16px;
+  @include fs.filter-sheet-base;
 }
 
 .sort-options-list {

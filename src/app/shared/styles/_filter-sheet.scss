@@ -1,0 +1,14 @@
+/** Shared base for every bottom-sheet modal's ".filter-sheet" wrapper -
+ * padding plus the default hint/message paragraph look, previously
+ * hand-copied into ~15 page/component scss files. Each consumer still owns
+ * its own `.filter-sheet { }` rule and layers page-specific selectors (or a
+ * `p` margin override) on top of this. */
+@mixin filter-sheet-base {
+  padding: 20px 20px 16px;
+
+  p {
+    color: var(--ion-color-medium);
+    font-size: 0.9rem;
+    margin: 0;
+  }
+}

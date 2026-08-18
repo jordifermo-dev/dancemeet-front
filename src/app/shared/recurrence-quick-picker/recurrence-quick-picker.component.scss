@@ -1,9 +1,7 @@
-// Same sheet padding every other bottom-sheet modal in the app uses (e.g.
-// sort-options-modal.component.scss) - this was missing here entirely, which
-// is why the "Repetir"/"Periodicidad personalizada" titles sat flush against
-// the top of their sheets instead of matching everywhere else.
+@use '../styles/filter-sheet' as fs;
+
 .filter-sheet {
-  padding: 20px 20px 16px;
+  @include fs.filter-sheet-base;
 
   // The "Personalizar…" sheet's own Aplicar button, right after
   // <app-recurrence-editor> - same 22px rhythm as that component's own rows.

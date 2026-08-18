@@ -1,3 +1,5 @@
+@use '../../shared/styles/filter-sheet' as fs;
+
 .follow-list-content {
   --background: var(--ion-color-light);
 }
@@ -129,19 +131,6 @@
 }
 
 .filter-sheet {
-  padding: 20px 20px 16px;
-}
-
-.filter-sheet-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 20px;
-
-  h2 {
-    font-size: 1.3rem;
-    font-weight: 800;
-    margin: 0;
-  }
+  @include fs.filter-sheet-base;
 }
 

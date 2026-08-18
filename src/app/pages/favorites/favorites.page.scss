@@ -1,3 +1,5 @@
+@use '../../shared/styles/filter-sheet' as fs;
+
 .favorites-content {
   --background: var(--ion-color-light);
 }
@@ -201,7 +203,7 @@
 // --- Shared bottom-sheet / chip styles, matching Explorer ---
 
 .filter-sheet {
-  padding: 20px 20px 16px;
+  @include fs.filter-sheet-base;
 }
 
 .date-range-row {

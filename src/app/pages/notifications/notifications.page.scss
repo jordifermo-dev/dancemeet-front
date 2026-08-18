@@ -1,3 +1,5 @@
+@use '../../shared/styles/filter-sheet' as fs;
+
 .notifications-content {
   --background: var(--ion-color-light);
 }
@@ -265,7 +267,7 @@
 // --- Filter sheet - matches Events/Explorer's own quick-filter modals ---
 
 .filter-sheet {
-  padding: 20px 20px 16px;
+  @include fs.filter-sheet-base;
 }
 
 .min-selection-warning {
