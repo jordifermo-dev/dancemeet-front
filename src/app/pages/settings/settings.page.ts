@@ -47,6 +47,7 @@ import { ALL_NOTIFICATION_TYPES, NOTIFICATION_TYPE_ICONS, NOTIFICATION_TYPE_LABE
 import { createSuccessFlash } from '../../shared/success-flash';
 import { firebaseErrorMessage } from '../../shared/firebase-error-message';
 import { passwordsMatchValidator, STRONG_PASSWORD_PATTERN } from '../../shared/password-validators';
+import { createPasswordVisibility } from '../../shared/password-visibility';
 import { FilterActionsRowComponent } from '../../shared/filter-actions-row/filter-actions-row.component';
 import { FilterSheetHeaderComponent } from '../../shared/filter-sheet-header/filter-sheet-header.component';
 
@@ -108,9 +109,9 @@ export class SettingsPage {
   readonly showChangePassword = signal(false);
   readonly changePasswordSaving = signal(false);
   readonly changePasswordError = signal<string | null>(null);
-  readonly showCurrentPassword = signal(false);
-  readonly showNewPassword = signal(false);
-  readonly showConfirmNewPassword = signal(false);
+  readonly showCurrentPassword = createPasswordVisibility();
+  readonly showNewPassword = createPasswordVisibility();
+  readonly showConfirmNewPassword = createPasswordVisibility();
   readonly changePasswordForm = this.fb.nonNullable.group(
     {
       currentPassword: ['', Validators.required],
@@ -231,9 +232,9 @@ export class SettingsPage {
   openChangePassword(): void {
     this.changePasswordForm.reset({ currentPassword: '', newPassword: '', confirmNewPassword: '' });
     this.changePasswordError.set(null);
-    this.showCurrentPassword.set(false);
-    this.showNewPassword.set(false);
-    this.showConfirmNewPassword.set(false);
+    this.showCurrentPassword.visible.set(false);
+    this.showNewPassword.visible.set(false);
+    this.showConfirmNewPassword.visible.set(false);
     this.showChangePassword.set(true);
   }
 

@@ -124,28 +124,16 @@
       <app-filter-sheet-header titleKey="settings.changePasswordTitle" (closed)="closeChangePassword()"></app-filter-sheet-header>
       <form [formGroup]="changePasswordForm" (ngSubmit)="submitChangePassword()">
         <p class="field-label">{{ 'settings.currentPasswordLabel' | translate }}</p>
-        <ion-input [type]="showCurrentPassword() ? 'text' : 'password'" formControlName="currentPassword">
-          <ion-icon
-            slot="end"
-            [name]="showCurrentPassword() ? 'eye-off-outline' : 'eye-outline'"
-            (click)="showCurrentPassword.set(!showCurrentPassword())"
-          ></ion-icon>
+        <ion-input [type]="showCurrentPassword.type()" formControlName="currentPassword">
+          <ion-icon slot="end" [name]="showCurrentPassword.iconName()" (click)="showCurrentPassword.toggle()"></ion-icon>
         </ion-input>
         <p class="field-label">{{ 'settings.newPasswordLabel' | translate }}</p>
-        <ion-input [type]="showNewPassword() ? 'text' : 'password'" formControlName="newPassword">
-          <ion-icon
-            slot="end"
-            [name]="showNewPassword() ? 'eye-off-outline' : 'eye-outline'"
-            (click)="showNewPassword.set(!showNewPassword())"
-          ></ion-icon>
+        <ion-input [type]="showNewPassword.type()" formControlName="newPassword">
+          <ion-icon slot="end" [name]="showNewPassword.iconName()" (click)="showNewPassword.toggle()"></ion-icon>
         </ion-input>
         <p class="field-label">{{ 'settings.confirmNewPasswordLabel' | translate }}</p>
-        <ion-input [type]="showConfirmNewPassword() ? 'text' : 'password'" formControlName="confirmNewPassword">
-          <ion-icon
-            slot="end"
-            [name]="showConfirmNewPassword() ? 'eye-off-outline' : 'eye-outline'"
-            (click)="showConfirmNewPassword.set(!showConfirmNewPassword())"
-          ></ion-icon>
+        <ion-input [type]="showConfirmNewPassword.type()" formControlName="confirmNewPassword">
+          <ion-icon slot="end" [name]="showConfirmNewPassword.iconName()" (click)="showConfirmNewPassword.toggle()"></ion-icon>
         </ion-input>
         @if (changePasswordForm.controls.newPassword.invalid && changePasswordForm.controls.newPassword.dirty) {
           <p class="field-error">{{ 'register.passwordTooWeak' | translate }}</p>

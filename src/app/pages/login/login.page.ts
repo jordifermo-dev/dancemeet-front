@@ -25,6 +25,7 @@ import {
 import { AuthService, AuthProvider } from '../../services/auth.service';
 import { OnboardingService } from '../../services/onboarding.service';
 import { firebaseErrorMessage } from '../../shared/firebase-error-message';
+import { createPasswordVisibility } from '../../shared/password-visibility';
 import { FilterSheetHeaderComponent } from '../../shared/filter-sheet-header/filter-sheet-header.component';
 import { FilterActionsRowComponent } from '../../shared/filter-actions-row/filter-actions-row.component';
 
@@ -55,7 +56,7 @@ export class LoginPage implements OnInit, AfterViewInit {
   private readonly router = inject(Router);
 
   readonly showEmailForm = signal(false);
-  readonly showPassword = signal(false);
+  readonly showPassword = createPasswordVisibility();
   readonly isSubmitting = signal(false);
   readonly errorMessage = signal<string | null>(null);
 
@@ -136,10 +137,6 @@ export class LoginPage implements OnInit, AfterViewInit {
   toggleEmailForm(): void {
     this.errorMessage.set(null);
     this.showEmailForm.update((value) => !value);
-  }
-
-  togglePasswordVisibility(): void {
-    this.showPassword.update((value) => !value);
   }
 
   async submitEmail(): Promise<void> {

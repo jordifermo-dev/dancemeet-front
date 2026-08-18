@@ -24,6 +24,7 @@ import { CreateUserPayload, Discipline, DISCIPLINE_NAMES, EventType, EVENT_TYPE_
 import { firebaseErrorMessage } from '../../shared/firebase-error-message';
 import { DISCIPLINE_ICON_FILES, sortByNameOrder } from '../../shared/icon-catalog';
 import { passwordsMatchValidator, STRONG_PASSWORD_PATTERN } from '../../shared/password-validators';
+import { createPasswordVisibility } from '../../shared/password-visibility';
 import { MapType } from '../../shared/maps';
 import { ChipGridComponent } from '../../shared/chip-grid/chip-grid.component';
 import { LocationPickerComponent } from '../../shared/location-picker/location-picker.component';
@@ -133,8 +134,8 @@ export class RegisterPage implements OnInit {
   readonly isSubmitting = signal(false);
   readonly errorMessage = signal<string | null>(null);
 
-  readonly showPassword = signal(false);
-  readonly showConfirmPassword = signal(false);
+  readonly showPassword = createPasswordVisibility();
+  readonly showConfirmPassword = createPasswordVisibility();
 
   constructor() {
     addIcons({
@@ -225,14 +226,6 @@ export class RegisterPage implements OnInit {
         this.router.navigateByUrl(href);
       }
     }
-  }
-
-  togglePasswordVisibility(): void {
-    this.showPassword.update((value) => !value);
-  }
-
-  toggleConfirmPasswordVisibility(): void {
-    this.showConfirmPassword.update((value) => !value);
   }
 
   goBack(): void {

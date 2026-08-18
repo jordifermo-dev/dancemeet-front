@@ -31,16 +31,12 @@
         ></ion-input>
         <p class="group-label">{{ 'login.passwordLabel' | translate }}<span class="required-marker">*</span></p>
         <ion-input
-          [type]="showPassword() ? 'text' : 'password'"
+          [type]="showPassword.type()"
           autocomplete="off"
           [placeholder]="'login.passwordPlaceholder' | translate"
           formControlName="password"
         >
-          <ion-icon
-            slot="end"
-            [name]="showPassword() ? 'eye-off-outline' : 'eye-outline'"
-            (click)="togglePasswordVisibility()"
-          ></ion-icon>
+          <ion-icon slot="end" [name]="showPassword.iconName()" (click)="showPassword.toggle()"></ion-icon>
         </ion-input>
         <button type="button" class="forgot-password-link" (click)="openForgotPassword()">
           {{ 'login.forgotPassword' | translate }}

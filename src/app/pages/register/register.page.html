@@ -24,27 +24,19 @@
             } @else {
               <p class="group-label">{{ 'login.passwordLabel' | translate }}<span class="required-marker">*</span></p>
               <ion-input
-                [type]="showPassword() ? 'text' : 'password'"
+                [type]="showPassword.type()"
                 [placeholder]="'register.passwordPlaceholder' | translate"
                 formControlName="password"
               >
-                <ion-icon
-                  slot="end"
-                  [name]="showPassword() ? 'eye-off-outline' : 'eye-outline'"
-                  (click)="togglePasswordVisibility()"
-                ></ion-icon>
+                <ion-icon slot="end" [name]="showPassword.iconName()" (click)="showPassword.toggle()"></ion-icon>
               </ion-input>
               <p class="group-label">{{ 'register.confirmPasswordLabel' | translate }}<span class="required-marker">*</span></p>
               <ion-input
-                [type]="showConfirmPassword() ? 'text' : 'password'"
+                [type]="showConfirmPassword.type()"
                 [placeholder]="'register.confirmPasswordPlaceholder' | translate"
                 formControlName="confirmPassword"
               >
-                <ion-icon
-                  slot="end"
-                  [name]="showConfirmPassword() ? 'eye-off-outline' : 'eye-outline'"
-                  (click)="toggleConfirmPasswordVisibility()"
-                ></ion-icon>
+                <ion-icon slot="end" [name]="showConfirmPassword.iconName()" (click)="showConfirmPassword.toggle()"></ion-icon>
               </ion-input>
               @if (accountForm.controls.password.invalid && accountForm.controls.password.dirty) {
                 <ion-text color="danger">
