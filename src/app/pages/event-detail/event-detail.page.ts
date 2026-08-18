@@ -1,8 +1,6 @@
 import { Location } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
 import { Component, ElementRef, computed, inject, signal, viewChild } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { firstValueFrom } from 'rxjs';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import {
@@ -102,9 +100,7 @@ import { MinSelectionWarningService } from '../../shared/min-selection-warning.s
 import { toggleWithMinimum } from '../../shared/min-selection';
 import { createSuccessFlash } from '../../shared/success-flash';
 import { dismissSharePreviewHint, isSharePreviewHintDismissed } from '../../shared/share-hint';
-import { Share } from '@capacitor/share';
-import { Directory, Filesystem } from '@capacitor/filesystem';
-import { environment } from '../../../environments/environment';
+import { EventShareService, escapeHtml } from '../../services/event-share.service';
 
 const MIN_ZOOM = 3;
 const MAX_ZOOM = 20;
@@ -119,52 +115,6 @@ const STATUS_OPTIONS = EVENT_STATUSES.map((id) => ({ id, labelKey: STATUS_LABEL_
 // has already passed, not something the organizer picks when creating/editing.
 const EDITABLE_STATUS_OPTIONS = STATUS_OPTIONS.filter((option) => option.id !== 'finished');
 const DEFAULT_EVENT_DURATION_MS = 2 * 60 * 60 * 1000;
-const SHARE_INTRO_KEYS: Record<EventStatus, string> = {
-  published: 'eventDetail.shareIntroPublished',
-  cancelled: 'eventDetail.shareIntroCancelled',
-  finished: 'eventDetail.shareIntroFinished',
-};
-
-// *asterisk* markdown only renders as real bold on WhatsApp/Telegram -
-// everywhere else (Instagram, Facebook, SMS...) it shows the literal
-// asterisks. Swapping each character for its Mathematical Sans-Serif Bold
-// Unicode codepoint instead is real bold text everywhere, since it's just
-// different characters rather than formatting any app has to opt into -
-// sans-serif specifically to match these apps' own UI font instead of the
-// serif look of the plain "Mathematical Bold" block. Accented letters (á,
-// ñ...) have no bold codepoint and are left as-is.
-function bold(text: string): string {
-  return Array.from(text)
-    .map((char) => {
-      const code = char.codePointAt(0)!;
-      if (code >= 65 && code <= 90) return String.fromCodePoint(0x1d5d4 + (code - 65)); // A-Z
-      if (code >= 97 && code <= 122) return String.fromCodePoint(0x1d5ee + (code - 97)); // a-z
-      if (code >= 48 && code <= 57) return String.fromCodePoint(0x1d7ec + (code - 48)); // 0-9
-      return char;
-    })
-    .join('');
-}
-
-// No "strikethrough alphabet" exists in Unicode the way bold() has one -
-// the standard trick is a combining stroke (U+0336) layered after every
-// character instead, which works on any character (accents, digits, emoji
-// included) since it's a diacritic, not a swapped-out letter. Only used for
-// the plain-text fallback (see htmlToShareText) - the rich editor itself
-// applies real strikethrough via execCommand.
-function strikethroughText(text: string): string {
-  return Array.from(text)
-    .map((char) => (char === '\n' ? char : `${char}̶`))
-    .join('');
-}
-
-// Plain-text -> the minimal HTML needed to seed the rich editor (see
-// startShareTextEdit) with the same line breaks it already has.
-function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
-}
 
 interface SocialLinkRow {
   key: keyof SocialLinks;
@@ -254,7 +204,7 @@ export class EventDetailPage implements ComponentWithUnsavedChanges {
   private readonly eventTypeService = inject(EventTypeService);
   private readonly languageService = inject(LanguageService);
   private readonly geocodingService = inject(GeocodingService);
-  private readonly http = inject(HttpClient);
+  private readonly shareService = inject(EventShareService);
   private readonly translate = inject(TranslateService);
   readonly minSelectionWarning = inject(MinSelectionWarningService);
 
@@ -956,7 +906,14 @@ export class EventDetailPage implements ComponentWithUnsavedChanges {
     this.shareTextEditing.set(false);
     this.shareHtml = null;
     this.shareTextLoading.set(true);
-    this.shareText.set(await this.buildShareText(event));
+    const preferences = [
+      ...this.eventTypeTags().map((tag) => tag.name),
+      ...this.disciplineTags().map((tag) => tag.name),
+      event.isFree ? this.translate.instant('eventCard.free') : `${event.price} €`,
+    ].join(' - ');
+    const { text, html } = await this.shareService.buildShareText(event, preferences, this.dateLabel());
+    this.shareHtml = html;
+    this.shareText.set(text);
     this.shareTextLoading.set(false);
   }
 
@@ -1007,7 +964,7 @@ export class EventDetailPage implements ComponentWithUnsavedChanges {
     // outright, so any bold/strikethrough just applied by hand would
     // silently vanish from the plain-text fallback that some share targets
     // end up using instead of the rich clipboard payload.
-    this.shareText.set(this.htmlToShareText(html));
+    this.shareText.set(this.shareService.htmlToShareText(html));
     this.shareTextEditing.set(false);
   }
 
@@ -1090,143 +1047,18 @@ export class EventDetailPage implements ComponentWithUnsavedChanges {
     }
     this.shareFeedback.set('shared');
     this.shareFlash.trigger();
-    try {
-      const response = await fetch(event.imageUrl);
-      const blob = await response.blob();
-      const base64 = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve((reader.result as string).split(',')[1]);
-        reader.onerror = () => reject(reader.error);
-        reader.readAsDataURL(blob);
-      });
-      const { uri } = await Filesystem.writeFile({
-        path: `dancemeet-share-${event.id}.jpg`,
-        data: base64,
-        directory: Directory.Cache,
-      });
-      // Capacitor's Share plugin falls back to the Web Share API on web
-      // builds by itself, so this one call covers both native and browser.
-      await Share.share({ title: 'DanceMeet', files: [uri] });
-    } catch {
-      // Image fetch/write/share failed (offline, cancelled share sheet...) -
-      // fall back to sharing the text, and if even that has nowhere to go,
-      // to copying it. Re-triggers the flash (resetting its timer) with the
-      // more accurate wording either way.
-      try {
-        await Share.share({ title: 'DanceMeet', text: this.shareText() });
-      } catch {
-        if (navigator.clipboard) {
-          await navigator.clipboard.writeText(this.shareText());
-          this.shareFeedback.set('copied');
-          this.shareFlash.trigger();
-        }
-      }
+    // Falls back image -> native text share -> clipboard copy inside the
+    // service (see EventShareService.shareEventImage) - only re-flash here
+    // if it ended up on the "copied" fallback, correcting the optimistic
+    // "shared" guess above with the more accurate wording.
+    const outcome = await this.shareService.shareEventImage(event.imageUrl, event.id!, this.shareText());
+    if (outcome === 'copied') {
+      this.shareFeedback.set('copied');
+      this.shareFlash.trigger();
     }
     this.showSharePreviewModal.set(false);
   }
 
-  // TinyURL has no auth/API key and can be called anonymously - routed
-  // through our own backend (ShareController's /share/shorten) purely to
-  // avoid a cross-origin request to a third-party domain from the WebView.
-  // Falls back to the original (long) URL on any failure - a down/blocked
-  // shortener should degrade the share text, never break it.
-  private async shortenUrl(url: string): Promise<string> {
-    try {
-      const response = await firstValueFrom(
-        this.http.get<{ shortUrl: string }>(`${environment.apiUrl}/share/shorten`, { params: { url } }),
-      );
-      return response.shortUrl;
-    } catch {
-      return url;
-    }
-  }
-
-  /** Not every share target renders the link-preview card built from
-   * ShareController's meta tags (Facebook's composer, Instagram Stories,
-   * X/Twitter...) - so the event's own details need to travel as plain text
-   * too, not just live behind a link only some apps bother to unfurl.
-   *
-   * Builds real HTML (real <b> tags) rather than bold()'s Unicode
-   * substitutes - accented letters (á, ñ...) have no bold codepoint in that
-   * scheme and stayed plain, and it looked visually different from actual
-   * bold applied through the rich editor's own Bold button. Real HTML
-   * fixes both: any character can be bold, and it's the same bold
-   * everywhere. Sets this.shareHtml as a side effect (consumed by
-   * copyShareText/startShareTextEdit) and returns the plain-text
-   * equivalent for shareText (native Share.share() only ever accepts
-   * plain strings) - see htmlToShareText below for how that's derived
-   * without losing the bold styling entirely. */
-  private async buildShareText(event: EventWithCreatorName): Promise<string> {
-    const intro = this.translate.instant(SHARE_INTRO_KEYS[event.status], {
-      creator: `<b>${escapeHtml(event.creatorName)}</b>`,
-    });
-    const preferences = [
-      ...this.eventTypeTags().map((tag) => tag.name),
-      ...this.disciplineTags().map((tag) => tag.name),
-      event.isFree ? this.translate.instant('eventCard.free') : `${event.price} €`,
-    ].join(' - ');
-    const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${event.latitude},${event.longitude}`;
-    // Points at the backend's own /share/events/:id (not the app URL
-    // directly) - link-preview crawlers (WhatsApp, Telegram, LinkedIn...)
-    // fetch this URL server-side and read its <meta property="og:..."> tags
-    // without ever running JavaScript, so the SPA's own client-rendered page
-    // (no per-event meta tags) always previewed as a bare link. This
-    // endpoint serves real event title/description/image in its meta tags,
-    // then redirects actual visitors on to the app - see ShareController.
-    const [shortEventUrl, shortMapsUrl] = await Promise.all([
-      this.shortenUrl(`${environment.apiUrl}/share/events/${event.id}`),
-      this.shortenUrl(mapsUrl),
-    ]);
-
-    // Emoji instead of translated word labels (🎫 title, 📝 description...) -
-    // unlike text they need no i18n and read the same in every language.
-    const lines = [`<b>DanceMeet</b>`, intro, `🎫 <b>${escapeHtml(event.title)}</b>`];
-    if (event.description) {
-      lines.push(`📝 <b>${escapeHtml(event.description)}</b>`);
-    }
-    if (event.additionalInfo) {
-      lines.push(`ℹ️ <b>${escapeHtml(event.additionalInfo)}</b>`);
-    }
-    lines.push(`🏷️ <b>${escapeHtml(preferences)}</b>`);
-    lines.push(`📅 ${escapeHtml(this.dateLabel())}`);
-    // The event link goes before the maps link - platforms that build a
-    // link-preview card out of shared plain text (WhatsApp in particular)
-    // unfurl whichever URL appears *first* in the message, and the event's
-    // own card (photo, title...) is what should win that slot, not Maps'.
-    lines.push(`🔗 ${escapeHtml(shortEventUrl)}`);
-    lines.push(`📍 ${escapeHtml(event.address)}, ${escapeHtml(event.city)}`);
-    lines.push(`🔗 ${escapeHtml(shortMapsUrl)}`);
-    const html = lines.join('<br>');
-    this.shareHtml = html;
-    return this.htmlToShareText(html);
-  }
-
-  // Detached-element walk (no document.body attach, so this works even
-  // before the modal's ever been opened) - converts real <b>/<strong> and
-  // <s>/<strike>/<del> content to bold()/strikethroughText()'s Unicode
-  // substitutes so the plain-text fallback (native Share.share(), or
-  // whatever a share target uses instead of the rich clipboard payload)
-  // still reads as formatted instead of losing it outright. execCommand's
-  // exact tag choice for strikethrough varies by browser (Chrome/Blink
-  // uses <strike>), so all three are covered. Italic (<i>/<em>) has no
-  // Unicode substitute here - the Mathematical Sans-Serif Italic block hit
-  // the same tofu-box font problem strikethrough-on-bold did earlier, so
-  // instead it's wrapped in _underscores_, the same markdown WhatsApp and
-  // Telegram already recognize as italic in plain text.
-  private htmlToShareText(html: string): string {
-    const container = document.createElement('div');
-    container.innerHTML = html.replace(/<br\s*\/?>/gi, '\n');
-    container.querySelectorAll('b, strong').forEach((node) => {
-      node.textContent = bold(node.textContent ?? '');
-    });
-    container.querySelectorAll('s, strike, del').forEach((node) => {
-      node.textContent = strikethroughText(node.textContent ?? '');
-    });
-    container.querySelectorAll('i, em').forEach((node) => {
-      node.textContent = `_${node.textContent ?? ''}_`;
-    });
-    return container.textContent ?? '';
-  }
 
   // --- Attend (favorite as attendee) ---------------------------------------
 
