@@ -131,7 +131,7 @@ ion-item {
    temporary label swap like Aplicar/Guardado uses, since replacing an
    already-meaningful icon with a checkmark would hide the very state change
    the button exists to show. Toggled on/off via createSuccessFlash()
-   (src/app/shared/success-flash.ts). */
+   (src/app/shared/common/success-flash.ts). */
 @keyframes success-pulse {
   0% {
     transform: scale(1);

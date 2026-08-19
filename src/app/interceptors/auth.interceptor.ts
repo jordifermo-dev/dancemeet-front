@@ -2,8 +2,8 @@ import { HttpInterceptorFn } from '@angular/common/http';
 import { inject } from '@angular/core';
 import { from, switchMap } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { AuthService } from '../services/auth.service';
-import { LanguageService } from '../services/language.service';
+import { AuthService } from '../services/core/auth.service';
+import { LanguageService } from '../services/core/language.service';
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   if (!req.url.startsWith(environment.apiUrl)) {

@@ -1,0 +1,318 @@
+@use '../../../shared/filters/styles/filter-sheet' as fs;
+
+.explorer-content {
+  --padding-start: 0;
+  --padding-end: 0;
+  --padding-top: 0;
+  --padding-bottom: 0;
+}
+
+// Matches the notification bell next to it and the rest of the app's header
+// icons (app-text-strong) instead of ion-button's default primary color.
+.create-event-button {
+  --color: var(--ion-color-primary);
+}
+
+.map-wrap {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.explorer-map {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.map-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  background: var(--ion-color-light);
+  padding: 0 32px;
+  text-align: center;
+
+  p {
+    color: var(--ion-color-medium);
+  }
+}
+
+.top-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.search-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tgtg-searchbar {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  font-size: 0.9rem;
+  --background: var(--app-surface-card);
+  --border-radius: 999px;
+  --box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  --placeholder-color: var(--ion-color-medium);
+  --icon-color: var(--ion-color-medium);
+  --color: var(--app-text-strong);
+  // Plain border on the host itself (ion-searchbar has no --border-color
+  // custom property) - without it, the search box (--background) had no
+  // visible edge at all in dark mode, where it's nearly the same near-black
+  // as the page behind it.
+  border: 1.5px solid var(--ion-color-primary);
+  border-radius: 999px;
+}
+
+.icon-btn {
+  appearance: none;
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: none;
+  background: var(--app-surface-card);
+  color: var(--app-text-strong);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+
+  ion-icon {
+    font-size: 1.3rem;
+  }
+}
+
+.filter-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.filter-all-btn {
+  width: 38px;
+  height: 38px;
+  color: var(--ion-color-primary);
+
+  ion-icon {
+    font-size: 1.1rem;
+  }
+}
+
+// Same solid teal/white treatment as chip-grid.component.scss's
+// .chip-solid - white/black background with teal text and outline when
+// inactive, solid teal with white text when active, instead of a neutral
+// grey/dark pill that (especially in dark mode) barely stood out from the
+// page behind it.
+.pill {
+  appearance: none;
+  flex: 0 0 auto;
+  border: 1.5px solid var(--ion-color-primary);
+  border-radius: 999px;
+  padding: 9px 16px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  background: var(--app-surface-card);
+  color: var(--ion-color-primary);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  white-space: nowrap;
+
+  &.active {
+    background: var(--ion-color-primary-fill);
+    color: var(--ion-color-primary-contrast);
+  }
+}
+
+.locate-fab {
+  position: absolute;
+  // Left side, not the bottom-right corner where Google's own zoom +/-
+  // control renders by default - avoids the overlap without needing to
+  // guess at a vertical gap between the two.
+  left: 16px;
+  bottom: 24px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: none;
+  background: var(--app-surface-card);
+  color: var(--ion-color-primary);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+
+  ion-icon {
+    font-size: 1.3rem;
+  }
+}
+
+.maptype-fab {
+  // Stacked directly above the locate-fab (48px + 8px gap).
+  bottom: 80px;
+}
+
+.loading-chip {
+  position: absolute;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  background: var(--app-surface-card);
+  border-radius: 999px;
+  padding: 10px 18px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+}
+
+.empty-chip {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  max-width: 260px;
+  background: var(--app-surface-card);
+  border-radius: 16px;
+  padding: 16px 22px;
+  text-align: center;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+
+  p {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--ion-color-medium);
+  }
+}
+
+// --- Shared bottom-sheet / chip styles, matching the rest of the app ---
+
+.filter-sheet {
+  @include fs.filter-sheet-base;
+}
+
+.city-suggestions {
+  display: flex;
+  flex-direction: column;
+  background: var(--app-surface-card);
+  border: 1px solid var(--ion-color-light-shade);
+  border-radius: 12px;
+  margin-top: 8px;
+  margin-bottom: 8px;
+  overflow: hidden;
+}
+
+.city-suggestion {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: none;
+  background: transparent;
+  padding: 10px 14px;
+  font-size: 0.85rem;
+  text-align: left;
+  color: var(--app-text-strong);
+  cursor: pointer;
+
+  &:not(:last-child) {
+    border-bottom: 1px solid var(--ion-color-light-shade);
+  }
+
+  ion-icon {
+    color: var(--ion-color-medium);
+    flex: 0 0 auto;
+  }
+}
+
+.range-label {
+  margin-top: 16px;
+  margin-bottom: 0;
+  font-weight: 600;
+}
+
+.date-range-row {
+  display: flex;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.date-field {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: 0;
+}
+
+.date-field-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ion-color-medium);
+}
+
+.date-value-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  ion-icon {
+    flex: 0 0 auto;
+    font-size: 1.1rem;
+    color: var(--ion-color-medium);
+  }
+}
+
+.date-clear-link {
+  appearance: none;
+  border: none;
+  background: transparent;
+  padding: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ion-color-primary);
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.min-selection-warning {
+  margin: 8px 0 0;
+  font-size: 0.8rem;
+  color: var(--ion-color-danger);
+}
+
+// The Salir/Aplica row below the calendar - rendered as a normal sibling of
+// <ion-datetime> (not inside its slot="buttons"), because that slot is
+// hard-coded by Ionic to shrink-wrap and right-align its content with no way
+// to override that from outside. Self-contained (not <app-filter-actions-row>)
+// since it needs its own horizontal padding and isn't really "a filter's
+// footer".
+.calendar-picker-actions {
+  display: flex;
+  gap: 10px;
+  padding: 8px 16px 0;
+
+  ion-button {
+    flex: 1;
+    --box-shadow: none;
+    font-size: 0.85rem;
+  }
+}

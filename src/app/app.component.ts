@@ -2,10 +2,10 @@ import { Component, effect, inject } from '@angular/core';
 import { IonApp, IonRouterOutlet } from '@ionic/angular/standalone';
 import { Capacitor } from '@capacitor/core';
 import { StatusBar, Style } from '@capacitor/status-bar';
-import { AuthService } from './services/auth.service';
-import { NotificationService } from './services/notification.service';
-import { ThemeService } from './services/theme.service';
-import { WelcomeModalComponent } from './shared/welcome-modal/welcome-modal.component';
+import { AuthService } from './services/core/auth.service';
+import { NotificationService } from './services/notifications/notification.service';
+import { ThemeService } from './services/core/theme.service';
+import { WelcomeModalComponent } from './shared/common/welcome-modal/welcome-modal.component';
 
 @Component({
   selector: 'app-root',

@@ -9,23 +9,23 @@ export const routes: Routes = [
     children: [
       {
         path: 'home',
-        loadComponent: () => import('../home/home.page').then((m) => m.HomePage),
+        loadComponent: () => import('./home/home.page').then((m) => m.HomePage),
       },
       {
         path: 'explorer',
-        loadComponent: () => import('../explorer/explorer.page').then((m) => m.ExplorerPage),
+        loadComponent: () => import('./explorer/explorer.page').then((m) => m.ExplorerPage),
       },
       {
         path: 'events',
-        loadComponent: () => import('../events/events.page').then((m) => m.EventsPage),
+        loadComponent: () => import('./events/events.page').then((m) => m.EventsPage),
       },
       {
         path: 'favorites',
-        loadComponent: () => import('../favorites/favorites.page').then((m) => m.FavoritesPage),
+        loadComponent: () => import('./favorites/favorites.page').then((m) => m.FavoritesPage),
       },
       {
         path: 'profile',
-        loadComponent: () => import('../profile/profile.page').then((m) => m.ProfilePage),
+        loadComponent: () => import('./profile/profile.page').then((m) => m.ProfilePage),
         canDeactivate: [unsavedChangesGuard],
       },
       {

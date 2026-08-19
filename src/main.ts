@@ -12,7 +12,7 @@ import { Capacitor } from '@capacitor/core';
 import { routes } from './app/app.routes';
 import { AppComponent } from './app/app.component';
 import { authInterceptor } from './app/interceptors/auth.interceptor';
-import { DEFAULT_LANGUAGE, detectInitialLanguage } from './app/services/language.service';
+import { DEFAULT_LANGUAGE, detectInitialLanguage } from './app/services/core/language.service';
 
 // Registers <pwa-camera-modal> so Capacitor's web Camera plugin can open a
 // real getUserMedia-based webcam view for CameraSource.Camera. Without this,

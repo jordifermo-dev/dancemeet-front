@@ -10,77 +10,77 @@ export const routes: Routes = [
   },
   {
     path: 'login',
-    loadComponent: () => import('./pages/login/login.page').then((m) => m.LoginPage),
+    loadComponent: () => import('./pages/screens/auth/login/login.page').then((m) => m.LoginPage),
     canActivate: [publicGuard],
   },
   {
     path: 'register',
-    loadComponent: () => import('./pages/register/register.page').then((m) => m.RegisterPage),
+    loadComponent: () => import('./pages/screens/auth/register/register.page').then((m) => m.RegisterPage),
     canActivate: [publicGuard],
   },
   {
     path: 'followers',
-    loadComponent: () => import('./pages/follow-list/follow-list.page').then((m) => m.FollowListPage),
+    loadComponent: () => import('./pages/screens/user/follow-list/follow-list.page').then((m) => m.FollowListPage),
     canActivate: [authGuard],
     data: { mode: 'followers' },
   },
   {
     path: 'following',
-    loadComponent: () => import('./pages/follow-list/follow-list.page').then((m) => m.FollowListPage),
+    loadComponent: () => import('./pages/screens/user/follow-list/follow-list.page').then((m) => m.FollowListPage),
     canActivate: [authGuard],
     data: { mode: 'following' },
   },
   {
     path: 'attendees',
-    loadComponent: () => import('./pages/follow-list/follow-list.page').then((m) => m.FollowListPage),
+    loadComponent: () => import('./pages/screens/user/follow-list/follow-list.page').then((m) => m.FollowListPage),
     canActivate: [authGuard],
     data: { mode: 'attendees' },
   },
   {
     path: 'users/:id',
-    loadComponent: () => import('./pages/user-detail/user-detail.page').then((m) => m.UserDetailPage),
+    loadComponent: () => import('./pages/screens/user/user-detail/user-detail.page').then((m) => m.UserDetailPage),
     canActivate: [authGuard],
   },
   {
     path: 'explorer-filters',
     loadComponent: () =>
-      import('./pages/explorer-filters/explorer-filters.page').then((m) => m.ExplorerFiltersPage),
+      import('./pages/screens/filters/explorer-filters/explorer-filters.page').then((m) => m.ExplorerFiltersPage),
     canActivate: [authGuard],
   },
   {
     path: 'user-events',
-    loadComponent: () => import('./pages/user-events/user-events.page').then((m) => m.UserEventsPage),
+    loadComponent: () => import('./pages/screens/user/user-events/user-events.page').then((m) => m.UserEventsPage),
     canActivate: [authGuard],
   },
   {
     path: 'notifications',
-    loadComponent: () => import('./pages/notifications/notifications.page').then((m) => m.NotificationsPage),
+    loadComponent: () => import('./pages/screens/notifications/notifications/notifications.page').then((m) => m.NotificationsPage),
     canActivate: [authGuard],
   },
   {
     path: 'settings',
-    loadComponent: () => import('./pages/settings/settings.page').then((m) => m.SettingsPage),
+    loadComponent: () => import('./pages/screens/settings/settings/settings.page').then((m) => m.SettingsPage),
     canActivate: [authGuard],
   },
   {
     // Public on purpose - people read these before/without ever having an
     // account (e.g. from the register page's terms checkbox).
     path: 'privacy-policy',
-    loadComponent: () => import('./pages/privacy-policy/privacy-policy.page').then((m) => m.PrivacyPolicyPage),
+    loadComponent: () => import('./pages/screens/settings/privacy-policy/privacy-policy.page').then((m) => m.PrivacyPolicyPage),
   },
   {
     path: 'terms-of-use',
-    loadComponent: () => import('./pages/terms-of-use/terms-of-use.page').then((m) => m.TermsOfUsePage),
+    loadComponent: () => import('./pages/screens/settings/terms-of-use/terms-of-use.page').then((m) => m.TermsOfUsePage),
   },
   {
     path: 'events/new',
-    loadComponent: () => import('./pages/event-detail/event-detail.page').then((m) => m.EventDetailPage),
+    loadComponent: () => import('./pages/screens/event/event-detail/event-detail.page').then((m) => m.EventDetailPage),
     canActivate: [authGuard],
     canDeactivate: [unsavedChangesGuard],
   },
   {
     path: 'events/:id',
-    loadComponent: () => import('./pages/event-detail/event-detail.page').then((m) => m.EventDetailPage),
+    loadComponent: () => import('./pages/screens/event/event-detail/event-detail.page').then((m) => m.EventDetailPage),
     canActivate: [authGuard],
     canDeactivate: [unsavedChangesGuard],
   },

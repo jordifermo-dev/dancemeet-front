@@ -1,0 +1,9 @@
+@use '../../filters/styles/filter-sheet' as fs;
+
+.filter-sheet {
+  @include fs.filter-sheet-base;
+
+  p {
+    margin: 0 0 20px;
+  }
+}

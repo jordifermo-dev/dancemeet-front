@@ -1,0 +1,297 @@
+@use '../../../../shared/filters/styles/filter-sheet' as fs;
+
+.user-events-content {
+  --background: var(--ion-color-light);
+}
+
+.view-mode-button {
+  --color: var(--ion-color-primary);
+}
+
+.top-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  padding: 12px 16px;
+  background: var(--ion-color-light);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.search-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.tgtg-searchbar {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  font-size: 0.9rem;
+  --background: var(--app-surface-card);
+  --border-radius: 999px;
+  --box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  --placeholder-color: var(--ion-color-medium);
+  --icon-color: var(--ion-color-medium);
+  --color: var(--app-text-strong);
+  // Plain border on the host itself (ion-searchbar has no --border-color
+  // custom property) - without it, the search box (--background) had no
+  // visible edge at all in dark mode, where it's nearly the same near-black
+  // as the page behind it.
+  border: 1.5px solid var(--ion-color-primary);
+  border-radius: 999px;
+}
+
+.icon-btn {
+  appearance: none;
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: none;
+  background: var(--app-surface-card);
+  color: var(--ion-color-primary);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+
+  ion-icon {
+    font-size: 1.3rem;
+  }
+}
+
+.filter-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.filter-all-btn {
+  width: 38px;
+  height: 38px;
+  color: var(--ion-color-primary);
+
+  ion-icon {
+    font-size: 1.1rem;
+  }
+}
+
+// Same solid teal/white treatment as chip-grid.component.scss's
+// .chip-solid - white/black background with teal text and outline when
+// inactive, solid teal with white text when active, instead of a neutral
+// grey/dark pill that (especially in dark mode) barely stood out from the
+// page behind it.
+.pill {
+  appearance: none;
+  flex: 0 0 auto;
+  border: 1.5px solid var(--ion-color-primary);
+  border-radius: 999px;
+  padding: 9px 16px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  background: var(--app-surface-card);
+  color: var(--ion-color-primary);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  white-space: nowrap;
+
+  &.active {
+    background: var(--ion-color-primary-fill);
+    color: var(--ion-color-primary-contrast);
+  }
+}
+
+.sort-row {
+  appearance: none;
+  border: none;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 2px 0;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.sort-row-label {
+  color: var(--app-text-strong);
+  font-weight: 500;
+}
+
+.sort-row-value {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--ion-color-primary);
+  font-weight: 600;
+
+  ion-icon {
+    font-size: 1rem;
+  }
+}
+
+.sort-options-list {
+  display: flex;
+  flex-direction: column;
+  margin-top: 4px;
+}
+
+.sort-option {
+  appearance: none;
+  border: none;
+  background: transparent;
+  text-align: left;
+  padding: 14px 4px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--app-text-strong);
+  cursor: pointer;
+
+  &.selected {
+    color: var(--ion-color-primary);
+    font-weight: 700;
+  }
+}
+
+.user-events-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  // padding-top is set inline from the component (listTopPadding), measured
+  // from the real overlay height via ResizeObserver - a fixed guess here
+  // drifts as soon as a pill wraps or a translation runs longer.
+  padding: 16px 16px 24px;
+}
+
+.user-events-calendar {
+  // Same measured-overlay padding-top as .user-events-list (see
+  // listTopPadding) - <app-event-calendar> handles its own internal spacing
+  // beyond that.
+  padding: 0 16px 24px;
+}
+
+.loading-row {
+  display: flex;
+  justify-content: center;
+  padding: 60px 0;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--ion-color-medium);
+  font-size: 0.9rem;
+}
+
+// --- Shared bottom-sheet / chip styles, matching Explorer / Favorites ---
+
+.filter-sheet {
+  @include fs.filter-sheet-base;
+}
+
+.date-range-row {
+  display: flex;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.date-field {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: 0;
+}
+
+.date-field-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ion-color-medium);
+}
+
+.date-value-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  ion-icon {
+    flex: 0 0 auto;
+    font-size: 1.1rem;
+    color: var(--ion-color-medium);
+  }
+}
+
+.date-clear-link {
+  appearance: none;
+  border: none;
+  background: transparent;
+  padding: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ion-color-primary);
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.min-selection-warning {
+  margin: 8px 0 0;
+  font-size: 0.8rem;
+  color: var(--ion-color-danger);
+}
+
+// Generic filter sheet: header stays fixed, everything else (all 5
+// categories plus the Reestablecer/Aplicar row at the end) scrolls inside
+// this ion-content - matching Explorer/Events' "Filtrar todo" page, where
+// those buttons are reached by scrolling down rather than pinned as a
+// separate footer. A bare, non-ion-content div here has no scroll mechanism
+// at all, which is what was clipping the action buttons before.
+.generic-filter-header {
+  padding: 20px 20px 0;
+}
+
+.generic-filter-content {
+  flex: 1;
+  // Flex items default to min-height: auto, which lets an ion-content
+  // grow to fit all its content instead of scrolling within its share of
+  // the available space - that's what was pushing Reestablecer/Aplica off
+  // the bottom of the sheet, requiring an outer scroll to reach them.
+  min-height: 0;
+  --padding-top: 4px;
+}
+
+.generic-filter-body {
+  padding: 16px 20px 20px;
+}
+
+// The Salir/Aplica row below the calendar - rendered as a normal sibling of
+// <ion-datetime> (not inside its slot="buttons"), because that slot is
+// hard-coded by Ionic to shrink-wrap and right-align its content with no way
+// to override that from outside. Self-contained (not <app-filter-actions-row>)
+// since it needs its own horizontal padding and isn't really "a filter's
+// footer".
+.calendar-picker-actions {
+  display: flex;
+  gap: 10px;
+  padding: 8px 16px 0;
+
+  ion-button {
+    flex: 1;
+    --box-shadow: none;
+    font-size: 0.85rem;
+  }
+}
