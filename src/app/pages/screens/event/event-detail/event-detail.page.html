@@ -229,7 +229,7 @@
             type="button"
             class="attend-heart-btn"
             [class.active]="isAttending()"
-            [disabled]="isOwnEvent() || attendLoading() || isEventOver()"
+            [disabled]="canManage() || attendLoading() || isEventOver()"
             [attr.aria-label]="(isAttending() ? 'eventDetail.unattendButton' : 'eventDetail.attendButton') | translate"
             (click)="toggleAttend()"
           >
@@ -237,6 +237,38 @@
           </button>
         </div>
       </div>
+
+      @if (myPendingInvite()) {
+        <div class="manager-invite-banner">
+          <p>
+            {{
+              (myPendingInvite()!.role === 'manager' ? 'eventDetail.pendingManagerInviteMessage' : 'eventDetail.pendingAttendeeInviteMessage')
+                | translate
+            }}
+          </p>
+          <div class="manager-invite-actions">
+            <ion-button
+              expand="block"
+              fill="outline"
+              class="decline-invite-btn"
+              [disabled]="inviteResponseBusy()"
+              (click)="respondToManagerInvite(false)"
+            >
+              <ion-icon slot="start" name="close-outline"></ion-icon>
+              {{ 'eventDetail.declineInvite' | translate }}
+            </ion-button>
+            <ion-button
+              expand="block"
+              class="btn-fill"
+              [disabled]="inviteResponseBusy()"
+              (click)="respondToManagerInvite(true)"
+            >
+              <ion-icon slot="start" name="checkmark-outline"></ion-icon>
+              {{ 'eventDetail.acceptInvite' | translate }}
+            </ion-button>
+          </div>
+        </div>
+      }
 
       <div class="event-tags">
         @for (eventType of eventTypeTags(); track eventType.name) {
@@ -283,18 +315,24 @@
         </ion-button>
       </div>
 
-      @if (isOwnEvent()) {
-        @if (event()!.status === 'finished') {
-          <ion-button expand="block" class="btn-fill" (click)="reuseEvent()">
-            <ion-icon slot="start" name="refresh-outline"></ion-icon>
-            {{ 'eventDetail.reuseButton' | translate }}
+      @if (canManage()) {
+        <div class="actions-row">
+          <ion-button expand="block" fill="outline" (click)="confirmDeleteEvent()">
+            <ion-icon slot="start" name="trash-outline"></ion-icon>
+            {{ 'eventDetail.deleteButton' | translate }}
           </ion-button>
-        } @else {
-          <ion-button expand="block" class="btn-fill" (click)="enterEditMode()">
-            <ion-icon slot="start" name="create-outline"></ion-icon>
-            {{ 'eventDetail.editButton' | translate }}
-          </ion-button>
-        }
+          @if (event()!.status === 'finished') {
+            <ion-button expand="block" class="btn-fill" (click)="reuseEvent()">
+              <ion-icon slot="start" name="refresh-outline"></ion-icon>
+              {{ 'eventDetail.reuseButton' | translate }}
+            </ion-button>
+          } @else {
+            <ion-button expand="block" class="btn-fill" (click)="enterEditMode()">
+              <ion-icon slot="start" name="create-outline"></ion-icon>
+              {{ 'eventDetail.editButton' | translate }}
+            </ion-button>
+          }
+        </div>
       }
 
       <section class="section">
@@ -627,3 +665,27 @@
   (wholeSeries)="confirmSeriesWhole()"
   (cancelled)="cancelSeriesToggle()"
 ></app-series-attend-confirm>
+
+<ion-modal
+  [isOpen]="confirmDelete()"
+  [initialBreakpoint]="0.4"
+  [breakpoints]="[0, 0.4]"
+  (didDismiss)="confirmDelete.set(false)"
+>
+  <ng-template>
+    <div class="filter-sheet">
+      <app-filter-sheet-header titleKey="eventDetail.deleteConfirmTitle" (closed)="confirmDelete.set(false)"></app-filter-sheet-header>
+      <p>{{ 'eventDetail.deleteConfirmMessage' | translate }}</p>
+      <app-filter-actions-row>
+        <ion-button expand="block" fill="outline" color="primary" (click)="confirmDelete.set(false)">
+          <ion-icon slot="start" name="close-outline"></ion-icon>
+          {{ 'common.cancel' | translate }}
+        </ion-button>
+        <ion-button expand="block" class="btn-fill" color="danger" [disabled]="deleting()" (click)="deleteEventConfirmed()">
+          <ion-icon slot="start" name="trash-outline"></ion-icon>
+          {{ 'eventDetail.deleteButton' | translate }}
+        </ion-button>
+      </app-filter-actions-row>
+    </div>
+  </ng-template>
+</ion-modal>

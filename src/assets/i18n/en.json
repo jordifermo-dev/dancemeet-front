@@ -79,6 +79,8 @@
     "typeFollowingNewEvent": "Events from people you follow",
     "typePreferenceNewEvent": "Recommended events",
     "typeRecurringSeriesCreated": "New recurring events",
+    "typeEventManagerInvite": "Event organizer invites",
+    "typeEventAttendeeInvite": "Invites to attend",
     "disabledBadge": "Off",
     "disabledTypesHint": "Some notification types are turned off.",
     "manageLink": "Manage",
@@ -208,7 +210,16 @@
     "sortDateOldest": "Oldest",
     "noResults": "No users found.",
     "noDisciplines": "Hasn't picked any dance styles yet",
-    "filterDisciplinesTitle": "Dance styles"
+    "filterDisciplinesTitle": "Dance styles",
+    "attendeeRoleBadge": "Attendee",
+    "inviteAsAttendee": "Attendee",
+    "inviteAsOrganizer": "Organizer",
+    "inviteError": "Couldn't send the invite.",
+    "cancelInvite": "Cancel invite",
+    "removeAttendee": "Remove from event",
+    "confirmRemoveAttendeeTitle": "Remove from event",
+    "confirmRemoveAttendeeMessage": "Remove {{name}} from this event? They'll no longer show as attending or organizing, but they'll stay a follower if they already were one.",
+    "removeAttendeeError": "Couldn't remove this person from the event."
   },
   "eventSort": {
     "label": "Sort by",
@@ -343,6 +354,13 @@
     "dontShowHintAgain": "Don't show again",
     "editButton": "Edit event",
     "reuseButton": "Reuse event",
+    "deleteButton": "Delete event",
+    "deleteConfirmTitle": "Delete event",
+    "deleteConfirmMessage": "Are you sure you want to delete this event? This can't be undone.",
+    "pendingManagerInviteMessage": "You've been invited to be an organizer of this event.",
+    "pendingAttendeeInviteMessage": "You've been invited to attend this event.",
+    "acceptInvite": "Accept",
+    "declineInvite": "Decline",
     "attendeesLabel": "Attendees",
     "attendButton": "Attend",
     "unattendButton": "Stop attending",
@@ -390,6 +408,15 @@
     "seriesPreviewUnlimited": "No end date: up to {{max}} events will be created starting {{from}}",
     "seriesPreviewNone": "This combination doesn't create any events",
     "seriesTooLong": "These dates would generate too many events (max {{max}}). Reduce the range or frequency."
+  },
+  "eventManagers": {
+    "searchPlaceholder": "Search by name...",
+    "noResults": "No users found.",
+    "organizerBadge": "Organizer"
+  },
+  "userSearchList": {
+    "searchPlaceholder": "Search by name...",
+    "noResults": "No users found."
   },
   "photoEditor": {
     "chooserTitle": "Change photo",

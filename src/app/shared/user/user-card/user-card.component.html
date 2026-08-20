@@ -8,6 +8,17 @@
   }
   <div class="user-info">
     <span class="user-name">{{ user.name }}</span>
+    @if (badgeLabel) {
+      <span class="role-badge">
+        @if (badgeIcon) {
+          <ion-icon [name]="badgeIcon"></ion-icon>
+        }
+        {{ badgeLabel }}
+      </span>
+    }
+    @if (user.showEmail && user.email) {
+      <span class="user-email">{{ user.email }}</span>
+    }
     @if (disciplines().length) {
       <div class="user-disciplines">
         @for (discipline of disciplines(); track discipline.id) {
@@ -22,26 +33,53 @@
     }
   </div>
   @if (!isMe()) {
-    @if (isFollowedByMe()) {
-      <button
-        type="button"
-        class="follow-btn follow-btn-following"
-        [disabled]="followBusy()"
-        (click)="toggleFollow($event)"
-      >
-        <ion-icon name="person-remove-outline"></ion-icon>
-        {{ (followFlash.active() ? 'eventDetail.savedButton' : 'profile.following') | translate }}
-      </button>
-    } @else {
-      <button
-        type="button"
-        class="follow-btn follow-btn-follow"
-        [disabled]="followBusy()"
-        (click)="toggleFollow($event)"
-      >
-        <ion-icon [name]="followFlash.active() ? 'checkmark-outline' : 'person-add-outline'"></ion-icon>
-        {{ (followFlash.active() ? 'eventDetail.savedButton' : 'userDetail.followButton') | translate }}
-      </button>
-    }
+    <div class="actions-col" [class.full-row]="!!extraActions">
+      @if (extraActions) {
+        <div class="extra-actions">
+          @for (action of extraActions; track action.labelKey) {
+            <button
+              type="button"
+              class="follow-btn follow-btn-following"
+              [disabled]="action.busy"
+              (click)="onExtraActionTap($event, action)"
+            >
+              <ion-icon [name]="action.icon"></ion-icon>
+              {{ action.labelKey | translate }}
+            </button>
+          }
+        </div>
+      } @else if (isFollowedByMe()) {
+        <button
+          type="button"
+          class="follow-btn follow-btn-following"
+          [disabled]="followBusy()"
+          (click)="toggleFollow($event)"
+        >
+          <ion-icon name="person-remove-outline"></ion-icon>
+          {{ (followFlash.active() ? 'eventDetail.savedButton' : 'profile.following') | translate }}
+        </button>
+      } @else {
+        <button
+          type="button"
+          class="follow-btn follow-btn-follow"
+          [disabled]="followBusy()"
+          (click)="toggleFollow($event)"
+        >
+          <ion-icon [name]="followFlash.active() ? 'checkmark-outline' : 'person-add-outline'"></ion-icon>
+          {{ (followFlash.active() ? 'eventDetail.savedButton' : 'userDetail.followButton') | translate }}
+        </button>
+      }
+      @if (removeAction) {
+        <button
+          type="button"
+          class="remove-btn"
+          [disabled]="removeAction.busy"
+          [attr.aria-label]="removeAction.labelKey | translate"
+          (click)="onExtraActionTap($event, removeAction)"
+        >
+          <ion-icon [name]="removeAction.icon"></ion-icon>
+        </button>
+      }
+    </div>
   }
 </div>

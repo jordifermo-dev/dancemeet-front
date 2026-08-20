@@ -38,4 +38,10 @@ export class UserService {
       }),
     );
   }
+
+  /** Used by the "invitar gestor" search - requires a real query, an empty
+   * one would otherwise match every user (see the backend's own guard). */
+  searchUsers(query: string): Observable<User[]> {
+    return this.http.get<User[]>(`${this.baseUrl}/search/list`, { params: { q: query } });
+  }
 }

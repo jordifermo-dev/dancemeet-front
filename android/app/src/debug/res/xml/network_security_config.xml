@@ -12,4 +12,10 @@
             <certificates src="user" />
         </trust-anchors>
     </base-config>
+    <!-- TEMP dev-only: lets the WebView reach `ng serve`/Nest over plain
+         HTTP via `adb reverse` (capacitor.config.ts's dev server: block) -
+         scoped to localhost only, and only merged into debug builds. -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="true">localhost</domain>
+    </domain-config>
 </network-security-config>

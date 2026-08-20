@@ -8,6 +8,7 @@ import {
   IonInput,
   IonText,
   IonModal,
+  ViewWillEnter,
 } from '@ionic/angular/standalone';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { addIcons } from 'ionicons';
@@ -48,7 +49,7 @@ import { FilterActionsRowComponent } from '../../../../shared/filters/filter-act
     FilterActionsRowComponent,
   ],
 })
-export class LoginPage implements OnInit, AfterViewInit {
+export class LoginPage implements OnInit, AfterViewInit, ViewWillEnter {
   private readonly fb = inject(FormBuilder);
   private readonly authService = inject(AuthService);
   private readonly onboarding = inject(OnboardingService);
@@ -88,8 +89,6 @@ export class LoginPage implements OnInit, AfterViewInit {
   }
 
   async ngOnInit(): Promise<void> {
-    this.emailForm.reset({ email: '', password: '' });
-
     // Only reachable after a mobile signInWithRedirect came back - a
     // successful one with an existing profile is already routed away from
     // /login by publicGuard before this component even mounts, so anything
@@ -111,6 +110,21 @@ export class LoginPage implements OnInit, AfterViewInit {
     // paint, after ngOnInit already ran - clear them again once that's had
     // a chance to happen.
     setTimeout(() => this.emailForm.reset({ email: '', password: '' }), 0);
+  }
+
+  /** Ionic keeps this page's instance alive for reuse (IonicRouteStrategy),
+   * so ngOnInit only runs once - without this, logging out after a previous
+   * email/password login left showEmailForm (and any leftover error/forgot-
+   * password state) stuck from that session instead of showing the normal
+   * provider-buttons screen again. */
+  ionViewWillEnter(): void {
+    this.showEmailForm.set(false);
+    this.errorMessage.set(null);
+    this.emailForm.reset({ email: '', password: '' });
+    this.showForgotPassword.set(false);
+    this.forgotPasswordSent.set(false);
+    this.forgotPasswordError.set(null);
+    this.forgotPasswordForm.reset({ email: '' });
   }
 
   async continueWithProvider(provider: AuthProvider): Promise<void> {

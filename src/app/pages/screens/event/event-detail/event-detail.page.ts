@@ -20,6 +20,7 @@ import {
   IonToggle,
   IonDatetime,
   IonCheckbox,
+  ViewWillEnter,
 } from '@ionic/angular/standalone';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { addIcons } from 'ionicons';
@@ -101,6 +102,9 @@ import { toggleWithMinimum } from '../../../../shared/filters/min-selection';
 import { createSuccessFlash } from '../../../../shared/common/success-flash';
 import { dismissSharePreviewHint, isSharePreviewHintDismissed } from '../../../../shared/sharing/share-hint';
 import { EventShareService, escapeHtml } from '../../../../services/sharing/event-share.service';
+import { EventManagerService } from '../../../../services/event-managers/event-manager.service';
+import { EventManager } from '../../../../models';
+import { canManageEvent, findMyParticipantRow } from '../../../../shared/event/event-manager-permissions';
 
 const MIN_ZOOM = 3;
 const MAX_ZOOM = 20;
@@ -191,7 +195,7 @@ function withTimePart(base: number, timeValue: string): number {
     SeriesAttendConfirmComponent,
   ],
 })
-export class EventDetailPage implements ComponentWithUnsavedChanges {
+export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnter {
   private readonly fb = inject(FormBuilder);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -205,6 +209,7 @@ export class EventDetailPage implements ComponentWithUnsavedChanges {
   private readonly languageService = inject(LanguageService);
   private readonly geocodingService = inject(GeocodingService);
   private readonly shareService = inject(EventShareService);
+  private readonly eventManagerService = inject(EventManagerService);
   private readonly translate = inject(TranslateService);
   readonly minSelectionWarning = inject(MinSelectionWarningService);
 
@@ -266,6 +271,25 @@ export class EventDetailPage implements ComponentWithUnsavedChanges {
     const me = this.authService.currentUser();
     return !!event && !!me && event.creatorId === me.id;
   });
+
+  readonly participants = signal<EventManager[]>([]);
+  /** Creator or accepted manager - gates edit/delete/reuse the same way
+   * isOwnEvent used to on its own (see canManageEvent's own doc comment for
+   * why this rule lives in one shared place). */
+  readonly canManage = computed(() =>
+    canManageEvent(this.event(), this.participants(), this.authService.currentUser()?.id),
+  );
+  /** Drives the "you've been invited" accept/decline banner - null once
+   * there's no row for me at all, or after I've already accepted. Its role
+   * (attendee vs manager) picks which message/notification text was shown. */
+  readonly myPendingInvite = computed(() => {
+    const row = findMyParticipantRow(this.participants(), this.authService.currentUser()?.id);
+    return row?.status === 'pending' ? row : null;
+  });
+  readonly inviteResponseBusy = signal(false);
+
+  readonly confirmDelete = signal(false);
+  readonly deleting = signal(false);
 
   readonly creatorProfileLink = computed<string[]>(() => {
     const event = this.event();
@@ -747,6 +771,20 @@ export class EventDetailPage implements ComponentWithUnsavedChanges {
     this.loadEvent(id);
   }
 
+  /** Ionic keeps this page's instance alive for reuse (IonicRouteStrategy),
+   * so all the constructor logic above only runs once - without this,
+   * returning here from the "Gestores" screen (e.g. after removing yourself,
+   * or someone else, as a manager) kept showing stale canManage()/relation
+   * state until the whole app was reloaded. Re-fetching is skipped while
+   * actively editing/creating, so it can't clobber in-progress form edits. */
+  ionViewWillEnter(): void {
+    const event = this.event();
+    if (!event || this.isEditMode()) {
+      return;
+    }
+    this.loadEvent(event.id);
+  }
+
   private finishEnteringCreateMode(): void {
     this.isCreateMode.set(true);
     this.isEditMode.set(true);
@@ -798,6 +836,7 @@ export class EventDetailPage implements ComponentWithUnsavedChanges {
         this.loading.set(false);
         this.refreshAttendingState(event);
         this.refreshAttendeesCount(id);
+        this.refreshParticipants(id);
       },
       error: () => {
         this.notFound.set(true);
@@ -810,6 +849,49 @@ export class EventDetailPage implements ComponentWithUnsavedChanges {
     this.favoriteService.countByEvent(eventId).subscribe({
       next: (count) => this.attendeesCount.set(count),
       error: () => this.attendeesCount.set(0),
+    });
+  }
+
+  private refreshParticipants(eventId: string): void {
+    this.eventManagerService.getParticipants(eventId).subscribe({
+      next: (participants) => this.participants.set(participants),
+      error: () => this.participants.set([]),
+    });
+  }
+
+  respondToManagerInvite(accept: boolean): void {
+    const event = this.event();
+    if (!event || this.inviteResponseBusy()) {
+      return;
+    }
+    this.inviteResponseBusy.set(true);
+    this.eventManagerService.respondToInvite(event.id, accept).subscribe({
+      next: () => {
+        this.inviteResponseBusy.set(false);
+        this.refreshParticipants(event.id);
+      },
+      error: () => this.inviteResponseBusy.set(false),
+    });
+  }
+
+  confirmDeleteEvent(): void {
+    this.confirmDelete.set(true);
+  }
+
+  deleteEventConfirmed(): void {
+    const event = this.event();
+    if (!event || this.deleting()) {
+      return;
+    }
+    this.deleting.set(true);
+    this.eventService.deleteEvent(event.id).subscribe({
+      next: () => {
+        this.deleting.set(false);
+        this.confirmDelete.set(false);
+        this.refreshNotifier.notifyChanged();
+        this.router.navigateByUrl(this.originUrl ?? '/tabs/explorer');
+      },
+      error: () => this.deleting.set(false),
     });
   }
 
@@ -1452,7 +1534,7 @@ export class EventDetailPage implements ComponentWithUnsavedChanges {
           next: ({ events }) => {
             this.saving.set(false);
             this.isEditMode.set(false);
-            this.refreshNotifier.notifyEventCreated();
+            this.refreshNotifier.notifyChanged();
             const first = events[0];
             if (this.originUrl) {
               this.router.navigateByUrl(this.originUrl, { replaceUrl: true });
@@ -1479,7 +1561,7 @@ export class EventDetailPage implements ComponentWithUnsavedChanges {
           // forward navigation below (see EventListRefreshService), so the
           // origin list is told directly instead of relying on it noticing
           // the new event on its own.
-          this.refreshNotifier.notifyEventCreated();
+          this.refreshNotifier.notifyChanged();
           // Returns to wherever this create flow actually started (the
           // origin tab/screen - see originUrl) via a normal forward
           // navigation, so Ionic's own view-cache/lifecycle handling stays

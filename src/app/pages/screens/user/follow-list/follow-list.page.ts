@@ -17,19 +17,32 @@ import {
 } from '@ionic/angular/standalone';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { addIcons } from 'ionicons';
-import { optionsOutline, chevronDownOutline, refreshOutline, checkmarkOutline, closeOutline, trashOutline } from 'ionicons/icons';
+import {
+  optionsOutline,
+  chevronDownOutline,
+  refreshOutline,
+  checkmarkOutline,
+  closeOutline,
+  trashOutline,
+  personAddOutline,
+  ribbonOutline,
+} from 'ionicons/icons';
 import { AuthService } from '../../../../services/core/auth.service';
 import { FollowService } from '../../../../services/user/follow.service';
 import { FavoriteService } from '../../../../services/favorites/favorite.service';
 import { DisciplineService } from '../../../../services/event/discipline.service';
+import { EventService } from '../../../../services/event/event.service';
+import { EventManagerService } from '../../../../services/event-managers/event-manager.service';
+import { UserService } from '../../../../services/user/user.service';
 import { FollowSortMode, SortPreferenceService } from '../../../../services/filters/sort-preference.service';
-import { Discipline, DISCIPLINE_NAMES, FollowUser } from '../../../../models';
+import { Discipline, DISCIPLINE_NAMES, EventManager, EventManagerRole, EventWithCreatorName, FollowUser } from '../../../../models';
 import { sortByNameOrder } from '../../../../shared/event/icon-catalog';
 import { createApplyFlash } from '../../../../shared/common/success-flash';
-import { UserCardComponent } from '../../../../shared/user/user-card/user-card.component';
+import { UserCardComponent, UserCardAction } from '../../../../shared/user/user-card/user-card.component';
 import { FilterSheetHeaderComponent } from '../../../../shared/filters/filter-sheet-header/filter-sheet-header.component';
 import { FilterActionsRowComponent } from '../../../../shared/filters/filter-actions-row/filter-actions-row.component';
 import { ChipGridComponent, ChipGridItem } from '../../../../shared/filters/chip-grid/chip-grid.component';
+import { canManageEvent } from '../../../../shared/event/event-manager-permissions';
 
 type FollowListMode = 'followers' | 'following' | 'attendees';
 type SortMode = FollowSortMode;
@@ -71,6 +84,9 @@ export class FollowListPage implements ViewWillEnter {
   private readonly followService = inject(FollowService);
   private readonly favoriteService = inject(FavoriteService);
   private readonly disciplineService = inject(DisciplineService);
+  private readonly eventService = inject(EventService);
+  private readonly eventManagerService = inject(EventManagerService);
+  private readonly userService = inject(UserService);
   private readonly translate = inject(TranslateService);
   private readonly sortPreference = inject(SortPreferenceService);
 
@@ -115,33 +131,117 @@ export class FollowListPage implements ViewWillEnter {
   private pendingConfirmResolve: ((confirmed: boolean) => void) | null = null;
   private pendingConfirmValue = false;
 
-  readonly filteredItems = computed(() => {
-    const term = this.searchTerm().trim().toLowerCase();
-    let list = term ? this.items().filter((item) => item.name.toLowerCase().includes(term)) : [...this.items()];
+  // --- whole-app search (merged into the same list, see mergedItems below) -
 
-    // Same "any of the selected disciplines" convention as Explorer/Favorites -
-    // every discipline selected (the default, matching what's shown before any
-    // filter is touched) or none selected are both treated as no constraint,
-    // rather than only the emptied-out state.
-    const filterIds = this.appliedDisciplineFilterIds();
-    if (filterIds.length > 0 && filterIds.length < this.disciplines().length) {
-      list = list.filter((item) => item.disciplineIds.some((id) => filterIds.includes(id)));
-    }
+  private readonly wholeAppResults = signal<FollowUser[]>([]);
+  readonly searching = signal(false);
 
-    switch (this.sortMode()) {
-      case 'nameAsc':
-        return list.sort((a, b) => a.name.localeCompare(b.name));
-      case 'nameDesc':
-        return list.sort((a, b) => b.name.localeCompare(a.name));
-      case 'dateNewest':
-        return list.sort((a, b) => b.followedAt - a.followedAt);
-      case 'dateOldest':
-        return list.sort((a, b) => a.followedAt - b.followedAt);
+  /** Everyone already related in some way - excluded from the "new" group so
+   * a person never shows up twice. Attendees mode also excludes the event's
+   * own creator (already rendered via the badge on their own attendee row,
+   * not a search result) and, deliberately, only *existing participants*
+   * (not plain self-joined attendees - see the module doc comment on why an
+   * already-attending, not-yet-organizer person isn't offered a "promote to
+   * organizer" action from this simplified list). */
+  private readonly relatedUserIds = computed(() => {
+    const ids = new Set(this.items().map((item) => item.id));
+    this.participants().forEach((participant) => ids.add(participant.userId));
+    const me = this.authService.currentUser()?.id;
+    if (me) {
+      ids.add(me);
     }
+    const event = this.event();
+    if (event) {
+      ids.add(event.creatorId);
+    }
+    return ids;
   });
 
+  /** The three independently-sorted groups rendered in order: people already
+   * related, (attendees mode only) people with a pending invite, and people
+   * found by the whole-app search who aren't related yet at all - kept apart
+   * rather than interleaved, so "who's already here" always reads clearly
+   * even while a search is active. */
+  readonly confirmedItems = computed<FollowUser[]>(() => this.sortFollowUsers(this.filterByTermAndDiscipline(this.items())));
+
+  readonly newItems = computed<FollowUser[]>(() => {
+    const excluded = this.relatedUserIds();
+    const candidates = this.wholeAppResults().filter((user) => !excluded.has(user.id));
+    return this.sortFollowUsers(this.filterByDiscipline(candidates));
+  });
+
+  private filterByTermAndDiscipline(list: FollowUser[]): FollowUser[] {
+    const term = this.searchTerm().trim().toLowerCase();
+    const byTerm = term ? list.filter((item) => item.name.toLowerCase().includes(term)) : list;
+    return this.filterByDiscipline(byTerm);
+  }
+
+  // Same "any of the selected disciplines" convention as Explorer/Favorites -
+  // every discipline selected (the default, matching what's shown before any
+  // filter is touched) or none selected are both treated as no constraint,
+  // rather than only the emptied-out state.
+  private filterByDiscipline(list: FollowUser[]): FollowUser[] {
+    const filterIds = this.appliedDisciplineFilterIds();
+    if (filterIds.length === 0 || filterIds.length >= this.disciplines().length) {
+      return list;
+    }
+    return list.filter((item) => item.disciplineIds.some((id) => filterIds.includes(id)));
+  }
+
+  private sortFollowUsers(list: FollowUser[]): FollowUser[] {
+    const sorted = [...list];
+    switch (this.sortMode()) {
+      case 'nameAsc':
+        return sorted.sort((a, b) => a.name.localeCompare(b.name));
+      case 'nameDesc':
+        return sorted.sort((a, b) => b.name.localeCompare(a.name));
+      case 'dateNewest':
+        return sorted.sort((a, b) => b.followedAt - a.followedAt);
+      case 'dateOldest':
+        return sorted.sort((a, b) => a.followedAt - b.followedAt);
+    }
+  }
+
+  // --- 'attendees' mode: organizer invite/manage ----------------------------
+
+  private readonly eventId = this.route.snapshot.queryParamMap.get('eventId');
+  readonly event = signal<EventWithCreatorName | null>(null);
+  readonly participants = signal<EventManager[]>([]);
+  readonly canManageAttendees = computed(() =>
+    canManageEvent(this.event(), this.participants(), this.authService.currentUser()?.id),
+  );
+  readonly pendingParticipants = computed<EventManager[]>(() => {
+    const list = this.participants().filter((p) => p.status === 'pending');
+    const sorted = [...list];
+    switch (this.sortMode()) {
+      case 'nameAsc':
+        return sorted.sort((a, b) => a.userName.localeCompare(b.userName));
+      case 'nameDesc':
+        return sorted.sort((a, b) => b.userName.localeCompare(a.userName));
+      case 'dateNewest':
+        return sorted.sort((a, b) => b.createdAt - a.createdAt);
+      case 'dateOldest':
+        return sorted.sort((a, b) => a.createdAt - b.createdAt);
+    }
+  });
+  private readonly acceptedManagerIds = computed(
+    () => new Set(this.participants().filter((p) => p.role === 'manager' && p.status === 'accepted').map((p) => p.userId)),
+  );
+  readonly inviteBusyUserId = signal<string | null>(null);
+  readonly actionErrorMessage = signal<string | null>(null);
+  readonly removeBusyUserId = signal<string | null>(null);
+
   constructor() {
-    addIcons({ optionsOutline, chevronDownOutline, refreshOutline, checkmarkOutline, closeOutline, trashOutline });
+    addIcons({
+      optionsOutline,
+      chevronDownOutline,
+      refreshOutline,
+      checkmarkOutline,
+      closeOutline,
+      trashOutline,
+      personAddOutline,
+      ribbonOutline,
+    });
 
     this.disciplineService.getAll().subscribe({
       next: (disciplines) => {
@@ -175,7 +275,7 @@ export class FollowListPage implements ViewWillEnter {
 
   private loadItems(): void {
     if (this.mode === 'attendees') {
-      const eventId = this.route.snapshot.queryParamMap.get('eventId');
+      const eventId = this.eventId;
       if (!eventId) {
         this.loading.set(false);
         return;
@@ -190,6 +290,10 @@ export class FollowListPage implements ViewWillEnter {
         },
         error: () => this.loading.set(false),
       });
+      this.eventService.getById(eventId).subscribe({
+        next: (event) => this.event.set(event),
+      });
+      this.loadParticipants(eventId);
       return;
     }
 
@@ -212,8 +316,43 @@ export class FollowListPage implements ViewWillEnter {
     });
   }
 
+  private loadParticipants(eventId: string): void {
+    this.eventManagerService.getParticipants(eventId).subscribe({
+      next: (participants) => this.participants.set(participants),
+      error: () => this.participants.set([]),
+    });
+  }
+
+  /** ion-searchbar's own [debounce] already spaces out calls while typing -
+   * filters the already-loaded list locally *and* (if there's a term) fires
+   * a whole-app search for the "not related yet" group, at the same time. */
   onSearchChange(value: string | null | undefined): void {
-    this.searchTerm.set(value ?? '');
+    const term = value ?? '';
+    this.searchTerm.set(term);
+    const trimmed = term.trim();
+    if (!trimmed) {
+      this.wholeAppResults.set([]);
+      this.searching.set(false);
+      return;
+    }
+    this.searching.set(true);
+    this.userService.searchUsers(trimmed).subscribe({
+      next: (users) => {
+        this.wholeAppResults.set(
+          users.map((user) => ({
+            id: user.id,
+            name: user.name,
+            photoUrl: user.photoUrl,
+            disciplineIds: user.disciplineIds,
+            followedAt: 0,
+            email: user.email,
+            showEmail: user.showEmail,
+          })),
+        );
+        this.searching.set(false);
+      },
+      error: () => this.searching.set(false),
+    });
   }
 
   openSortModal(): void {
@@ -283,5 +422,164 @@ export class FollowListPage implements ViewWillEnter {
     this.draftDisciplineFilterIds.set(allIds);
     this.appliedDisciplineFilterIds.set(allIds);
     this.isFilterModalOpen.set(false);
+  }
+
+  // --- 'attendees' mode: organizer actions ----------------------------------
+
+  /** Only rendered for the "new" group's rows (via <app-user-card>'s
+   * extraActions), and only when this viewer can manage the event - replaces
+   * the follow button there with the actual reason that row is showing. */
+  inviteActionsFor(user: FollowUser): UserCardAction[] | undefined {
+    if (this.mode !== 'attendees' || !this.canManageAttendees()) {
+      return undefined;
+    }
+    const busy = this.inviteBusyUserId() === user.id;
+    return [
+      {
+        labelKey: 'followList.inviteAsAttendee',
+        icon: 'person-add-outline',
+        busy,
+        onClick: (u) => this.inviteParticipant(u, 'attendee'),
+      },
+      {
+        labelKey: 'followList.inviteAsOrganizer',
+        icon: 'ribbon-outline',
+        busy,
+        onClick: (u) => this.inviteParticipant(u, 'manager'),
+      },
+    ];
+  }
+
+  private inviteParticipant(user: FollowUser, role: EventManagerRole): void {
+    const eventId = this.event()?.id;
+    if (!eventId || this.inviteBusyUserId()) {
+      return;
+    }
+    this.actionErrorMessage.set(null);
+    this.inviteBusyUserId.set(user.id);
+    this.eventManagerService.inviteParticipant(eventId, user.id, role).subscribe({
+      next: () => {
+        this.inviteBusyUserId.set(null);
+        this.loadParticipants(eventId);
+      },
+      error: () => {
+        this.inviteBusyUserId.set(null);
+        this.actionErrorMessage.set('followList.inviteError');
+      },
+    });
+  }
+
+  /** Fully removes someone from the event (attendance + any organizer role,
+   * see EventManagerService.removeParticipant) - used by both the per-row
+   * remove action below and cancelPendingInvite. Deliberately never touches
+   * Follow, so the row's own follow/unfollow button (rendered alongside,
+   * not replaced - see removeActionFor) keeps reflecting the real
+   * relationship regardless of what happens here. */
+  removeParticipant(userId: string): void {
+    const eventId = this.event()?.id;
+    if (!eventId || this.removeBusyUserId()) {
+      return;
+    }
+    this.actionErrorMessage.set(null);
+    this.removeBusyUserId.set(userId);
+    this.eventManagerService.removeParticipant(eventId, userId).subscribe({
+      next: () => {
+        this.removeBusyUserId.set(null);
+        this.loadParticipants(eventId);
+        this.loadItems();
+      },
+      error: () => {
+        this.removeBusyUserId.set(null);
+        this.actionErrorMessage.set('followList.removeAttendeeError');
+      },
+    });
+  }
+
+  /** Cancels a still-pending invite of either role - same removal call, the
+   * backend doesn't care which role a pending row has (see
+   * EventManagerService.removeParticipant's own comment). */
+  cancelPendingInvite(userId: string): void {
+    this.removeParticipant(userId);
+  }
+
+  /** Reshapes a pending EventManager row into <app-user-card>'s expected
+   * input, the same as newItems' whole-app search results - lets pending
+   * rows render through the same row template (avatar, disciplines, follow
+   * button) instead of a bespoke layout of their own. */
+  pendingParticipantUser(participant: EventManager): FollowUser {
+    return {
+      id: participant.userId,
+      name: participant.userName,
+      photoUrl: participant.userPhotoUrl,
+      disciplineIds: participant.userDisciplineIds,
+      followedAt: participant.createdAt,
+      email: participant.userEmail,
+      showEmail: participant.userShowEmail,
+    };
+  }
+
+  pendingBadgeFor(participant: EventManager): string {
+    return this.translate.instant(
+      participant.role === 'manager' ? 'eventManagers.organizerBadge' : 'followList.attendeeRoleBadge',
+    );
+  }
+
+  /** Cancels the invite - same removeParticipant call as removeActionFor
+   * below, just always available (no creator to exclude here, a pending row
+   * is by definition not the creator) and with no confirm step, matching
+   * this button's pre-existing behavior. */
+  pendingRemoveActionFor(participant: EventManager): UserCardAction {
+    return this.trashAction(participant.userId, 'followList.cancelInvite', () =>
+      this.cancelPendingInvite(participant.userId),
+    );
+  }
+
+  /** The creator gets the same badge as an accepted manager - both have full
+   * organizer rights, and the creator's row lives in items() too (they
+   * auto-favorite their own event, see EventService.createEvent). Purely
+   * informational now - removal (of an attendee or an organizer alike) goes
+   * through removeActionFor's dedicated button, not the badge. */
+  private isOrganizerRow(item: FollowUser): boolean {
+    return this.event()?.creatorId === item.id || this.acceptedManagerIds().has(item.id);
+  }
+
+  organizerBadgeFor(item: FollowUser): string | undefined {
+    return this.isOrganizerRow(item) ? this.translate.instant('eventManagers.organizerBadge') : undefined;
+  }
+
+  /** Only for the 'attendees' mode's already-related group: lets an
+   * organizer remove anyone from the event - attendee or fellow organizer
+   * alike, follower of theirs or not (see EventManagerService.removeParticipant,
+   * which no longer requires an existing invite row, so a plain
+   * self-favorited attendee can be removed too). The creator can't be
+   * targeted - there's nothing to remove for them (their rights are
+   * implicit, not a row) and the backend would reject it anyway. */
+  removeActionFor(item: FollowUser): UserCardAction | undefined {
+    if (this.mode !== 'attendees' || !this.canManageAttendees() || item.id === this.event()?.creatorId) {
+      return undefined;
+    }
+    return this.trashAction(item.id, 'followList.removeAttendee', () => this.confirmAndRemoveParticipant(item));
+  }
+
+  private async confirmAndRemoveParticipant(user: FollowUser): Promise<void> {
+    const confirmed = await this.confirm(
+      'followList.confirmRemoveAttendeeTitle',
+      this.translate.instant('followList.confirmRemoveAttendeeMessage', { name: user.name }),
+    );
+    if (confirmed) {
+      this.removeParticipant(user.id);
+    }
+  }
+
+  /** Shared shape behind both removeActionFor and pendingRemoveActionFor -
+   * the two only differ in label and what tapping actually does (confirm
+   * dialog first vs. cancel outright). */
+  private trashAction(targetUserId: string, labelKey: string, onClick: () => void): UserCardAction {
+    return {
+      labelKey,
+      icon: 'trash-outline',
+      busy: this.removeBusyUserId() === targetUserId,
+      onClick,
+    };
   }
 }

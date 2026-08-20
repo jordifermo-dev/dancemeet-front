@@ -79,6 +79,8 @@
     "typeFollowingNewEvent": "Eventos de tus seguidos",
     "typePreferenceNewEvent": "Eventos recomendados",
     "typeRecurringSeriesCreated": "Nuevos eventos recurrentes",
+    "typeEventManagerInvite": "Invitaciones a organizar eventos",
+    "typeEventAttendeeInvite": "Invitaciones a asistir",
     "disabledBadge": "Desactivada",
     "disabledTypesHint": "Tienes tipos de notificación desactivados.",
     "manageLink": "Gestionar",
@@ -208,7 +210,16 @@
     "sortDateOldest": "Más antiguos",
     "noResults": "No se han encontrado usuarios.",
     "noDisciplines": "Todavía no ha seleccionado ningún baile",
-    "filterDisciplinesTitle": "Bailes"
+    "filterDisciplinesTitle": "Bailes",
+    "attendeeRoleBadge": "Asistente",
+    "inviteAsAttendee": "Asistente",
+    "inviteAsOrganizer": "Organizador/a",
+    "inviteError": "No se ha podido enviar la invitación.",
+    "cancelInvite": "Cancelar invitación",
+    "removeAttendee": "Eliminar del evento",
+    "confirmRemoveAttendeeTitle": "Eliminar del evento",
+    "confirmRemoveAttendeeMessage": "¿Quieres eliminar a {{name}} de este evento? Dejará de constar como asistente u organizador/a, pero seguirá siendo seguidor/a si ya lo era.",
+    "removeAttendeeError": "No se ha podido eliminar a esta persona del evento."
   },
   "eventSort": {
     "label": "Ordenar",
@@ -343,6 +354,13 @@
     "dontShowHintAgain": "No volver a mostrar",
     "editButton": "Editar evento",
     "reuseButton": "Reutilizar evento",
+    "deleteButton": "Eliminar evento",
+    "deleteConfirmTitle": "Eliminar evento",
+    "deleteConfirmMessage": "¿Seguro que quieres eliminar este evento? Esta acción no se puede deshacer.",
+    "pendingManagerInviteMessage": "Te han invitado a ser organizador/a de este evento.",
+    "pendingAttendeeInviteMessage": "Te han invitado a asistir a este evento.",
+    "acceptInvite": "Aceptar",
+    "declineInvite": "Rechazar",
     "attendeesLabel": "Asistentes",
     "attendButton": "Asistir",
     "unattendButton": "Dejar de asistir",
@@ -390,6 +408,15 @@
     "seriesPreviewUnlimited": "Sin fecha de fin: se crearán hasta {{max}} eventos a partir del {{from}}",
     "seriesPreviewNone": "Esta combinación no genera ningún evento",
     "seriesTooLong": "Con estas fechas se generarían demasiados eventos (máx. {{max}}). Reduce el rango o la frecuencia."
+  },
+  "eventManagers": {
+    "searchPlaceholder": "Buscar por nombre...",
+    "noResults": "No se han encontrado usuarios.",
+    "organizerBadge": "Organizador"
+  },
+  "userSearchList": {
+    "searchPlaceholder": "Buscar por nombre...",
+    "noResults": "No se han encontrado usuarios."
   },
   "photoEditor": {
     "chooserTitle": "Cambiar foto",

@@ -8,6 +8,8 @@ export const ALL_NOTIFICATION_TYPES: NotificationType[] = [
   'recurring_series_created',
   'event_attendee',
   'new_follower',
+  'event_manager_invite',
+  'event_attendee_invite',
 ];
 
 export const NOTIFICATION_TYPE_ICONS: Record<NotificationType, string> = {
@@ -18,6 +20,8 @@ export const NOTIFICATION_TYPE_ICONS: Record<NotificationType, string> = {
   following_new_event: 'calendar-outline',
   preference_new_event: 'sparkles-outline',
   recurring_series_created: 'repeat-outline',
+  event_manager_invite: 'ribbon-outline',
+  event_attendee_invite: 'people-outline',
 };
 
 export const NOTIFICATION_TYPE_LABEL_KEYS: Record<NotificationType, string> = {
@@ -28,4 +32,6 @@ export const NOTIFICATION_TYPE_LABEL_KEYS: Record<NotificationType, string> = {
   following_new_event: 'notifications.typeFollowingNewEvent',
   preference_new_event: 'notifications.typePreferenceNewEvent',
   recurring_series_created: 'notifications.typeRecurringSeriesCreated',
+  event_manager_invite: 'notifications.typeEventManagerInvite',
+  event_attendee_invite: 'notifications.typeEventAttendeeInvite',
 };

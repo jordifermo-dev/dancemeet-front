@@ -13,7 +13,7 @@
       <ion-searchbar
         class="tgtg-searchbar"
         [placeholder]="'followList.searchPlaceholder' | translate"
-        [debounce]="200"
+        [debounce]="250"
         (ionInput)="onSearchChange($event.detail.value)"
       ></ion-searchbar>
       <button
@@ -34,22 +34,58 @@
       </span>
     </button>
 
+    @if (actionErrorMessage()) {
+      <p class="error-text">{{ actionErrorMessage() | translate }}</p>
+    }
+
     @if (loading()) {
       <div class="state-row">
         <ion-spinner name="crescent"></ion-spinner>
       </div>
-    } @else if (filteredItems().length === 0) {
+    } @else if (!confirmedItems().length && !(mode === 'attendees' && canManageAttendees() && pendingParticipants().length) && !newItems().length && !searching()) {
       <div class="state-row">
         <p>{{ 'followList.noResults' | translate }}</p>
       </div>
     } @else {
       <div class="user-list">
-        @for (item of filteredItems(); track item.id) {
+        @for (item of confirmedItems(); track item.id) {
           <app-user-card
             [user]="item"
             [disciplinesById]="disciplinesById()"
             [confirmUnfollow]="confirmUnfollowUser"
             [showEmptyDisciplines]="true"
+            [badgeLabel]="organizerBadgeFor(item)"
+            [removeAction]="removeActionFor(item)"
+            variant="row"
+          ></app-user-card>
+        }
+
+        @if (mode === 'attendees' && canManageAttendees()) {
+          @for (participant of pendingParticipants(); track participant.id) {
+            <app-user-card
+              [user]="pendingParticipantUser(participant)"
+              [disciplinesById]="disciplinesById()"
+              [confirmUnfollow]="confirmUnfollowUser"
+              [showEmptyDisciplines]="true"
+              [badgeLabel]="pendingBadgeFor(participant)"
+              badgeIcon="time-outline"
+              [removeAction]="pendingRemoveActionFor(participant)"
+              variant="row"
+            ></app-user-card>
+          }
+        }
+
+        @if (searching()) {
+          <div class="state-row compact">
+            <ion-spinner name="crescent"></ion-spinner>
+          </div>
+        }
+        @for (item of newItems(); track item.id) {
+          <app-user-card
+            [user]="item"
+            [disciplinesById]="disciplinesById()"
+            [highlighted]="true"
+            [extraActions]="inviteActionsFor(item)"
             variant="row"
           ></app-user-card>
         }

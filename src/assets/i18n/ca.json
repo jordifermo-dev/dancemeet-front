@@ -79,6 +79,8 @@
     "typeFollowingNewEvent": "Esdeveniments dels teus seguits",
     "typePreferenceNewEvent": "Esdeveniments recomanats",
     "typeRecurringSeriesCreated": "Nous esdeveniments recurrents",
+    "typeEventManagerInvite": "Invitacions a organitzar esdeveniments",
+    "typeEventAttendeeInvite": "Invitacions a assistir",
     "disabledBadge": "Desactivada",
     "disabledTypesHint": "Tens tipus de notificació desactivats.",
     "manageLink": "Gestiona",
@@ -208,7 +210,16 @@
     "sortDateOldest": "Més antics",
     "noResults": "No s'han trobat usuaris.",
     "noDisciplines": "Encara no ha triat cap ball",
-    "filterDisciplinesTitle": "Balls"
+    "filterDisciplinesTitle": "Balls",
+    "attendeeRoleBadge": "Assistent",
+    "inviteAsAttendee": "Assistent",
+    "inviteAsOrganizer": "Organitzador/a",
+    "inviteError": "No s'ha pogut enviar la invitació.",
+    "cancelInvite": "Cancel·lar invitació",
+    "removeAttendee": "Eliminar de l'esdeveniment",
+    "confirmRemoveAttendeeTitle": "Eliminar de l'esdeveniment",
+    "confirmRemoveAttendeeMessage": "Vols eliminar en/na {{name}} d'aquest esdeveniment? Deixarà de constar com a assistent o organitzador/a, però continuarà sent seguidor/a si ja ho era.",
+    "removeAttendeeError": "No s'ha pogut eliminar aquesta persona de l'esdeveniment."
   },
   "eventSort": {
     "label": "Ordena",
@@ -343,6 +354,13 @@
     "dontShowHintAgain": "No tornar a mostrar",
     "editButton": "Edita l'esdeveniment",
     "reuseButton": "Reutilitza l'esdeveniment",
+    "deleteButton": "Elimina l'esdeveniment",
+    "deleteConfirmTitle": "Eliminar esdeveniment",
+    "deleteConfirmMessage": "Segur que vols eliminar aquest esdeveniment? Aquesta acció no es pot desfer.",
+    "pendingManagerInviteMessage": "T'han convidat a ser organitzador/a d'aquest esdeveniment.",
+    "pendingAttendeeInviteMessage": "T'han convidat a assistir a aquest esdeveniment.",
+    "acceptInvite": "Acceptar",
+    "declineInvite": "Rebutjar",
     "attendeesLabel": "Assistents",
     "attendButton": "Assistir",
     "unattendButton": "Deixar d'assistir",
@@ -390,6 +408,15 @@
     "seriesPreviewUnlimited": "Sense data de fi: es crearan fins a {{max}} esdeveniments a partir del {{from}}",
     "seriesPreviewNone": "Aquesta combinació no genera cap esdeveniment",
     "seriesTooLong": "Amb aquestes dates es generarien massa esdeveniments (màx. {{max}}). Redueix l'interval o la freqüència."
+  },
+  "eventManagers": {
+    "searchPlaceholder": "Cerca per nom...",
+    "noResults": "No s'ha trobat cap usuari.",
+    "organizerBadge": "Organitzador"
+  },
+  "userSearchList": {
+    "searchPlaceholder": "Cerca per nom...",
+    "noResults": "No s'han trobat usuaris."
   },
   "photoEditor": {
     "chooserTitle": "Canviar foto",

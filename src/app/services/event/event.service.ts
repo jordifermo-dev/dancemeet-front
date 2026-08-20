@@ -30,6 +30,10 @@ export class EventService {
     return this.http.put<{ success: boolean }>(`${this.baseUrl}/${id}`, payload);
   }
 
+  deleteEvent(id: string): Observable<{ success: boolean }> {
+    return this.http.delete<{ success: boolean }>(`${this.baseUrl}/${id}`);
+  }
+
   createSeries(payload: CreateEventSeriesPayload): Observable<{ seriesId: string; events: Event[] }> {
     return this.http.post<{ seriesId: string; events: Event[] }>(`${this.baseUrl}/series`, payload);
   }

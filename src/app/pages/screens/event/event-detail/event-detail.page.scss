@@ -271,6 +271,44 @@
   }
 }
 
+// Same "solid primary tint" language as user-card.component.scss's
+// .follow-btn-follow - a call-to-action banner, not an alert/warning, so it
+// borrows the app's own primary color instead of a danger/warning one.
+.manager-invite-banner {
+  background: var(--ion-color-primary-tint);
+  color: var(--ion-color-primary-contrast);
+  border-radius: 16px;
+  padding: 14px 16px;
+  margin-bottom: 14px;
+
+  p {
+    margin: 0 0 10px;
+    font-size: 0.88rem;
+    font-weight: 600;
+  }
+}
+
+.manager-invite-actions {
+  display: flex;
+  gap: 10px;
+
+  ion-button {
+    flex: 1;
+    --box-shadow: none;
+  }
+}
+
+// Same look as the plain outline buttons below (Compartir/Añadir al
+// calendario): a card-colored pill with teal border/text - rather than a
+// transparent outline sitting directly on the banner's own teal background,
+// which (unlike those buttons, always on the page's own card/background
+// color) had nothing to contrast against.
+.decline-invite-btn {
+  --background: var(--app-surface-card);
+  --border-color: var(--ion-color-primary);
+  --color: var(--ion-color-primary);
+}
+
 .section {
   background: var(--app-surface-card);
   border-radius: 16px;

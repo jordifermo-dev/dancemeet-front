@@ -59,10 +59,12 @@ export function buildEventCardView(
     relation: event.relation,
     isOwnEvent,
     // isOwnEvent first - the backend creates a real Favorite record for the
-    // creator on createEvent(), so they do attend their own event, but on
-    // Favorites (the one screen that omits attendedEventIds - see the param
-    // comment above) event.relation is 'creator', not 'favorite', since that
-    // field's job is picking ONE badge to show, not listing every relation.
-    isAttending: isOwnEvent || (attendedEventIds ? attendedEventIds.has(event.id) : event.relation === 'favorite'),
+    // creator on createEvent() (and, the same way, for an accepted manager
+    // on respondToInvite() - see EventManagerService) so both attend their
+    // event without an explicit favorite action. On Favorites (the one
+    // screen that omits attendedEventIds - see the param comment above),
+    // appearing in the list AT ALL - either relation value - already implies
+    // a real Favorite row exists, so any truthy `relation` means attending.
+    isAttending: isOwnEvent || (attendedEventIds ? attendedEventIds.has(event.id) : !!event.relation),
   };
 }

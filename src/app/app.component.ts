@@ -2,6 +2,7 @@ import { Component, effect, inject } from '@angular/core';
 import { IonApp, IonRouterOutlet } from '@ionic/angular/standalone';
 import { Capacitor } from '@capacitor/core';
 import { StatusBar, Style } from '@capacitor/status-bar';
+import { Keyboard } from '@capacitor/keyboard';
 import { AuthService } from './services/core/auth.service';
 import { NotificationService } from './services/notifications/notification.service';
 import { ThemeService } from './services/core/theme.service';
@@ -28,6 +29,25 @@ export class AppComponent {
     // status bar is told it's not overlaying the WebView.
     if (Capacitor.isNativePlatform()) {
       void this.initStatusBar();
+
+      // Some Android WebViews (seen on older/lower-end devices) don't
+      // repaint ion-content's scroll area after the on-screen keyboard
+      // closes - the page stays visually blank (DOM's still there, it just
+      // never re-renders at the new viewport height) until something else
+      // forces a layout pass. A plain 'resize' event alone wasn't enough on
+      // the device this was reproduced on (confirmed via logcat: the
+      // listener fires, the page still stayed blank) - forcing a real
+      // reflow by toggling document.body's height is the more reliable
+      // trick for this class of bug. There's no other listener for this
+      // event anywhere in the app, so it was silently firing into the void
+      // before this was added.
+      void Keyboard.addListener('keyboardDidHide', () => {
+        window.dispatchEvent(new Event('resize'));
+        document.body.style.height = '100.01%';
+        requestAnimationFrame(() => {
+          document.body.style.height = '';
+        });
+      });
 
       // Re-applies whenever Light/Dark/System (or the OS preference behind
       // "System") changes, so the native status bar never gets stuck on the

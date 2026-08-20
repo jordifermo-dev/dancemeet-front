@@ -11,13 +11,20 @@ export interface SocialLinks {
   pinterest?: string;
 }
 
-/** One row of a followers/following list. */
+/** One row of a followers/following/attendees list. followedAt is 0 for a
+ * "not yet related" row synthesized from a whole-app search result (see
+ * follow-list.page's mergedItems) - there's no real "since when" for a
+ * stranger, so those rows are always name-sorted regardless of sortMode.
+ * email/showEmail are only populated for that same synthesized case (an
+ * existing follow/attendee relation never needed to show it). */
 export interface FollowUser {
   id: string;
   name: string;
   photoUrl?: string;
   disciplineIds: string[];
   followedAt: number;
+  email?: string;
+  showEmail?: boolean;
 }
 
 export interface User {
