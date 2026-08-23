@@ -1,0 +1,29 @@
+<ion-button class="view-mode-menu-button" (click)="openMenu($event)">
+  <ion-icon slot="icon-only" name="ellipsis-vertical-outline"></ion-icon>
+</ion-button>
+
+<ion-popover [isOpen]="isOpen()" [event]="popoverEvent()" side="bottom" alignment="end" (didDismiss)="isOpen.set(false)">
+  <ng-template>
+    <div class="view-mode-menu-list">
+      <button type="button" class="view-mode-menu-option" [class.selected]="viewMode === 'list'" (click)="select('list')">
+        <ion-icon name="list-outline"></ion-icon>
+        <span>{{ 'explorer.viewList' | translate }}</span>
+      </button>
+      <button type="button" class="view-mode-menu-option" [class.selected]="viewMode === 'calendar'" (click)="select('calendar')">
+        <ion-icon name="calendar-outline"></ion-icon>
+        <span>{{ 'explorer.viewCalendar' | translate }}</span>
+      </button>
+      <button type="button" class="view-mode-menu-option" [class.selected]="viewMode === 'gallery'" (click)="select('gallery')">
+        <ion-icon name="images-outline"></ion-icon>
+        <span>{{ 'explorer.viewModeGallery' | translate }}</span>
+      </button>
+      @if (showCreateEvent) {
+        <div class="view-mode-menu-divider"></div>
+        <button type="button" class="view-mode-menu-option" (click)="onCreateEvent()">
+          <ion-icon name="add-circle-outline"></ion-icon>
+          <span>{{ 'profile.createEventButton' | translate }}</span>
+        </button>
+      }
+    </div>
+  </ng-template>
+</ion-popover>

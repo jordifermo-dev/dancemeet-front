@@ -206,6 +206,62 @@
   }
 }
 
+// Instagram-style icon-only tab row (Información/Galería) - same pattern as
+// user-detail.page.scss's own version, kept in sync deliberately rather than
+// factored into a shared component (two rules, no shared behavior to extract).
+.detail-view-toggle {
+  display: flex;
+  border-top: 1px solid var(--ion-color-light-shade);
+  border-bottom: 1px solid var(--ion-color-light-shade);
+  margin-bottom: 14px;
+}
+
+.detail-view-toggle-btn {
+  flex: 1;
+  appearance: none;
+  border: none;
+  background: transparent;
+  padding: 10px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ion-color-medium);
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+
+  ion-icon {
+    font-size: 1.4rem;
+  }
+
+  &.active {
+    color: var(--app-text-strong);
+    border-bottom-color: var(--app-text-strong);
+  }
+}
+
+// Matches the notification bell/settings icons elsewhere in the app's
+// header bars - a bare, colored icon rather than app-photo-editor's own
+// filled-circle badge (built for overlaying an avatar/cover preview, not
+// for sitting in a toolbar).
+.add-photo-toolbar-button {
+  --color: var(--ion-color-primary);
+}
+
+// app-photo-editor's own trigger button is replaced by .add-photo-toolbar-
+// button above (via openChooser(), see the template) - this keeps the
+// component mounted (so its chooser sheet/cropper overlay still work, both
+// position:fixed and unaffected by this) while making its own default badge
+// invisible. display:none isn't an option here - it would unmount those
+// same fixed-position overlays instead of just hiding the trigger.
+.hidden-photo-editor {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+}
+
 .event-tags {
   display: flex;
   flex-wrap: wrap;

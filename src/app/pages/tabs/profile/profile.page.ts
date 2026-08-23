@@ -26,12 +26,16 @@ import {
   addCircleOutline,
   refreshOutline,
   checkmarkOutline,
+  informationCircleOutline,
+  gridOutline,
+  cameraOutline,
 } from 'ionicons/icons';
 import { AuthService } from '../../../services/core/auth.service';
 import { UserService } from '../../../services/user/user.service';
 import { DisciplineService } from '../../../services/event/discipline.service';
 import { EventTypeService } from '../../../services/event/event-type.service';
 import { FavoriteService } from '../../../services/favorites/favorite.service';
+import { GalleryService } from '../../../services/gallery/gallery.service';
 import { AppLanguage, LanguageService, SUPPORTED_LANGUAGES } from '../../../services/core/language.service';
 import { CitySuggestion, GeocodingService } from '../../../services/location/geocoding.service';
 import { ComponentWithUnsavedChanges } from '../../../guards/unsaved-changes.guard';
@@ -44,6 +48,7 @@ import {
   EVENT_TYPE_NAMES,
   EventStatus,
   EVENT_STATUSES,
+  GalleryPhotoWithEvent,
   PriceOption,
   RelationOption,
   UpdateUserPayload,
@@ -53,6 +58,8 @@ import { DISCIPLINE_ICON_FILES, SocialIconKey, socialIconUrl, sortByNameOrder, S
 import { MapType } from '../../../shared/location/maps';
 import { LocationPickerComponent } from '../../../shared/location/location-picker/location-picker.component';
 import { PhotoEditorComponent } from '../../../shared/user/photo-editor/photo-editor.component';
+import { PhotoGridComponent } from '../../../shared/gallery/photo-grid/photo-grid.component';
+import { LightboxPhoto, PhotoLightboxComponent } from '../../../shared/gallery/photo-lightbox/photo-lightbox.component';
 import { NotificationBellComponent } from '../../../shared/notifications/notification-bell/notification-bell.component';
 import { FilterSheetHeaderComponent } from '../../../shared/filters/filter-sheet-header/filter-sheet-header.component';
 import { FilterActionsRowComponent } from '../../../shared/filters/filter-actions-row/filter-actions-row.component';
@@ -138,6 +145,8 @@ const LANGUAGE_OPTIONS = SUPPORTED_LANGUAGES.map((code) => ({
     FilterActionsRowComponent,
     ChipGridComponent,
     LocationPickerComponent,
+    PhotoGridComponent,
+    PhotoLightboxComponent,
   ],
 })
 export class ProfilePage implements OnInit, ViewWillEnter, ComponentWithUnsavedChanges {
@@ -147,6 +156,7 @@ export class ProfilePage implements OnInit, ViewWillEnter, ComponentWithUnsavedC
   private readonly disciplineService = inject(DisciplineService);
   private readonly eventTypeService = inject(EventTypeService);
   private readonly favoriteService = inject(FavoriteService);
+  private readonly galleryService = inject(GalleryService);
   private readonly languageService = inject(LanguageService);
   private readonly geocodingService = inject(GeocodingService);
   private readonly translate = inject(TranslateService);
@@ -164,6 +174,52 @@ export class ProfilePage implements OnInit, ViewWillEnter, ComponentWithUnsavedC
   readonly followersCount = computed(() => this.currentUser()?.followedId?.length ?? 0);
   readonly followingCount = computed(() => this.currentUser()?.followingId?.length ?? 0);
   readonly attendedEventsCount = signal(0);
+
+  // --- Instagram-style info/gallery toggle -----------------------------
+
+  readonly detailViewMode = signal<'info' | 'gallery'>('info');
+  readonly profileGallery = signal<GalleryPhotoWithEvent[]>([]);
+
+  readonly galleryGridItems = computed(() => this.profileGallery().map((photo) => ({ id: photo.id, photoUrl: photo.photoUrl })));
+
+  readonly lightboxItems = computed<LightboxPhoto[]>(() =>
+    this.profileGallery().map((photo) => ({
+      id: photo.id,
+      photoUrl: photo.photoUrl,
+      // Absent for a photo posted straight to the profile - no event to link to.
+      relatedLinkRoute: photo.eventId ? ['/events', photo.eventId] : undefined,
+      relatedLinkLabel: photo.eventTitle,
+    })),
+  );
+
+  readonly lightboxOpen = signal(false);
+  readonly lightboxStartIndex = signal(0);
+
+  openLightbox(photoId: string): void {
+    const index = this.profileGallery().findIndex((photo) => photo.id === photoId);
+    if (index === -1) {
+      return;
+    }
+    this.lightboxStartIndex.set(index);
+    this.lightboxOpen.set(true);
+  }
+
+  private refreshGallery(userId: string): void {
+    this.galleryService.getUserGallery(userId).subscribe({
+      next: (photos) => this.profileGallery.set(photos),
+      error: () => this.profileGallery.set([]),
+    });
+  }
+
+  onGalleryPhotoUploaded(url: string): void {
+    const user = this.currentUser();
+    if (!user) {
+      return;
+    }
+    this.galleryService.postProfilePhoto(user.id, url).subscribe({
+      next: () => this.refreshGallery(user.id),
+    });
+  }
 
   readonly accountForm = this.fb.nonNullable.group({
     name: [''],
@@ -250,6 +306,9 @@ export class ProfilePage implements OnInit, ViewWillEnter, ComponentWithUnsavedC
       addCircleOutline,
       refreshOutline,
       checkmarkOutline,
+      informationCircleOutline,
+      gridOutline,
+      cameraOutline,
     });
 
     // The draft must always track *whoever is currently authenticated*, not
@@ -388,6 +447,7 @@ export class ProfilePage implements OnInit, ViewWillEnter, ComponentWithUnsavedC
     this.favoriteService.getFavoritedEvents(user.id).subscribe({
       next: (events) => this.attendedEventsCount.set(events.length),
     });
+    this.refreshGallery(user.id);
 
     this.baseline = this.buildSnapshot();
   }

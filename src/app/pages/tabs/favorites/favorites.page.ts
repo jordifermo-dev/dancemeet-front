@@ -20,10 +20,8 @@ import {
   close,
   locateOutline,
   calendarOutline,
-  listOutline,
   optionsOutline,
   chevronDownOutline,
-  addCircleOutline,
   refreshOutline,
   checkmarkOutline,
   closeOutline,
@@ -50,6 +48,8 @@ import { ChipGridComponent } from '../../../shared/filters/chip-grid/chip-grid.c
 import { FilterAllComponent } from '../../../shared/filters/filter-all/filter-all.component';
 import { DatePickerFieldComponent } from '../../../shared/calendar/date-picker-field/date-picker-field.component';
 import { LocationPickerComponent } from '../../../shared/location/location-picker/location-picker.component';
+import { PhotoGridComponent } from '../../../shared/gallery/photo-grid/photo-grid.component';
+import { ViewModeMenuComponent } from '../../../shared/event/view-mode-menu/view-mode-menu.component';
 
 @Component({
   selector: 'app-favorites',
@@ -79,6 +79,8 @@ import { LocationPickerComponent } from '../../../shared/location/location-picke
     EventCalendarComponent,
     CalendarGranularityToggleComponent,
     SeriesAttendConfirmComponent,
+    PhotoGridComponent,
+    ViewModeMenuComponent,
   ],
 })
 export class FavoritesPage implements OnInit, AfterViewInit, OnDestroy, ViewWillEnter {
@@ -107,10 +109,8 @@ export class FavoritesPage implements OnInit, AfterViewInit, OnDestroy, ViewWill
       close,
       locateOutline,
       calendarOutline,
-      listOutline,
       optionsOutline,
       chevronDownOutline,
-      addCircleOutline,
       refreshOutline,
       checkmarkOutline,
       closeOutline,
@@ -122,6 +122,17 @@ export class FavoritesPage implements OnInit, AfterViewInit, OnDestroy, ViewWill
     effect(() => {
       this.refreshNotifier.version();
       untracked(() => this.loadFavorites());
+    });
+
+    // Only fetched while "browse by photo" is actually active (see
+    // event-list-filters.ts's own refreshGalleryCovers) - re-runs whenever
+    // the filtered event list changes while that mode stays selected.
+    effect(() => {
+      if (this.filters.viewMode() !== 'gallery') {
+        return;
+      }
+      const eventIds = this.cardViews().map((view) => view.id);
+      untracked(() => this.filters.refreshGalleryCovers(eventIds));
     });
   }
 
@@ -178,9 +189,29 @@ export class FavoritesPage implements OnInit, AfterViewInit, OnDestroy, ViewWill
     );
   });
 
+  /** "Browse by photo" mode (see event-list-filters.ts's own doc comment) -
+   * each event's gallery cover, falling back to its own imageUrl until it
+   * has a real shared photo, so this mode is never emptier than the list.
+   * photoCount (0 when falling back to imageUrl) drives the grid's own
+   * "several photos"/"no photos shared yet" badge. */
+  readonly galleryGridItems = computed(() => {
+    const covers = this.filters.galleryCoverUrls();
+    return this.cardViews().map((view) => {
+      const cover = covers[view.id];
+      return { id: view.id, photoUrl: cover?.photoUrl ?? view.imageUrl, photoCount: cover?.count ?? 0 };
+    });
+  });
+
   ngOnInit(): void {
     this.filters.loadTaxonomies();
     this.loadFavorites();
+  }
+
+  /** Tapping a photo here jumps straight to that event's detail page - unlike
+   * user-detail/event-detail's own galleries, there's no lightbox in this
+   * mode, since the point is browsing *events*, not viewing photos. */
+  openGalleryEvent(eventId: string): void {
+    this.router.navigate(['/events', eventId], { queryParams: { origin: '/tabs/favorites' } });
   }
 
   /** Ionic keeps this tab's instance alive, so re-fetch every time it's

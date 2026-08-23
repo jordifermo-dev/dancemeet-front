@@ -18,6 +18,9 @@ export interface Event {
   status: EventStatus;
   isFree: boolean;
   price: number;
+  /** Whether attendees (not just the organizer/managers) can post photos to
+   * this event's gallery - individual per event instance, defaults true. */
+  allowAttendeePhotos: boolean;
   creatorId: string;
   address: string;
   city: string;
@@ -77,8 +80,10 @@ export interface EventSearchParams {
 /** Partial update sent to PUT /api/events/:id - any subset of editable event fields. */
 export type UpdateEventPayload = Partial<Omit<Event, 'id' | 'creatorId' | 'createdAt' | 'updatedAt'>>;
 
-/** Payload sent to POST /api/events - every field CreateEventDto requires. */
-export type CreateEventPayload = Omit<Event, 'id' | 'createdAt' | 'updatedAt'>;
+/** Payload sent to POST /api/events - every field CreateEventDto requires.
+ * allowAttendeePhotos is excluded - the backend defaults it to true, same as
+ * CreateEventDto not accepting it (see UpdateEventDto, which does). */
+export type CreateEventPayload = Omit<Event, 'id' | 'createdAt' | 'updatedAt' | 'allowAttendeePhotos'>;
 
 export type RecurrenceFrequency = 'weekly' | 'monthlyNthWeekday';
 
@@ -114,9 +119,23 @@ export interface CreateEventSeriesPayload extends Omit<CreateEventPayload, 'even
 /** Payload sent to PATCH /api/events/series/:seriesId - bulk-edits every
  * instance of a series at once. No absolute date fields (each instance
  * keeps its own date); timeFrom/timeTo (given together) shift every
- * instance's time-of-day while preserving its date and duration. */
+ * instance's time-of-day while preserving its date and duration.
+ * allowAttendeePhotos is excluded - it's individual per event instance, not
+ * a series-wide setting (see PatchEventSeriesDto, backend). */
 export type PatchEventSeriesPayload = Partial<
-  Omit<Event, 'id' | 'creatorId' | 'createdAt' | 'updatedAt' | 'eventDateFrom' | 'eventDateTo' | 'seriesId' | 'seriesIndex' | 'seriesTotal'>
+  Omit<
+    Event,
+    | 'id'
+    | 'creatorId'
+    | 'createdAt'
+    | 'updatedAt'
+    | 'eventDateFrom'
+    | 'eventDateTo'
+    | 'seriesId'
+    | 'seriesIndex'
+    | 'seriesTotal'
+    | 'allowAttendeePhotos'
+  >
 > & {
   timeFrom?: string;
   timeTo?: string;

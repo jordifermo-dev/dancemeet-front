@@ -4,10 +4,6 @@
   --background: var(--ion-color-light);
 }
 
-.view-mode-button {
-  --color: var(--ion-color-primary);
-}
-
 .top-overlay {
   position: absolute;
   top: 0;
@@ -181,6 +177,10 @@
   // Same measured-overlay padding-top as .user-events-list (see
   // listTopPadding) - <app-event-calendar> handles its own internal spacing
   // beyond that.
+  padding: 0 16px 24px;
+}
+
+.user-events-gallery {
   padding: 0 16px 24px;
 }
 

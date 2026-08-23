@@ -5,13 +5,10 @@
     </ion-buttons>
     <ion-title>{{ 'userEvents.title' | translate }}</ion-title>
     <ion-buttons slot="end">
-      <ion-button
-        class="view-mode-button"
-        (click)="filters.toggleViewMode()"
-        [attr.aria-label]="(filters.viewMode() === 'list' ? 'explorer.viewCalendar' : 'explorer.viewList') | translate"
-      >
-        <ion-icon slot="icon-only" [name]="filters.viewMode() === 'list' ? 'calendar-outline' : 'list-outline'"></ion-icon>
-      </ion-button>
+      <app-view-mode-menu
+        [viewMode]="filters.viewMode()"
+        (viewModeChange)="filters.setViewMode($event)"
+      ></app-view-mode-menu>
     </ion-buttons>
   </ion-toolbar>
 </ion-header>
@@ -88,7 +85,7 @@
         }
       }
     </div>
-  } @else {
+  } @else if (filters.viewMode() === 'calendar') {
     <div class="user-events-calendar" [style.paddingTop.px]="filters.listTopPadding()">
       <app-event-calendar
         [events]="filteredEvents()"
@@ -101,6 +98,20 @@
         [maxDate]="filters.appliedDateTo() ?? null"
         (attendToggle)="onAttendToggle($event)"
       ></app-event-calendar>
+    </div>
+  } @else {
+    <div class="user-events-gallery" [style.paddingTop.px]="filters.listTopPadding()">
+      @if (filters.loading()) {
+        <div class="filters.loading-row">
+          <ion-spinner name="crescent"></ion-spinner>
+        </div>
+      } @else if (galleryGridItems().length === 0) {
+        <div class="empty-state">
+          <p>{{ 'favorites.empty' | translate }}</p>
+        </div>
+      } @else {
+        <app-photo-grid [photos]="galleryGridItems()" (photoTap)="openGalleryEvent($event)"></app-photo-grid>
+      }
     </div>
   }
 </ion-content>

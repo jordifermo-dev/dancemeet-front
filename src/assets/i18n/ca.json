@@ -81,6 +81,9 @@
     "typeRecurringSeriesCreated": "Nous esdeveniments recurrents",
     "typeEventManagerInvite": "Invitacions a organitzar esdeveniments",
     "typeEventAttendeeInvite": "Invitacions a assistir",
+    "typeGalleryPhotoFollowed": "Fotos dels teus seguits",
+    "typeGalleryPhotoAttending": "Fotos als teus esdeveniments",
+    "typeGalleryPhotoProfile": "Fotos de perfil dels teus seguits",
     "disabledBadge": "Desactivada",
     "disabledTypesHint": "Tens tipus de notificació desactivats.",
     "manageLink": "Gestiona",
@@ -263,7 +266,8 @@
     "mapExpand": "Amplia el mapa a pantalla completa",
     "mapCollapse": "Minimitza el mapa",
     "viewCalendar": "Veure com a calendari",
-    "viewList": "Veure com a llista"
+    "viewList": "Veure com a llista",
+    "viewModeGallery": "Veure per fotos"
   },
   "calendar": {
     "month": "Mes",
@@ -379,6 +383,8 @@
     "statusLabel": "Estat",
     "isFreeLabel": "Esdeveniment gratuït",
     "priceLabel": "Preu (€)",
+    "allowAttendeePhotosLabel": "Els assistents poden compartir fotos",
+    "allowAttendeePhotosHint": "Si ho desactives, només l'organitzador i els gestors podran afegir fotos a la galeria d'aquest esdeveniment.",
     "addressLabel": "Adreça",
     "cityLabel": "Ciutat",
     "latitudeLabel": "Latitud",
@@ -427,6 +433,21 @@
     "dragHint": "Arrossega per moure, fes servir el control per fer zoom",
     "cancel": "Cancel·lar",
     "confirm": "Confirmar"
+  },
+  "gallery": {
+    "tabInfo": "Informació",
+    "tabGallery": "Galeria",
+    "emptyState": "Encara no s'han compartit fotos.",
+    "addPhoto": "Afegir foto",
+    "postedFromEvent": "Des de",
+    "viewEventDetail": "Veure esdeveniment",
+    "viewPosterProfile": "Veure perfil",
+    "deleteConfirmTitle": "Eliminar foto",
+    "deleteConfirmMessage": "Vols eliminar aquesta foto de la galeria?",
+    "deleteError": "No s'ha pogut eliminar la foto.",
+    "uploadError": "No s'ha pogut compartir la foto.",
+    "multiplePhotos": "Diverses fotos compartides en aquest esdeveniment",
+    "noPhotosYet": "Encara no s'han compartit fotos en aquest esdeveniment - es mostra la portada de l'esdeveniment"
   },
   "firebaseErrors": {
     "auth/invalid-email": "Aquest email no és vàlid.",

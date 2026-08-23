@@ -15,14 +15,18 @@ import { TranslatePipe } from '@ngx-translate/core';
 import { addIcons } from 'ionicons';
 import { closeOutline, checkmarkOutline } from 'ionicons/icons';
 
-export type CropAspect = 'square' | 'portrait';
+/** 'gallery' is deliberately not just another entry in VIEWPORT_SIZES below -
+ * unlike the avatar (circular) and event cover (fixed small card), a gallery
+ * photo should feel like the main event on screen, sized off the actual
+ * viewport instead of a small fixed box - see galleryViewportSize(). */
+export type CropAspect = 'square' | 'portrait' | 'gallery';
 
 interface Size {
   width: number;
   height: number;
 }
 
-const VIEWPORT_SIZES: Record<CropAspect, Size> = {
+const VIEWPORT_SIZES: Record<'square' | 'portrait', Size> = {
   square: { width: 280, height: 280 },
   portrait: { width: 240, height: 320 },
 };
@@ -30,7 +34,18 @@ const VIEWPORT_SIZES: Record<CropAspect, Size> = {
 const OUTPUT_SIZES: Record<CropAspect, Size> = {
   square: { width: 480, height: 480 },
   portrait: { width: 720, height: 960 },
+  gallery: { width: 960, height: 1200 },
 };
+
+/** A tall "post" ratio (4:5, same as Instagram's own portrait posts) rather
+ * than square/circular - and sized off the real screen instead of a small
+ * fixed box, so the photo (not the surrounding chrome) dominates the crop
+ * screen. */
+function galleryViewportSize(): Size {
+  const width = Math.round(Math.min(window.innerWidth * 0.88, 420));
+  const height = Math.round(width * 1.25);
+  return { width, height };
+}
 
 /** Pan-and-zoom crop UI: drag the image to reposition it, use the slider to
  * zoom, then confirm to render the visible viewport onto an output canvas at
@@ -82,7 +97,7 @@ export class ImageCropperComponent implements OnInit, OnDestroy {
   }
 
   get viewportSize(): Size {
-    return VIEWPORT_SIZES[this.aspect];
+    return this.aspect === 'gallery' ? galleryViewportSize() : VIEWPORT_SIZES[this.aspect];
   }
 
   get imageTransform(): string {

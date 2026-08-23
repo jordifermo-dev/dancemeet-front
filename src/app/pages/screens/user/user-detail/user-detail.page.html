@@ -44,134 +44,170 @@
         </div>
       </div>
 
-      <!-- Todas las acciones sobre este perfil, juntas justo debajo de las estadísticas -
-           ocultas por completo si el perfil visitado es el tuyo propio. -->
-      @if (!isMe()) {
-        <div class="actions-section">
-          @if (amFollowing()) {
-            <ion-button expand="block" fill="outline" color="primary" [disabled]="followActionBusy()" (click)="confirmUnfollow()">
-              <ion-icon slot="start" name="person-remove-outline"></ion-icon>
-              {{ 'userDetail.unfollowButton' | translate }}
-            </ion-button>
-          }
-          @if (isMyFollower()) {
-            <ion-button expand="block" fill="outline" color="primary" [disabled]="followActionBusy()" (click)="confirmRemoveFollower()">
-              <ion-icon slot="start" name="person-remove-outline"></ion-icon>
-              {{ (removeFollowerFlash.active() ? 'eventDetail.savedButton' : 'userDetail.removeFollowerButton') | translate }}
-            </ion-button>
-          }
-          @if (!amFollowing() && !isMyFollower()) {
-            <ion-button expand="block" class="btn-fill" [disabled]="followActionBusy()" (click)="follow()">
-              <ion-icon slot="start" [name]="followFlash.active() ? 'checkmark-outline' : 'person-add-outline'"></ion-icon>
-              {{ (followFlash.active() ? 'eventDetail.savedButton' : 'userDetail.followButton') | translate }}
-            </ion-button>
-          }
-          @if (canSaveContact()) {
-            <ion-button expand="block" fill="outline" (click)="saveContact()">
-              <ion-icon slot="start" [name]="contactFlash.active() ? 'checkmark-outline' : 'download-outline'"></ion-icon>
-              {{ (contactFlash.active() ? 'eventDetail.savedButton' : 'userDetail.saveContactButton') | translate }}
-            </ion-button>
-          }
-        </div>
-      }
+      <!-- Par de iconos estilo Instagram (Información/Galería) - referencia
+           de estilo tomada de la fila de pestañas de un perfil de Instagram. -->
+      <div class="detail-view-toggle">
+        <button
+          type="button"
+          class="detail-view-toggle-btn"
+          [class.active]="detailViewMode() === 'info'"
+          (click)="detailViewMode.set('info')"
+        >
+          <ion-icon name="information-circle-outline"></ion-icon>
+        </button>
+        <button
+          type="button"
+          class="detail-view-toggle-btn"
+          [class.active]="detailViewMode() === 'gallery'"
+          (click)="detailViewMode.set('gallery')"
+        >
+          <ion-icon name="grid-outline"></ion-icon>
+        </button>
+      </div>
 
-      <!-- Datos de contacto -->
-      <section class="section">
-        <h2>{{ 'profile.contactSection' | translate }}</h2>
-        @if (hasContactInfo()) {
-          @if (user()!.showEmail) {
-            <div class="info-row">
-              <ion-icon [src]="socialIconUrl('email')"></ion-icon>
-              <span>{{ user()!.email }}</span>
-            </div>
-          }
-          @if (user()!.showPhone && user()!.phone) {
-            <div class="info-row">
-              <ion-icon [src]="socialIconUrl('phone')"></ion-icon>
-              <span>{{ user()!.phone }}</span>
-            </div>
-          }
-        } @else {
-          <p class="empty-message">{{ 'userDetail.contactEmpty' | translate }}</p>
-        }
-      </section>
-
-      <!-- Redes sociales -->
-      <section class="section">
-        <h2>{{ 'profile.socialLinksLabel' | translate }}</h2>
-        @if (socialLinks().length) {
-          <div class="social-icon-links">
-            @for (link of socialLinks(); track link.key) {
-              <a
-                class="social-icon-link"
-                [href]="link.url"
-                target="_blank"
-                rel="noopener"
-                [attr.aria-label]="socialNetworkLabelKey(link.key) | translate"
-              >
-                <ion-icon [src]="socialIconUrl(link.key)"></ion-icon>
-              </a>
+      @if (detailViewMode() === 'gallery') {
+        <app-photo-grid
+          [photos]="galleryGridItems()"
+          emptyStateKey="gallery.emptyState"
+          (photoTap)="openLightbox($event)"
+        ></app-photo-grid>
+      } @else {
+        <!-- Todas las acciones sobre este perfil, juntas justo debajo de las estadísticas -
+             ocultas por completo si el perfil visitado es el tuyo propio. -->
+        @if (!isMe()) {
+          <div class="actions-section">
+            @if (amFollowing()) {
+              <ion-button expand="block" fill="outline" color="primary" [disabled]="followActionBusy()" (click)="confirmUnfollow()">
+                <ion-icon slot="start" name="person-remove-outline"></ion-icon>
+                {{ 'userDetail.unfollowButton' | translate }}
+              </ion-button>
+            }
+            @if (isMyFollower()) {
+              <ion-button expand="block" fill="outline" color="primary" [disabled]="followActionBusy()" (click)="confirmRemoveFollower()">
+                <ion-icon slot="start" name="person-remove-outline"></ion-icon>
+                {{ (removeFollowerFlash.active() ? 'eventDetail.savedButton' : 'userDetail.removeFollowerButton') | translate }}
+              </ion-button>
+            }
+            @if (!amFollowing() && !isMyFollower()) {
+              <ion-button expand="block" class="btn-fill" [disabled]="followActionBusy()" (click)="follow()">
+                <ion-icon slot="start" [name]="followFlash.active() ? 'checkmark-outline' : 'person-add-outline'"></ion-icon>
+                {{ (followFlash.active() ? 'eventDetail.savedButton' : 'userDetail.followButton') | translate }}
+              </ion-button>
+            }
+            @if (canSaveContact()) {
+              <ion-button expand="block" fill="outline" (click)="saveContact()">
+                <ion-icon slot="start" [name]="contactFlash.active() ? 'checkmark-outline' : 'download-outline'"></ion-icon>
+                {{ (contactFlash.active() ? 'eventDetail.savedButton' : 'userDetail.saveContactButton') | translate }}
+              </ion-button>
             }
           </div>
-        } @else {
-          <p class="empty-message">{{ 'userDetail.socialLinksEmpty' | translate }}</p>
-        }
-      </section>
-
-      <!-- Preferencias -->
-      <section class="section">
-        <h2>{{ 'profile.preferencesSection' | translate }}</h2>
-
-        <p class="group-label first">{{ 'userDetail.eventTypesLabel' | translate }}</p>
-        @if (selectedEventTypes().length) {
-          <app-chip-grid [items]="eventTypeChips()" [interactive]="false"></app-chip-grid>
-        } @else {
-          <p class="empty-message">{{ 'userDetail.eventTypesEmpty' | translate }}</p>
         }
 
-        <p class="group-label">{{ 'userDetail.disciplinesLabel' | translate }}</p>
-        @if (selectedDisciplines().length) {
-          <app-chip-grid [items]="disciplineChips()" [interactive]="false"></app-chip-grid>
-        } @else {
-          <p class="empty-message">{{ 'userDetail.disciplinesEmpty' | translate }}</p>
-        }
+        <!-- Datos de contacto -->
+        <section class="section">
+          <h2>{{ 'profile.contactSection' | translate }}</h2>
+          @if (hasContactInfo()) {
+            @if (user()!.showEmail) {
+              <div class="info-row">
+                <ion-icon [src]="socialIconUrl('email')"></ion-icon>
+                <span>{{ user()!.email }}</span>
+              </div>
+            }
+            @if (user()!.showPhone && user()!.phone) {
+              <div class="info-row">
+                <ion-icon [src]="socialIconUrl('phone')"></ion-icon>
+                <span>{{ user()!.phone }}</span>
+              </div>
+            }
+          } @else {
+            <p class="empty-message">{{ 'userDetail.contactEmpty' | translate }}</p>
+          }
+        </section>
 
-        <p class="group-label">{{ 'userDetail.statusLabel' | translate }}</p>
-        @if (selectedStatuses().length) {
-          <app-chip-grid [items]="statusChips()" [interactive]="false"></app-chip-grid>
-        } @else {
-          <p class="empty-message">{{ 'userDetail.statusEmpty' | translate }}</p>
-        }
-      </section>
+        <!-- Redes sociales -->
+        <section class="section">
+          <h2>{{ 'profile.socialLinksLabel' | translate }}</h2>
+          @if (socialLinks().length) {
+            <div class="social-icon-links">
+              @for (link of socialLinks(); track link.key) {
+                <a
+                  class="social-icon-link"
+                  [href]="link.url"
+                  target="_blank"
+                  rel="noopener"
+                  [attr.aria-label]="socialNetworkLabelKey(link.key) | translate"
+                >
+                  <ion-icon [src]="socialIconUrl(link.key)"></ion-icon>
+                </a>
+              }
+            </div>
+          } @else {
+            <p class="empty-message">{{ 'userDetail.socialLinksEmpty' | translate }}</p>
+          }
+        </section>
 
-      <!-- Ubicación -->
-      <section class="section">
-        @if (showLocation()) {
-          <app-location-picker
-            titleKey="profile.locationSection"
-            [editable]="false"
-            [lat]="user()!.latitude"
-            [lng]="user()!.longitude"
-            [zoom]="zoomLevel()"
-            [mapType]="mapType()"
-            [showSearch]="false"
-            [showCurrentLocationButton]="false"
-            [addressLine]="userAddressLine()"
-            [showDirectionsButton]="true"
-            [directionsActive]="directionsFlash.active()"
-            (zoomIn)="zoomIn()"
-            (zoomOut)="zoomOut()"
-            (mapTypeToggle)="toggleMapType()"
-            (directions)="openDirections()"
-          ></app-location-picker>
-        } @else {
-          <h2>{{ 'profile.locationSection' | translate }}</h2>
-          <p class="city-only">{{ user()!.city }}</p>
-        }
-      </section>
+        <!-- Preferencias -->
+        <section class="section">
+          <h2>{{ 'profile.preferencesSection' | translate }}</h2>
+
+          <p class="group-label first">{{ 'userDetail.eventTypesLabel' | translate }}</p>
+          @if (selectedEventTypes().length) {
+            <app-chip-grid [items]="eventTypeChips()" [interactive]="false"></app-chip-grid>
+          } @else {
+            <p class="empty-message">{{ 'userDetail.eventTypesEmpty' | translate }}</p>
+          }
+
+          <p class="group-label">{{ 'userDetail.disciplinesLabel' | translate }}</p>
+          @if (selectedDisciplines().length) {
+            <app-chip-grid [items]="disciplineChips()" [interactive]="false"></app-chip-grid>
+          } @else {
+            <p class="empty-message">{{ 'userDetail.disciplinesEmpty' | translate }}</p>
+          }
+
+          <p class="group-label">{{ 'userDetail.statusLabel' | translate }}</p>
+          @if (selectedStatuses().length) {
+            <app-chip-grid [items]="statusChips()" [interactive]="false"></app-chip-grid>
+          } @else {
+            <p class="empty-message">{{ 'userDetail.statusEmpty' | translate }}</p>
+          }
+        </section>
+
+        <!-- Ubicación -->
+        <section class="section">
+          @if (showLocation()) {
+            <app-location-picker
+              titleKey="profile.locationSection"
+              [editable]="false"
+              [lat]="user()!.latitude"
+              [lng]="user()!.longitude"
+              [zoom]="zoomLevel()"
+              [mapType]="mapType()"
+              [showSearch]="false"
+              [showCurrentLocationButton]="false"
+              [addressLine]="userAddressLine()"
+              [showDirectionsButton]="true"
+              [directionsActive]="directionsFlash.active()"
+              (zoomIn)="zoomIn()"
+              (zoomOut)="zoomOut()"
+              (mapTypeToggle)="toggleMapType()"
+              (directions)="openDirections()"
+            ></app-location-picker>
+          } @else {
+            <h2>{{ 'profile.locationSection' | translate }}</h2>
+            <p class="city-only">{{ user()!.city }}</p>
+          }
+        </section>
+      }
     </div>
   }
 </ion-content>
+
+<app-photo-lightbox
+  [photos]="lightboxItems()"
+  [startIndex]="lightboxStartIndex()"
+  [isOpen]="lightboxOpen()"
+  (closed)="lightboxOpen.set(false)"
+></app-photo-lightbox>
 
 <ion-modal
   [isOpen]="showConfirmModal()"

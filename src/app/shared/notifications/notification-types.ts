@@ -10,6 +10,9 @@ export const ALL_NOTIFICATION_TYPES: NotificationType[] = [
   'new_follower',
   'event_manager_invite',
   'event_attendee_invite',
+  'gallery_photo_followed',
+  'gallery_photo_attending',
+  'gallery_photo_profile',
 ];
 
 export const NOTIFICATION_TYPE_ICONS: Record<NotificationType, string> = {
@@ -22,6 +25,9 @@ export const NOTIFICATION_TYPE_ICONS: Record<NotificationType, string> = {
   recurring_series_created: 'repeat-outline',
   event_manager_invite: 'ribbon-outline',
   event_attendee_invite: 'people-outline',
+  gallery_photo_followed: 'images-outline',
+  gallery_photo_attending: 'images-outline',
+  gallery_photo_profile: 'images-outline',
 };
 
 export const NOTIFICATION_TYPE_LABEL_KEYS: Record<NotificationType, string> = {
@@ -34,4 +40,7 @@ export const NOTIFICATION_TYPE_LABEL_KEYS: Record<NotificationType, string> = {
   recurring_series_created: 'notifications.typeRecurringSeriesCreated',
   event_manager_invite: 'notifications.typeEventManagerInvite',
   event_attendee_invite: 'notifications.typeEventAttendeeInvite',
+  gallery_photo_followed: 'notifications.typeGalleryPhotoFollowed',
+  gallery_photo_attending: 'notifications.typeGalleryPhotoAttending',
+  gallery_photo_profile: 'notifications.typeGalleryPhotoProfile',
 };

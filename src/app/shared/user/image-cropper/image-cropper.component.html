@@ -6,6 +6,7 @@
   <div
     class="cropper-viewport"
     [class.portrait]="aspect === 'portrait'"
+    [class.gallery]="aspect === 'gallery'"
     [style.width.px]="viewportSize.width"
     [style.height.px]="viewportSize.height"
     (pointerdown)="onPointerDown($event)"

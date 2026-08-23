@@ -1,0 +1,43 @@
+<ion-modal
+  [isOpen]="isOpen"
+  [initialBreakpoint]="1"
+  [breakpoints]="[0, 1]"
+  (didDismiss)="onDidDismiss()"
+>
+  <ng-template>
+    <div class="lightbox">
+      <button type="button" class="lightbox-close" (click)="close()">
+        <ion-icon name="close-outline"></ion-icon>
+      </button>
+
+      <div class="lightbox-track" #track (scroll)="onScroll()">
+        @for (photo of photos; track photo.id) {
+          <div class="lightbox-slide">
+            <img [src]="photo.photoUrl" alt="" />
+          </div>
+        }
+      </div>
+
+      @if (photos.length > 1) {
+        @if (currentIndex() > 0) {
+          <button type="button" class="lightbox-nav lightbox-nav-prev" (click)="goPrev()">
+            <ion-icon name="chevron-back-outline"></ion-icon>
+          </button>
+        }
+        @if (currentIndex() < photos.length - 1) {
+          <button type="button" class="lightbox-nav lightbox-nav-next" (click)="goNext()">
+            <ion-icon name="chevron-forward-outline"></ion-icon>
+          </button>
+        }
+      }
+
+      @if (currentPhoto(); as photo) {
+        @if (photo.relatedLinkRoute) {
+          <a class="lightbox-caption" [routerLink]="photo.relatedLinkRoute" (click)="close()">
+            {{ photo.relatedLinkLabel }}
+          </a>
+        }
+      }
+    </div>
+  </ng-template>
+</ion-modal>

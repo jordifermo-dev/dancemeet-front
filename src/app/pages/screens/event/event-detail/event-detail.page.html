@@ -4,6 +4,25 @@
       <ion-back-button defaultHref="/tabs/explorer" text=""></ion-back-button>
     </ion-buttons>
     <ion-title>{{ isCreateMode() ? ('eventDetail.createTitle' | translate) : event()?.title }}</ion-title>
+    @if (!isCreateMode() && !isEditMode() && detailViewMode() === 'gallery' && canPostPhoto()) {
+      <ion-buttons slot="end">
+        <ion-button
+          class="add-photo-toolbar-button"
+          [attr.aria-label]="'gallery.addPhoto' | translate"
+          (click)="galleryPhotoEditorRef.openChooser()"
+        >
+          <ion-icon slot="icon-only" name="camera-outline"></ion-icon>
+        </ion-button>
+        <app-photo-editor
+          #galleryPhotoEditorRef
+          class="hidden-photo-editor"
+          kind="gallery"
+          aspect="gallery"
+          nameForFile="galeria"
+          (uploaded)="onGalleryPhotoUploaded($event)"
+        ></app-photo-editor>
+      </ion-buttons>
+    }
   </ion-toolbar>
 </ion-header>
 
@@ -180,6 +199,16 @@
         }
       </section>
 
+      @if (!isCreateMode()) {
+        <section class="section">
+          <h2>{{ 'gallery.tabGallery' | translate }}</h2>
+          <ion-item lines="none" class="toggle-row">
+            <ion-toggle formControlName="allowAttendeePhotos">{{ 'eventDetail.allowAttendeePhotosLabel' | translate }}</ion-toggle>
+          </ion-item>
+          <p class="empty-message">{{ 'eventDetail.allowAttendeePhotosHint' | translate }}</p>
+        </section>
+      }
+
       <section class="section">
         <app-location-picker
           titleKey="profile.locationSection"
@@ -238,6 +267,27 @@
         </div>
       </div>
 
+      <!-- Par de iconos estilo Instagram (Información/Galería) - mismo
+           patrón/estilo que user-detail.page.html. -->
+      <div class="detail-view-toggle">
+        <button
+          type="button"
+          class="detail-view-toggle-btn"
+          [class.active]="detailViewMode() === 'info'"
+          (click)="detailViewMode.set('info')"
+        >
+          <ion-icon name="information-circle-outline"></ion-icon>
+        </button>
+        <button
+          type="button"
+          class="detail-view-toggle-btn"
+          [class.active]="detailViewMode() === 'gallery'"
+          (click)="detailViewMode.set('gallery')"
+        >
+          <ion-icon name="grid-outline"></ion-icon>
+        </button>
+      </div>
+
       @if (myPendingInvite()) {
         <div class="manager-invite-banner">
           <p>
@@ -270,37 +320,48 @@
         </div>
       }
 
-      <div class="event-tags">
-        @for (eventType of eventTypeTags(); track eventType.name) {
-          <span class="tag">
-            <img class="tag-icon" [src]="eventType.iconUrl" [alt]="eventType.name" />
-            {{ eventType.name }}
-          </span>
-        }
-        @for (discipline of disciplineTags(); track discipline.name) {
-          <span class="tag">
-            <img class="tag-icon" [src]="discipline.iconUrl" [alt]="discipline.name" />
-            {{ discipline.name }}
-          </span>
-        }
-        <span class="tag">
-          <img class="tag-icon" [src]="statusIconSrc()" [alt]="statusLabelKey() | translate" />
-          {{ statusLabelKey() | translate }}
-        </span>
-        <span class="tag tag-price">
-          @if (event()!.isFree) {
-            {{ 'eventCard.free' | translate }}
-          } @else {
-            {{ event()!.price }} €
+      @if (detailViewMode() === 'info') {
+        <div class="event-tags">
+          @for (eventType of eventTypeTags(); track eventType.name) {
+            <span class="tag">
+              <img class="tag-icon" [src]="eventType.iconUrl" [alt]="eventType.name" />
+              {{ eventType.name }}
+            </span>
           }
-        </span>
-      </div>
+          @for (discipline of disciplineTags(); track discipline.name) {
+            <span class="tag">
+              <img class="tag-icon" [src]="discipline.iconUrl" [alt]="discipline.name" />
+              {{ discipline.name }}
+            </span>
+          }
+          <span class="tag">
+            <img class="tag-icon" [src]="statusIconSrc()" [alt]="statusLabelKey() | translate" />
+            {{ statusLabelKey() | translate }}
+          </span>
+          <span class="tag tag-price">
+            @if (event()!.isFree) {
+              {{ 'eventCard.free' | translate }}
+            } @else {
+              {{ event()!.price }} €
+            }
+          </span>
+        </div>
 
-      <p class="event-detail-line">
-        <ion-icon name="calendar-outline"></ion-icon>
-        <span>{{ dateLabel() }}</span>
-      </p>
+        <p class="event-detail-line">
+          <ion-icon name="calendar-outline"></ion-icon>
+          <span>{{ dateLabel() }}</span>
+        </p>
+      }
 
+      @if (detailViewMode() === 'gallery') {
+        <app-photo-grid
+          [photos]="galleryGridItems()"
+          emptyStateKey="gallery.emptyState"
+          (photoTap)="openLightbox($event)"
+        ></app-photo-grid>
+      }
+
+      @if (detailViewMode() === 'info') {
       <div class="actions-row">
         <ion-button expand="block" fill="outline" (click)="addToCalendar()">
           <ion-icon slot="start" [name]="calendarFlash.active() ? 'checkmark-outline' : 'download-outline'"></ion-icon>
@@ -334,7 +395,6 @@
           }
         </div>
       }
-
       <section class="section">
         <h2>{{ 'eventDetail.descriptionSection' | translate }}</h2>
         <p class="description-text">{{ event()!.description }}</p>
@@ -383,9 +443,17 @@
           (directions)="openDirections()"
         ></app-location-picker>
       </section>
+      }
     </div>
   }
 </ion-content>
+
+<app-photo-lightbox
+  [photos]="lightboxItems()"
+  [startIndex]="lightboxStartIndex()"
+  [isOpen]="lightboxOpen()"
+  (closed)="lightboxOpen.set(false)"
+></app-photo-lightbox>
 
 <ion-modal
   [isOpen]="showValidationModal()"

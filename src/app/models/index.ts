@@ -4,4 +4,5 @@ export * from './event/event-type.model';
 export * from './event/event-status.model';
 export * from './event/event.model';
 export * from './event/event-manager.model';
+export * from './gallery/gallery.model';
 export * from './notification/notification.model';

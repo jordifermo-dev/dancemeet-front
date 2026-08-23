@@ -3,7 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
-export type UploadKind = 'profile' | 'event';
+export type UploadKind = 'profile' | 'event' | 'gallery';
 
 /** Uploads a cropped photo (as a base64 data URL) to the backend, which
  * stores it in Supabase Storage (see UploadService on the backend) and hands

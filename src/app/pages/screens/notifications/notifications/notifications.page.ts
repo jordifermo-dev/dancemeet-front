@@ -35,6 +35,9 @@ import {
   checkmarkOutline,
   closeOutline,
   repeatOutline,
+  ribbonOutline,
+  peopleOutline,
+  imagesOutline,
 } from 'ionicons/icons';
 import { AuthService } from '../../../../services/core/auth.service';
 import { NotificationService } from '../../../../services/notifications/notification.service';
@@ -258,6 +261,9 @@ export class NotificationsPage implements ViewWillEnter, AfterViewInit, OnDestro
       checkmarkOutline,
       closeOutline,
       repeatOutline,
+      ribbonOutline,
+      peopleOutline,
+      imagesOutline,
     });
     this.disciplineService.getAll().subscribe({
       next: (disciplines) => (this.disciplinesById = new Map(disciplines.map((d) => [d.id, d]))),

@@ -3,6 +3,8 @@ import { AuthService } from '../../services/core/auth.service';
 import { DisciplineService } from '../../services/event/discipline.service';
 import { EventTypeService } from '../../services/event/event-type.service';
 import { CitySuggestion, GeocodingService } from '../../services/location/geocoding.service';
+import { GalleryService } from '../../services/gallery/gallery.service';
+import { EventListViewMode } from '../event/view-mode-menu/view-mode-menu.component';
 import { SortPreferenceService } from '../../services/filters/sort-preference.service';
 import { MinSelectionWarningService } from './min-selection-warning.service';
 import { toggleWithMinimum } from './min-selection';
@@ -11,7 +13,16 @@ import { EVENT_SORT_OPTIONS, EventSortMode } from '../event/event-sort';
 import { DateQuickOption, ExplorerFiltersService } from '../../services/filters/explorer-filters.service';
 import { sortByNameOrder, STATUS_LABEL_KEYS } from '../event/icon-catalog';
 import { MapType } from '../location/maps';
-import { Discipline, DISCIPLINE_NAMES, EventType, EVENT_TYPE_NAMES, EventStatus, EVENT_STATUSES, PriceOption } from '../../models';
+import {
+  Discipline,
+  DISCIPLINE_NAMES,
+  EventType,
+  EVENT_TYPE_NAMES,
+  EventStatus,
+  EVENT_STATUSES,
+  GalleryCover,
+  PriceOption,
+} from '../../models';
 import {
   disciplineChipItems,
   eventTypeChipItems,
@@ -57,6 +68,7 @@ export function createEventListFilters(dateMode: EventListDateMode) {
   const minSelectionWarning = inject(MinSelectionWarningService);
   const dateUtils = inject(ExplorerFiltersService);
   const sortPreference = inject(SortPreferenceService);
+  const galleryService = inject(GalleryService);
 
   const defaultDateRange = (): { from: number | undefined; to: number | undefined } => {
     if (dateMode !== 'upcomingOnly') {
@@ -164,12 +176,32 @@ export function createEventListFilters(dateMode: EventListDateMode) {
   const disciplinesById = computed(() => new Map(disciplines().map((d) => [d.id, d])));
   const eventTypesById = computed(() => new Map(eventTypes().map((e) => [e.id, e])));
 
-  /** List vs calendar - independent per screen, so it's just a local signal,
-   * not SortPreferenceService-style shared state. */
-  const viewMode = signal<'list' | 'calendar'>('list');
+  /** List vs calendar vs gallery ("browse by photo", Wikiloc-style) -
+   * independent per screen, so it's just a local signal, not
+   * SortPreferenceService-style shared state. */
+  const viewMode = signal<EventListViewMode>('list');
   /** Owns the Mes/Semana/Día choice so the toggle (rendered in the page's own
    * fixed top-overlay) and <app-event-calendar>'s grid stay in sync. */
   const calendarGranularity = signal<CalendarGranularity>('month');
+
+  /** Cover photo (+count) per event, keyed by event id - only fetched on
+   * demand (see refreshGalleryCovers) while viewMode is 'gallery', so the
+   * normal list/calendar responses stay unbloated. */
+  const galleryCoverUrls = signal<Record<string, GalleryCover>>({});
+
+  /** Called by the consuming page (with whatever event ids it's currently
+   * showing) whenever viewMode flips to 'gallery' or the underlying list
+   * changes while already in that mode. */
+  function refreshGalleryCovers(eventIds: string[]): void {
+    if (!eventIds.length) {
+      galleryCoverUrls.set({});
+      return;
+    }
+    galleryService.getCoverPhotos(eventIds).subscribe({
+      next: (covers) => galleryCoverUrls.set(covers),
+      error: () => galleryCoverUrls.set({}),
+    });
+  }
 
   /** Real measured height of the fixed search/filter overlay, so the list's
    * top padding always clears it exactly - a hardcoded guess drifts the
@@ -234,8 +266,8 @@ export function createEventListFilters(dateMode: EventListDateMode) {
     searchInputTimer = setTimeout(() => searchTerm.set(term), 300);
   }
 
-  function toggleViewMode(): void {
-    viewMode.update((mode) => (mode === 'list' ? 'calendar' : 'list'));
+  function setViewMode(mode: EventListViewMode): void {
+    viewMode.set(mode);
   }
 
   function openSortModal(): void {
@@ -748,11 +780,13 @@ export function createEventListFilters(dateMode: EventListDateMode) {
     eventTypesById,
     viewMode,
     calendarGranularity,
+    galleryCoverUrls,
     listTopPadding,
     loadTaxonomies,
     observeOverlay,
     onSearchChange,
-    toggleViewMode,
+    setViewMode,
+    refreshGalleryCovers,
     openSortModal,
     selectSort,
     openDisciplineModal,

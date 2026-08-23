@@ -12,7 +12,7 @@ import {
   signal,
   untracked,
 } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import {
   IonHeader,
   IonToolbar,
@@ -34,7 +34,6 @@ import {
   close,
   locateOutline,
   calendarOutline,
-  listOutline,
   optionsOutline,
   chevronDownOutline,
   refreshOutline,
@@ -62,6 +61,8 @@ import { FilterActionsRowComponent } from '../../../../shared/filters/filter-act
 import { ChipGridComponent } from '../../../../shared/filters/chip-grid/chip-grid.component';
 import { FilterAllComponent } from '../../../../shared/filters/filter-all/filter-all.component';
 import { DatePickerFieldComponent } from '../../../../shared/calendar/date-picker-field/date-picker-field.component';
+import { PhotoGridComponent } from '../../../../shared/gallery/photo-grid/photo-grid.component';
+import { ViewModeMenuComponent } from '../../../../shared/event/view-mode-menu/view-mode-menu.component';
 
 /** "X's events" list (organized + favorited) - your own (no ?userId) or
  * someone else's (from their follower/following profile). Same card,
@@ -95,10 +96,13 @@ import { DatePickerFieldComponent } from '../../../../shared/calendar/date-picke
     EventCalendarComponent,
     CalendarGranularityToggleComponent,
     SeriesAttendConfirmComponent,
+    PhotoGridComponent,
+    ViewModeMenuComponent,
   ],
 })
 export class UserEventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWillEnter {
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
   private readonly authService = inject(AuthService);
   private readonly favoriteService = inject(FavoriteService);
   private readonly refreshNotifier = inject(EventListRefreshService);
@@ -128,7 +132,6 @@ export class UserEventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWil
       close,
       locateOutline,
       calendarOutline,
-      listOutline,
       optionsOutline,
       chevronDownOutline,
       refreshOutline,
@@ -147,6 +150,17 @@ export class UserEventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWil
     effect(() => {
       this.refreshNotifier.version();
       untracked(() => this.loadEvents());
+    });
+
+    // Only fetched while "browse by photo" is actually active (see
+    // event-list-filters.ts's own refreshGalleryCovers) - re-runs whenever
+    // the filtered event list changes while that mode stays selected.
+    effect(() => {
+      if (this.filters.viewMode() !== 'gallery') {
+        return;
+      }
+      const eventIds = this.cardViews().map((view) => view.id);
+      untracked(() => this.filters.refreshGalleryCovers(eventIds));
     });
   }
 
@@ -202,8 +216,28 @@ export class UserEventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWil
     );
   });
 
+  /** "Browse by photo" mode (see event-list-filters.ts's own doc comment) -
+   * each event's gallery cover, falling back to its own imageUrl until it
+   * has a real shared photo, so this mode is never emptier than the list.
+   * photoCount (0 when falling back to imageUrl) drives the grid's own
+   * "several photos"/"no photos shared yet" badge. */
+  readonly galleryGridItems = computed(() => {
+    const covers = this.filters.galleryCoverUrls();
+    return this.cardViews().map((view) => {
+      const cover = covers[view.id];
+      return { id: view.id, photoUrl: cover?.photoUrl ?? view.imageUrl, photoCount: cover?.count ?? 0 };
+    });
+  });
+
   ngOnInit(): void {
     this.filters.loadTaxonomies();
+  }
+
+  /** Tapping a photo here jumps straight to that event's detail page - unlike
+   * user-detail/event-detail's own galleries, there's no lightbox in this
+   * mode, since the point is browsing *events*, not viewing photos. */
+  openGalleryEvent(eventId: string): void {
+    this.router.navigate(['/events', eventId], { queryParams: { origin: '/user-events' } });
   }
 
   ngAfterViewInit(): void {

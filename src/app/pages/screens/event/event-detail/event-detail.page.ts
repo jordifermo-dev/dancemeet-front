@@ -46,6 +46,9 @@ import {
   arrowRedoOutline,
   closeOutline,
   copyOutline,
+  informationCircleOutline,
+  gridOutline,
+  cameraOutline,
 } from 'ionicons/icons';
 import { AuthService } from '../../../../services/core/auth.service';
 import { EventService } from '../../../../services/event/event.service';
@@ -55,6 +58,7 @@ import { DisciplineService } from '../../../../services/event/discipline.service
 import { EventTypeService } from '../../../../services/event/event-type.service';
 import { LanguageService } from '../../../../services/core/language.service';
 import { CitySuggestion, GeocodingService } from '../../../../services/location/geocoding.service';
+import { GalleryService } from '../../../../services/gallery/gallery.service';
 import {
   CreateEventPayload,
   CreateEventSeriesPayload,
@@ -65,6 +69,7 @@ import {
   EventStatus,
   EVENT_STATUSES,
   EventWithCreatorName,
+  GalleryPhotoWithPoster,
   RecurrenceRule,
   SocialLinks,
   UpdateEventPayload,
@@ -105,6 +110,8 @@ import { EventShareService, escapeHtml } from '../../../../services/sharing/even
 import { EventManagerService } from '../../../../services/event-managers/event-manager.service';
 import { EventManager } from '../../../../models';
 import { canManageEvent, findMyParticipantRow } from '../../../../shared/event/event-manager-permissions';
+import { PhotoGridComponent } from '../../../../shared/gallery/photo-grid/photo-grid.component';
+import { LightboxPhoto, PhotoLightboxComponent } from '../../../../shared/gallery/photo-lightbox/photo-lightbox.component';
 
 const MIN_ZOOM = 3;
 const MAX_ZOOM = 20;
@@ -193,6 +200,8 @@ function withTimePart(base: number, timeValue: string): number {
     TimeRangePickerComponent,
     RecurrenceQuickPickerComponent,
     SeriesAttendConfirmComponent,
+    PhotoGridComponent,
+    PhotoLightboxComponent,
   ],
 })
 export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnter {
@@ -210,6 +219,7 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
   private readonly geocodingService = inject(GeocodingService);
   private readonly shareService = inject(EventShareService);
   private readonly eventManagerService = inject(EventManagerService);
+  private readonly galleryService = inject(GalleryService);
   private readonly translate = inject(TranslateService);
   readonly minSelectionWarning = inject(MinSelectionWarningService);
 
@@ -287,6 +297,58 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
     return row?.status === 'pending' ? row : null;
   });
   readonly inviteResponseBusy = signal(false);
+
+  // --- Instagram-style info/gallery toggle ------------------------------
+
+  readonly detailViewMode = signal<'info' | 'gallery'>('info');
+  readonly eventGallery = signal<GalleryPhotoWithPoster[]>([]);
+
+  readonly galleryGridItems = computed(() => this.eventGallery().map((photo) => ({ id: photo.id, photoUrl: photo.photoUrl })));
+
+  readonly lightboxItems = computed<LightboxPhoto[]>(() =>
+    this.eventGallery().map((photo) => ({
+      id: photo.id,
+      photoUrl: photo.photoUrl,
+      relatedLinkRoute: ['/users', photo.posterUserId],
+      relatedLinkLabel: photo.posterUserName,
+    })),
+  );
+
+  readonly lightboxOpen = signal(false);
+  readonly lightboxStartIndex = signal(0);
+
+  openLightbox(photoId: string): void {
+    const index = this.eventGallery().findIndex((photo) => photo.id === photoId);
+    if (index === -1) {
+      return;
+    }
+    this.lightboxStartIndex.set(index);
+    this.lightboxOpen.set(true);
+  }
+
+  /** Gates the "Añadir foto" button - only a UI-level shortcut, the real
+   * authorization check (assertCanPostPhoto) runs again on the backend. */
+  readonly canPostPhoto = computed(() => {
+    const event = this.event();
+    return this.canManage() || (!!event?.allowAttendeePhotos && this.isAttending());
+  });
+
+  private refreshGallery(eventId: string): void {
+    this.galleryService.getEventGallery(eventId).subscribe({
+      next: (photos) => this.eventGallery.set(photos),
+      error: () => this.eventGallery.set([]),
+    });
+  }
+
+  onGalleryPhotoUploaded(url: string): void {
+    const event = this.event();
+    if (!event) {
+      return;
+    }
+    this.galleryService.postEventPhoto(event.id, url).subscribe({
+      next: () => this.refreshGallery(event.id),
+    });
+  }
 
   readonly confirmDelete = signal(false);
   readonly deleting = signal(false);
@@ -420,6 +482,7 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
       imageUrl: raw.imageUrl,
       isFree: raw.isFree,
       price: raw.price,
+      allowAttendeePhotos: raw.allowAttendeePhotos,
       socialLinks: {
         instagram: raw.instagram,
         facebook: raw.facebook,
@@ -547,6 +610,7 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
     imageUrl: ['', Validators.required],
     isFree: [true],
     price: [0],
+    allowAttendeePhotos: [true],
     instagram: ['', Validators.pattern(SOCIAL_URL_PATTERNS.instagram)],
     facebook: ['', Validators.pattern(SOCIAL_URL_PATTERNS.facebook)],
     tiktok: ['', Validators.pattern(SOCIAL_URL_PATTERNS.tiktok)],
@@ -706,6 +770,9 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
       arrowRedoOutline,
       closeOutline,
       copyOutline,
+      informationCircleOutline,
+      gridOutline,
+      cameraOutline,
     });
 
     this.disciplineService.getAll().subscribe({
@@ -837,6 +904,7 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
         this.refreshAttendingState(event);
         this.refreshAttendeesCount(id);
         this.refreshParticipants(id);
+        this.refreshGallery(id);
       },
       error: () => {
         this.notFound.set(true);
@@ -1402,6 +1470,7 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
       imageUrl: event.imageUrl,
       isFree: event.isFree,
       price: event.price,
+      allowAttendeePhotos: event.allowAttendeePhotos,
       instagram: event.socialLinks?.instagram ?? '',
       facebook: event.socialLinks?.facebook ?? '',
       tiktok: event.socialLinks?.tiktok ?? '',
@@ -1585,7 +1654,11 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
       this.saving.set(false);
       return;
     }
-    const payload: UpdateEventPayload = commonFields;
+    // allowAttendeePhotos isn't part of commonFields - it's excluded from
+    // CreateEventPayload/CreateEventSeriesPayload (backend defaults it, see
+    // Event.allowAttendeePhotos's doc comment), so it's only added here, on
+    // the update-an-existing-event branch.
+    const payload: UpdateEventPayload = { ...commonFields, allowAttendeePhotos: formValue.allowAttendeePhotos };
     const rule = this.recurrenceRule();
     this.eventService.updateEvent(event.id, payload).subscribe({
       next: () => {

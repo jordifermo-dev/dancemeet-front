@@ -81,6 +81,9 @@
     "typeRecurringSeriesCreated": "Nuevos eventos recurrentes",
     "typeEventManagerInvite": "Invitaciones a organizar eventos",
     "typeEventAttendeeInvite": "Invitaciones a asistir",
+    "typeGalleryPhotoFollowed": "Fotos de tus seguidos",
+    "typeGalleryPhotoAttending": "Fotos en tus eventos",
+    "typeGalleryPhotoProfile": "Fotos de perfil de tus seguidos",
     "disabledBadge": "Desactivada",
     "disabledTypesHint": "Tienes tipos de notificación desactivados.",
     "manageLink": "Gestionar",
@@ -263,7 +266,8 @@
     "mapExpand": "Ampliar mapa a pantalla completa",
     "mapCollapse": "Minimizar mapa",
     "viewCalendar": "Ver como calendario",
-    "viewList": "Ver como lista"
+    "viewList": "Ver como lista",
+    "viewModeGallery": "Ver por fotos"
   },
   "calendar": {
     "month": "Mes",
@@ -379,6 +383,8 @@
     "statusLabel": "Estado",
     "isFreeLabel": "Evento gratuito",
     "priceLabel": "Precio (€)",
+    "allowAttendeePhotosLabel": "Los asistentes pueden compartir fotos",
+    "allowAttendeePhotosHint": "Si lo desactivas, solo el organizador y los gestores podrán añadir fotos a la galería de este evento.",
     "addressLabel": "Dirección",
     "cityLabel": "Ciudad",
     "latitudeLabel": "Latitud",
@@ -427,6 +433,21 @@
     "dragHint": "Arrastra para mover, usa el control para hacer zoom",
     "cancel": "Cancelar",
     "confirm": "Confirmar"
+  },
+  "gallery": {
+    "tabInfo": "Información",
+    "tabGallery": "Galería",
+    "emptyState": "Todavía no se han compartido fotos.",
+    "addPhoto": "Añadir foto",
+    "postedFromEvent": "Desde",
+    "viewEventDetail": "Ver evento",
+    "viewPosterProfile": "Ver perfil",
+    "deleteConfirmTitle": "Eliminar foto",
+    "deleteConfirmMessage": "¿Quieres eliminar esta foto de la galería?",
+    "deleteError": "No se ha podido eliminar la foto.",
+    "uploadError": "No se ha podido compartir la foto.",
+    "multiplePhotos": "Varias fotos compartidas en este evento",
+    "noPhotosYet": "Todavía no se han compartido fotos en este evento - se muestra la portada del evento"
   },
   "firebaseErrors": {
     "auth/invalid-email": "Ese email no es válido.",

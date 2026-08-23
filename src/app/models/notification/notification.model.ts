@@ -7,7 +7,10 @@ export type NotificationType =
   | 'preference_new_event'
   | 'recurring_series_created'
   | 'event_manager_invite'
-  | 'event_attendee_invite';
+  | 'event_attendee_invite'
+  | 'gallery_photo_followed'
+  | 'gallery_photo_attending'
+  | 'gallery_photo_profile';
 
 export interface AppNotification {
   id: string;

@@ -22,6 +22,8 @@ import {
   checkmarkOutline,
   trashOutline,
   personRemoveOutline,
+  informationCircleOutline,
+  gridOutline,
 } from 'ionicons/icons';
 import { AuthService } from '../../../../services/core/auth.service';
 import { UserService } from '../../../../services/user/user.service';
@@ -29,7 +31,8 @@ import { FollowService } from '../../../../services/user/follow.service';
 import { FavoriteService } from '../../../../services/favorites/favorite.service';
 import { DisciplineService } from '../../../../services/event/discipline.service';
 import { EventTypeService } from '../../../../services/event/event-type.service';
-import { Discipline, EventType, EVENT_STATUSES, SocialLinks, User } from '../../../../models';
+import { GalleryService } from '../../../../services/gallery/gallery.service';
+import { Discipline, EventType, EVENT_STATUSES, GalleryPhotoWithEvent, SocialLinks, User } from '../../../../models';
 import { SocialIconKey, socialIconUrl, STATUS_LABEL_KEYS } from '../../../../shared/event/icon-catalog';
 import { ALL_SOCIAL_NETWORKS, SOCIAL_NETWORK_LABEL_KEYS, SocialNetworkKey } from '../../../../shared/user/social-networks';
 import { MapType } from '../../../../shared/location/maps';
@@ -40,6 +43,8 @@ import { FilterActionsRowComponent } from '../../../../shared/filters/filter-act
 import { FilterSheetHeaderComponent } from '../../../../shared/filters/filter-sheet-header/filter-sheet-header.component';
 import { ChipGridComponent } from '../../../../shared/filters/chip-grid/chip-grid.component';
 import { disciplineChipItems, eventTypeChipItems, statusChipItems } from '../../../../shared/filters/chip-grid/chip-grid-presets';
+import { PhotoGridComponent } from '../../../../shared/gallery/photo-grid/photo-grid.component';
+import { LightboxPhoto, PhotoLightboxComponent } from '../../../../shared/gallery/photo-lightbox/photo-lightbox.component';
 
 const MIN_ZOOM = 3;
 const MAX_ZOOM = 20;
@@ -72,6 +77,8 @@ interface SocialLinkRow {
     FilterSheetHeaderComponent,
     ChipGridComponent,
     LocationPickerComponent,
+    PhotoGridComponent,
+    PhotoLightboxComponent,
   ],
 })
 export class UserDetailPage {
@@ -84,6 +91,7 @@ export class UserDetailPage {
   private readonly favoriteService = inject(FavoriteService);
   private readonly disciplineService = inject(DisciplineService);
   private readonly eventTypeService = inject(EventTypeService);
+  private readonly galleryService = inject(GalleryService);
   private readonly translate = inject(TranslateService);
 
   private readonly disciplinesById = signal<Map<string, Discipline>>(new Map());
@@ -93,6 +101,35 @@ export class UserDetailPage {
   readonly notFound = signal(false);
   readonly user = signal<User | null>(null);
   readonly attendedEventsCount = signal(0);
+
+  // --- Instagram-style info/gallery toggle -----------------------------
+
+  readonly detailViewMode = signal<'info' | 'gallery'>('info');
+  readonly userGallery = signal<GalleryPhotoWithEvent[]>([]);
+
+  readonly galleryGridItems = computed(() => this.userGallery().map((photo) => ({ id: photo.id, photoUrl: photo.photoUrl })));
+
+  readonly lightboxItems = computed<LightboxPhoto[]>(() =>
+    this.userGallery().map((photo) => ({
+      id: photo.id,
+      photoUrl: photo.photoUrl,
+      // Absent for a photo posted straight to the profile - no event to link to.
+      relatedLinkRoute: photo.eventId ? ['/events', photo.eventId] : undefined,
+      relatedLinkLabel: photo.eventTitle,
+    })),
+  );
+
+  readonly lightboxOpen = signal(false);
+  readonly lightboxStartIndex = signal(0);
+
+  openLightbox(photoId: string): void {
+    const index = this.userGallery().findIndex((photo) => photo.id === photoId);
+    if (index === -1) {
+      return;
+    }
+    this.lightboxStartIndex.set(index);
+    this.lightboxOpen.set(true);
+  }
 
   readonly followersCount = computed(() => this.user()?.followedId?.length ?? 0);
   readonly followingCount = computed(() => this.user()?.followingId?.length ?? 0);
@@ -221,6 +258,8 @@ export class UserDetailPage {
       checkmarkOutline,
       trashOutline,
       personRemoveOutline,
+      informationCircleOutline,
+      gridOutline,
     });
 
     this.disciplineService.getAll().subscribe({
@@ -246,6 +285,9 @@ export class UserDetailPage {
           // Organizer + attendee, matching what goToEvents()/user-events shows for this person.
           this.favoriteService.getFavoritedEvents(user.id).subscribe({
             next: (events) => this.attendedEventsCount.set(events.length),
+          });
+          this.galleryService.getUserGallery(user.id).subscribe({
+            next: (photos) => this.userGallery.set(photos),
           });
         }
       },

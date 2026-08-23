@@ -1,0 +1,25 @@
+@if (photos.length) {
+  <div class="photo-grid" [style.--columns]="columns">
+    @for (photo of photos; track photo.id) {
+      <button type="button" class="photo-grid-item" (click)="onTap(photo.id)">
+        <img [src]="photo.photoUrl" alt="" />
+        @if (photo.photoCount !== undefined) {
+          @if (photo.photoCount > 1) {
+            <span class="photo-badge photo-badge-multiple" [attr.aria-label]="'gallery.multiplePhotos' | translate">
+              <ion-icon name="images-outline"></ion-icon>
+              {{ photo.photoCount }}
+            </span>
+          } @else if (photo.photoCount === 0) {
+            <span class="photo-badge photo-badge-cover" [attr.aria-label]="'gallery.noPhotosYet' | translate">
+              <ion-icon name="image-outline"></ion-icon>
+            </span>
+          }
+        }
+      </button>
+    }
+  </div>
+} @else if (emptyStateKey) {
+  <div class="photo-grid-empty">
+    <p>{{ emptyStateKey | translate }}</p>
+  </div>
+}

@@ -81,6 +81,9 @@
     "typeRecurringSeriesCreated": "New recurring events",
     "typeEventManagerInvite": "Event organizer invites",
     "typeEventAttendeeInvite": "Invites to attend",
+    "typeGalleryPhotoFollowed": "Photos from people you follow",
+    "typeGalleryPhotoAttending": "Photos on your events",
+    "typeGalleryPhotoProfile": "Profile photos from people you follow",
     "disabledBadge": "Off",
     "disabledTypesHint": "Some notification types are turned off.",
     "manageLink": "Manage",
@@ -263,7 +266,8 @@
     "mapExpand": "Expand map to full screen",
     "mapCollapse": "Collapse map",
     "viewCalendar": "View as calendar",
-    "viewList": "View as list"
+    "viewList": "View as list",
+    "viewModeGallery": "View by photo"
   },
   "calendar": {
     "month": "Month",
@@ -379,6 +383,8 @@
     "statusLabel": "Status",
     "isFreeLabel": "Free event",
     "priceLabel": "Price (€)",
+    "allowAttendeePhotosLabel": "Attendees can share photos",
+    "allowAttendeePhotosHint": "If turned off, only the organizer and managers will be able to add photos to this event's gallery.",
     "addressLabel": "Address",
     "cityLabel": "City",
     "latitudeLabel": "Latitude",
@@ -427,6 +433,21 @@
     "dragHint": "Drag to reposition, use the control to zoom",
     "cancel": "Cancel",
     "confirm": "Confirm"
+  },
+  "gallery": {
+    "tabInfo": "Info",
+    "tabGallery": "Gallery",
+    "emptyState": "No photos shared yet.",
+    "addPhoto": "Add photo",
+    "postedFromEvent": "From",
+    "viewEventDetail": "View event",
+    "viewPosterProfile": "View profile",
+    "deleteConfirmTitle": "Delete photo",
+    "deleteConfirmMessage": "Remove this photo from the gallery?",
+    "deleteError": "Couldn't delete the photo.",
+    "uploadError": "Couldn't share the photo.",
+    "multiplePhotos": "Several photos shared at this event",
+    "noPhotosYet": "No photos shared at this event yet - showing the event's cover instead"
   },
   "firebaseErrors": {
     "auth/invalid-email": "That email isn't valid.",

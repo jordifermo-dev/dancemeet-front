@@ -31,9 +31,7 @@ import { addIcons } from 'ionicons';
 import {
   optionsOutline,
   calendarOutline,
-  listOutline,
   chevronDownOutline,
-  addCircleOutline,
   bookmarkOutline,
   refreshOutline,
   checkmarkOutline,
@@ -45,6 +43,7 @@ import { EventTypeService } from '../../../services/event/event-type.service';
 import { EventService } from '../../../services/event/event.service';
 import { EventListRefreshService } from '../../../services/event/event-list-refresh.service';
 import { FavoriteService } from '../../../services/favorites/favorite.service';
+import { GalleryService } from '../../../services/gallery/gallery.service';
 import { LanguageService } from '../../../services/core/language.service';
 import {
   Discipline,
@@ -53,6 +52,7 @@ import {
   EVENT_TYPE_NAMES,
   EventStatus,
   EVENT_STATUSES,
+  GalleryCover,
   PriceOption,
   EventWithCreatorName,
 } from '../../../models';
@@ -84,6 +84,8 @@ import { SortPreferenceService } from '../../../services/filters/sort-preference
 import { ExplorerFiltersService, DateQuickOption } from '../../../services/filters/explorer-filters.service';
 import { createApplyFlash } from '../../../shared/common/success-flash';
 import { SeriesAttendConfirmComponent } from '../../../shared/event/series-attend-confirm/series-attend-confirm.component';
+import { PhotoGridComponent } from '../../../shared/gallery/photo-grid/photo-grid.component';
+import { EventListViewMode, ViewModeMenuComponent } from '../../../shared/event/view-mode-menu/view-mode-menu.component';
 
 const STATUS_OPTIONS = EVENT_STATUSES.map((id) => ({ id, labelKey: STATUS_LABEL_KEYS[id] }));
 const PRICE_OPTIONS: { id: PriceOption; labelKey: string }[] = [
@@ -123,6 +125,8 @@ const PRICE_OPTIONS: { id: PriceOption; labelKey: string }[] = [
     EventCalendarComponent,
     CalendarGranularityToggleComponent,
     SeriesAttendConfirmComponent,
+    PhotoGridComponent,
+    ViewModeMenuComponent,
   ],
 })
 export class EventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWillEnter {
@@ -131,6 +135,7 @@ export class EventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWillEnt
   private readonly eventService = inject(EventService);
   private readonly refreshNotifier = inject(EventListRefreshService);
   private readonly favoriteService = inject(FavoriteService);
+  private readonly galleryService = inject(GalleryService);
   private readonly authService = inject(AuthService);
   private readonly languageService = inject(LanguageService);
   private readonly router = inject(Router);
@@ -153,14 +158,19 @@ export class EventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWillEnt
   readonly loading = signal(true);
   readonly events = signal<EventWithCreatorName[]>([]);
   readonly searchTerm = signal('');
-  /** List vs calendar - independent per screen (not shared with Favorites/
-   * user-events, unlike sort mode), so it's just a local signal, not
-   * SortPreferenceService-style shared state. */
-  readonly viewMode = signal<'list' | 'calendar'>('list');
+  /** List vs calendar vs gallery ("browse by photo", Wikiloc-style) -
+   * independent per screen (not shared with Favorites/user-events, unlike
+   * sort mode), so it's just a local signal, not SortPreferenceService-style
+   * shared state. */
+  readonly viewMode = signal<EventListViewMode>('list');
   /** Owns the Mes/Semana/Día choice so the toggle (rendered in this page's
    * own fixed top-overlay) and <app-event-calendar>'s grid (rendered below,
    * scrollable) stay in sync. */
   readonly calendarGranularity = signal<CalendarGranularity>('month');
+  /** Cover photo (+count) per event, keyed by event id - only fetched on
+   * demand while viewMode is 'gallery' (see the effect below), so the
+   * normal search response stays unbloated. */
+  readonly galleryCoverUrls = signal<Record<string, GalleryCover>>({});
   /** IDs of events the logged-in user attends - a plain search result has no
    * per-event relation of its own (see buildEventCardView), so the heart on
    * each card is driven by this separately-fetched set instead. */
@@ -209,6 +219,19 @@ export class EventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWillEnt
     );
   });
 
+  /** "Browse by photo" mode (see viewMode's own doc comment) - each event's
+   * gallery cover, falling back to its own imageUrl until it has a real
+   * shared photo, so this mode is never emptier than the list. photoCount
+   * (0 when falling back to imageUrl) drives the grid's own "several
+   * photos"/"no photos shared yet" badge. */
+  readonly galleryGridItems = computed(() => {
+    const covers = this.galleryCoverUrls();
+    return this.cardViews().map((view) => {
+      const cover = covers[view.id];
+      return { id: view.id, photoUrl: cover?.photoUrl ?? view.imageUrl, photoCount: cover?.count ?? 0 };
+    });
+  });
+
   readonly isEventTypeModalOpen = signal(false);
   readonly isDisciplineModalOpen = signal(false);
   readonly isStatusModalOpen = signal(false);
@@ -219,9 +242,7 @@ export class EventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWillEnt
     addIcons({
       optionsOutline,
       calendarOutline,
-      listOutline,
       chevronDownOutline,
-      addCircleOutline,
       bookmarkOutline,
       refreshOutline,
       checkmarkOutline,
@@ -247,6 +268,28 @@ export class EventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWillEnt
       this.refreshNotifier.version();
       const term = this.searchTerm();
       untracked(() => this.loadEvents(term));
+    });
+
+    // Only fetched while "browse by photo" is actually active - re-runs
+    // whenever the underlying event list changes while that mode stays
+    // selected.
+    effect(() => {
+      if (this.viewMode() !== 'gallery') {
+        return;
+      }
+      const eventIds = this.cardViews().map((view) => view.id);
+      untracked(() => this.refreshGalleryCovers(eventIds));
+    });
+  }
+
+  private refreshGalleryCovers(eventIds: string[]): void {
+    if (!eventIds.length) {
+      this.galleryCoverUrls.set({});
+      return;
+    }
+    this.galleryService.getCoverPhotos(eventIds).subscribe({
+      next: (covers) => this.galleryCoverUrls.set(covers),
+      error: () => this.galleryCoverUrls.set({}),
     });
   }
 
@@ -486,12 +529,19 @@ export class EventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWillEnt
     this.router.navigateByUrl('/explorer-filters');
   }
 
-  toggleViewMode(): void {
-    this.viewMode.update((mode) => (mode === 'list' ? 'calendar' : 'list'));
+  setViewMode(mode: EventListViewMode): void {
+    this.viewMode.set(mode);
   }
 
   goToCreateEvent(): void {
     this.router.navigate(['/events/new'], { queryParams: { origin: '/tabs/events' } });
+  }
+
+  /** Tapping a photo here jumps straight to that event's detail page - unlike
+   * user-detail/event-detail's own galleries, there's no lightbox in this
+   * mode, since the point is browsing *events*, not viewing photos. */
+  openGalleryEvent(eventId: string): void {
+    this.router.navigate(['/events', eventId], { queryParams: { origin: '/tabs/events' } });
   }
 
   // --- Individual quick filter modals (mirrors Explorer's, same shared filter state) --

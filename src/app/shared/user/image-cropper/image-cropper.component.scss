@@ -53,7 +53,8 @@
   align-items: center;
   justify-content: center;
 
-  &.portrait {
+  &.portrait,
+  &.gallery {
     border-radius: 16px;
   }
 
