@@ -12,6 +12,7 @@ import {
   IonButton,
   IonSpinner,
   IonModal,
+  ViewWillEnter,
 } from '@ionic/angular/standalone';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { addIcons } from 'ionicons';
@@ -81,7 +82,7 @@ interface SocialLinkRow {
     PhotoLightboxComponent,
   ],
 })
-export class UserDetailPage {
+export class UserDetailPage implements ViewWillEnter {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly location = inject(Location);
@@ -113,6 +114,7 @@ export class UserDetailPage {
     this.userGallery().map((photo) => ({
       id: photo.id,
       photoUrl: photo.photoUrl,
+      createdAt: photo.createdAt,
       // Absent for a photo posted straight to the profile - no event to link to.
       relatedLinkRoute: photo.eventId ? ['/events', photo.eventId] : undefined,
       relatedLinkLabel: photo.eventTitle,
@@ -296,6 +298,15 @@ export class UserDetailPage {
         this.loading.set(false);
       },
     });
+  }
+
+  /** Always land on Información, not whatever tab this cached instance was
+   * last left on (Ionic reuses the same page instance when you return to a
+   * profile you've already visited this session) - most noticeably, the
+   * gallery lightbox's own "go to this event/user" link kept dropping you
+   * straight into Galería if you'd left that profile there before. */
+  ionViewWillEnter(): void {
+    this.detailViewMode.set('info');
   }
 
   goToEvents(): void {

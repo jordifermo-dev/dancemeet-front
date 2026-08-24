@@ -42,3 +42,22 @@ export function formatEventDateOnly(timestamp: number, lang: AppLanguage | null)
   const formatter = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', year: 'numeric' });
   return formatter.format(new Date(timestamp));
 }
+
+/** "23/08/2026, 16:40" - day/month as digits rather than a locale month
+ * name. Some Android WebView builds ship ICU/CLDR data trimmed down to
+ * English-only month names, so month:'short' silently renders "Aug" even
+ * when a Spanish/Catalan locale was requested - numeric fields don't depend
+ * on that per-language name table at all, only on digit/separator
+ * conventions, which are far more reliably present. Used for the gallery
+ * lightbox's "posted at" timestamp. */
+export function formatDateTimeNumeric(timestamp: number, lang: AppLanguage | null): string {
+  const locale = INTL_LOCALES[lang ?? 'es'];
+  const formatter = new Intl.DateTimeFormat(locale, {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+  return formatter.format(new Date(timestamp));
+}

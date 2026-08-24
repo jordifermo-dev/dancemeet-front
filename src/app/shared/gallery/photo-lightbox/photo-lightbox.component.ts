@@ -9,22 +9,26 @@ import {
   SimpleChanges,
   ViewChild,
   computed,
+  inject,
   signal,
 } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router } from '@angular/router';
 import { IonModal, IonIcon } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { closeOutline, chevronBackOutline, chevronForwardOutline } from 'ionicons/icons';
+import { LanguageService } from '../../../services/core/language.service';
+import { formatDateTimeNumeric } from '../../calendar/event-date-format';
 
 export interface LightboxPhoto {
   id: string;
   photoUrl: string;
-  /** Where tapping the caption link jumps to - an event's page from a
-   * user's gallery, or a user's profile from an event's gallery. Owned
-   * per-photo (not one route for the whole lightbox) since a user's own
-   * gallery mixes photos from many different events, and vice versa. Both
-   * absent for a photo posted straight to a profile, with no event to link
-   * to - the caption is simply omitted for that photo. */
+  createdAt: number;
+  /** Where tapping the caption jumps to - an event's page from a user's
+   * gallery, or a user's profile from an event's gallery. Owned per-photo
+   * (not one route for the whole lightbox) since a user's own gallery mixes
+   * photos from many different events, and vice versa. Both absent for a
+   * photo posted straight to a profile, with no event to link to - the
+   * caption is simply omitted for that photo. */
   relatedLinkRoute?: string[];
   relatedLinkLabel?: string;
 }
@@ -39,7 +43,7 @@ export interface LightboxPhoto {
   standalone: true,
   templateUrl: './photo-lightbox.component.html',
   styleUrl: './photo-lightbox.component.scss',
-  imports: [IonModal, IonIcon, RouterLink],
+  imports: [IonModal, IonIcon],
 })
 export class PhotoLightboxComponent implements OnChanges, AfterViewInit {
   @Input({ required: true }) photos!: LightboxPhoto[];
@@ -47,13 +51,35 @@ export class PhotoLightboxComponent implements OnChanges, AfterViewInit {
   @Input() isOpen = false;
   @Output() readonly closed = new EventEmitter<void>();
 
+  private readonly router = inject(Router);
+  private readonly languageService = inject(LanguageService);
+
   @ViewChild('track') private trackRef?: ElementRef<HTMLElement>;
 
   readonly currentIndex = signal(0);
   readonly currentPhoto = computed(() => this.photos[this.currentIndex()]);
+  readonly currentPhotoDateLabel = computed(() => {
+    const photo = this.currentPhoto();
+    return photo ? formatDateTimeNumeric(photo.createdAt, this.languageService.currentLang()) : '';
+  });
+
+  /** Set by onCaptionTap, consumed by onDidDismiss - see its own doc comment
+   * for why the navigation is deferred there instead of firing immediately. */
+  private pendingNavigationRoute: string[] | null = null;
 
   constructor() {
     addIcons({ closeOutline, chevronBackOutline, chevronForwardOutline });
+  }
+
+  /** Only records where to go and starts the normal close - see
+   * onDidDismiss for why navigation itself waits until then. */
+  onCaptionTap(): void {
+    const route = this.currentPhoto()?.relatedLinkRoute;
+    if (!route) {
+      return;
+    }
+    this.pendingNavigationRoute = route;
+    this.close();
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -94,8 +120,23 @@ export class PhotoLightboxComponent implements OnChanges, AfterViewInit {
     this.closed.emit();
   }
 
+  /** Fires once ion-modal's own dismiss animation genuinely finishes -
+   * whether triggered by close() (X button or the caption link below),
+   * the swipe-down gesture, or a backdrop tap. A caption tap used to call
+   * router.navigate() immediately alongside close() - that raced with this
+   * same page's own component tree starting to tear down mid-navigation
+   * (this lightbox is declared inside the page being navigated away from,
+   * so navigating destroys it too), leaving ion-modal's overlay stuck on
+   * screen with its own close button unresponsive until a manual swipe-down
+   * dismissed it "for real". Waiting for the real dismissal first removes
+   * that race entirely. */
   onDidDismiss(): void {
     this.closed.emit();
+    const route = this.pendingNavigationRoute;
+    if (route) {
+      this.pendingNavigationRoute = null;
+      void this.router.navigate(route);
+    }
   }
 
   private scrollToIndex(index: number, behavior: ScrollBehavior): void {

@@ -309,6 +309,7 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
     this.eventGallery().map((photo) => ({
       id: photo.id,
       photoUrl: photo.photoUrl,
+      createdAt: photo.createdAt,
       relatedLinkRoute: ['/users', photo.posterUserId],
       relatedLinkLabel: photo.posterUserName,
     })),
@@ -845,6 +846,12 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
    * state until the whole app was reloaded. Re-fetching is skipped while
    * actively editing/creating, so it can't clobber in-progress form edits. */
   ionViewWillEnter(): void {
+    // Always land on Información, not whatever tab this cached instance was
+    // last left on (Ionic reuses the same page instance when you return to
+    // an event you've already visited this session) - most noticeably, the
+    // gallery lightbox's own "go to this event/user" link kept dropping you
+    // straight into Galería if you'd left that event there before.
+    this.detailViewMode.set('info');
     const event = this.event();
     if (!event || this.isEditMode()) {
       return;

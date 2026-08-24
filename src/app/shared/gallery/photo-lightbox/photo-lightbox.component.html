@@ -32,11 +32,14 @@
       }
 
       @if (currentPhoto(); as photo) {
-        @if (photo.relatedLinkRoute) {
-          <a class="lightbox-caption" [routerLink]="photo.relatedLinkRoute" (click)="close()">
-            {{ photo.relatedLinkLabel }}
-          </a>
-        }
+        <div class="lightbox-caption">
+          @if (photo.relatedLinkRoute) {
+            <button type="button" class="lightbox-caption-link" (click)="onCaptionTap()">
+              {{ photo.relatedLinkLabel }}
+            </button>
+          }
+          <span class="lightbox-caption-date">{{ currentPhotoDateLabel() }}</span>
+        </div>
       }
     </div>
   </ng-template>

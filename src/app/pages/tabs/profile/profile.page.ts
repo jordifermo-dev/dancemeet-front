@@ -186,6 +186,7 @@ export class ProfilePage implements OnInit, ViewWillEnter, ComponentWithUnsavedC
     this.profileGallery().map((photo) => ({
       id: photo.id,
       photoUrl: photo.photoUrl,
+      createdAt: photo.createdAt,
       // Absent for a photo posted straight to the profile - no event to link to.
       relatedLinkRoute: photo.eventId ? ['/events', photo.eventId] : undefined,
       relatedLinkLabel: photo.eventTitle,
