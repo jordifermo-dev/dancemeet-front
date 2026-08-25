@@ -50,7 +50,7 @@
       </div>
     } @else {
       @for (view of agendaCardViews(); track view.id) {
-        <app-event-card [view]="view" (attendToggle)="onAttendToggle($event)"></app-event-card>
+        <app-event-card [view]="view" (likeToggle)="onLikeToggle($event)"></app-event-card>
       }
     }
   </div>

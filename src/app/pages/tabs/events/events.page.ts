@@ -83,7 +83,6 @@ import { EVENT_SORT_OPTIONS, EventSortMode, sortEvents } from '../../../shared/e
 import { SortPreferenceService } from '../../../services/filters/sort-preference.service';
 import { ExplorerFiltersService, DateQuickOption } from '../../../services/filters/explorer-filters.service';
 import { createApplyFlash } from '../../../shared/common/success-flash';
-import { SeriesAttendConfirmComponent } from '../../../shared/event/series-attend-confirm/series-attend-confirm.component';
 import { PhotoGridComponent } from '../../../shared/gallery/photo-grid/photo-grid.component';
 import { EventListViewMode, ViewModeMenuComponent } from '../../../shared/event/view-mode-menu/view-mode-menu.component';
 
@@ -124,7 +123,6 @@ const PRICE_OPTIONS: { id: PriceOption; labelKey: string }[] = [
     DatePickerFieldComponent,
     EventCalendarComponent,
     CalendarGranularityToggleComponent,
-    SeriesAttendConfirmComponent,
     PhotoGridComponent,
     ViewModeMenuComponent,
   ],
@@ -171,15 +169,15 @@ export class EventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWillEnt
    * demand while viewMode is 'gallery' (see the effect below), so the
    * normal search response stays unbloated. */
   readonly galleryCoverUrls = signal<Record<string, GalleryCover>>({});
-  /** IDs of events the logged-in user attends - a plain search result has no
-   * per-event relation of its own (see buildEventCardView), so the heart on
-   * each card is driven by this separately-fetched set instead. */
-  readonly attendedEventIds = signal<Set<string>>(new Set());
-  /** Guards attend/unattend requests in flight per event id - a doubled tap
+  /** IDs of events the logged-in user has liked - a plain search result has
+   * no per-event relation of its own (see buildEventCardView), so the heart
+   * on each card is driven by this separately-fetched set instead. */
+  readonly likedEventIds = signal<Set<string>>(new Set());
+  /** Guards like/unlike requests in flight per event id - a doubled tap
    * otherwise fires the handler twice before the first request's response
-   * updates attendedEventIds, sending a duplicate add/remove call the
-   * backend rejects with an "already favorited"/"not found" error. */
-  private readonly attendBusyIds = signal<Set<string>>(new Set());
+   * updates likedEventIds, sending a duplicate add/remove call the backend
+   * rejects with an "already favorited"/"not found" error. */
+  private readonly likeBusyIds = signal<Set<string>>(new Set());
 
   readonly disciplines = signal<Discipline[]>([]);
   readonly disciplinesById = computed(() => new Map(this.disciplines().map((d) => [d.id, d])));
@@ -213,9 +211,9 @@ export class EventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWillEnt
     const eventTypesById = this.eventTypesById();
     const lang = this.languageService.currentLang();
     const currentUserId = this.authService.currentUser()?.id;
-    const attendedEventIds = this.attendedEventIds();
+    const likedEventIds = this.likedEventIds();
     return sortEvents(this.events(), this.sortMode()).map((event) =>
-      buildEventCardView(event, disciplinesById, eventTypesById, lang, currentUserId, attendedEventIds),
+      buildEventCardView(event, disciplinesById, eventTypesById, lang, currentUserId, likedEventIds),
     );
   });
 
@@ -315,128 +313,57 @@ export class EventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWillEnt
    * back here would still show the stale, pre-edit card. */
   ionViewWillEnter(): void {
     this.loadEvents(this.searchTerm());
-    this.loadAttendedEventIds();
+    this.loadLikedEventIds();
   }
 
-  private loadAttendedEventIds(): void {
+  private loadLikedEventIds(): void {
     const userId = this.authService.currentUser()?.id;
     if (!userId) {
-      this.attendedEventIds.set(new Set());
+      this.likedEventIds.set(new Set());
       return;
     }
     this.favoriteService.getFavoritedEvents(userId).subscribe({
-      next: (events) => this.attendedEventIds.set(new Set(events.map((event) => event.id))),
-      error: () => this.attendedEventIds.set(new Set()),
+      next: (events) => this.likedEventIds.set(new Set(events.map((event) => event.id))),
+      error: () => this.likedEventIds.set(new Set()),
     });
   }
 
-  /** Set instead of immediately toggling when the tapped card belongs to a
-   * recurring series - see onAttendToggle below and
-   * <app-series-attend-confirm>'s own doc comment. */
-  readonly pendingSeriesToggle = signal<{ eventId: string; seriesId: string; wasAttending: boolean } | null>(null);
-
-  /** <app-event-card>'s (attendToggle) - it already refuses to emit for the
+  /** <app-event-card>'s (likeToggle) - it already refuses to emit for the
    * organizer's own event or a finished/cancelled one, so this only ever
-   * needs to flip between attending and not. A series instance asks "this
-   * day or the whole series?" first instead of assuming. */
-  onAttendToggle(eventId: string): void {
-    if (this.attendBusyIds().has(eventId)) {
-      return;
-    }
-    const event = this.events().find((e) => e.id === eventId);
-    if (event?.seriesId) {
-      this.pendingSeriesToggle.set({ eventId, seriesId: event.seriesId, wasAttending: this.attendedEventIds().has(eventId) });
-      return;
-    }
-    this.toggleSingleAttend(eventId);
-  }
-
-  confirmSeriesDayOnly(): void {
-    const pending = this.pendingSeriesToggle();
-    this.pendingSeriesToggle.set(null);
-    if (pending) {
-      this.toggleSingleAttend(pending.eventId);
-    }
-  }
-
-  confirmSeriesWhole(): void {
-    const pending = this.pendingSeriesToggle();
+   * needs to flip between liked and not. A simple, immediate toggle per
+   * instance - even for a recurring series, liking doesn't ask "this day or
+   * the whole series?" the way attending does (see event-detail.page.ts). */
+  onLikeToggle(eventId: string): void {
     const userId = this.authService.currentUser()?.id;
-    this.pendingSeriesToggle.set(null);
-    if (!pending || !userId) {
+    if (!userId || this.likeBusyIds().has(eventId)) {
       return;
     }
-    this.attendBusyIds.update((ids) => new Set(ids).add(pending.eventId));
-    const seriesEventIds = this.events()
-      .filter((e) => e.seriesId === pending.seriesId)
-      .map((e) => e.id);
-    const request$ = pending.wasAttending
-      ? this.favoriteService.removeSeriesFromFavorites(userId, pending.seriesId)
-      : this.favoriteService.addSeriesToFavorites(userId, pending.seriesId);
-    request$.subscribe({
-      next: () => {
-        this.attendedEventIds.update((ids) => {
-          const next = new Set(ids);
-          for (const id of seriesEventIds) {
-            if (pending.wasAttending) {
-              next.delete(id);
-            } else {
-              next.add(id);
-            }
-          }
-          return next;
-        });
-        this.attendBusyIds.update((ids) => {
-          const next = new Set(ids);
-          next.delete(pending.eventId);
-          return next;
-        });
-      },
-      error: () => {
-        this.attendBusyIds.update((ids) => {
-          const next = new Set(ids);
-          next.delete(pending.eventId);
-          return next;
-        });
-      },
-    });
-  }
-
-  cancelSeriesToggle(): void {
-    this.pendingSeriesToggle.set(null);
-  }
-
-  private toggleSingleAttend(eventId: string): void {
-    const userId = this.authService.currentUser()?.id;
-    if (!userId) {
-      return;
-    }
-    this.attendBusyIds.update((ids) => new Set(ids).add(eventId));
-    const wasAttending = this.attendedEventIds().has(eventId);
-    const request$ = wasAttending
+    this.likeBusyIds.update((ids) => new Set(ids).add(eventId));
+    const wasLiked = this.likedEventIds().has(eventId);
+    const request$ = wasLiked
       ? this.favoriteService.removeFromFavorites(userId, eventId)
       : this.favoriteService.addToFavorites(userId, eventId);
     request$.subscribe({
       next: () => {
-        this.attendedEventIds.update((ids) => {
+        this.likedEventIds.update((ids) => {
           const next = new Set(ids);
-          if (wasAttending) {
+          if (wasLiked) {
             next.delete(eventId);
           } else {
             next.add(eventId);
           }
           return next;
         });
-        this.attendBusyIds.update((ids) => {
+        this.likeBusyIds.update((ids) => {
           const next = new Set(ids);
           next.delete(eventId);
           return next;
         });
       },
       error: (err) => {
-        const recovered = recoverAttendState(err, wasAttending);
+        const recovered = recoverAttendState(err, wasLiked);
         if (recovered !== null) {
-          this.attendedEventIds.update((ids) => {
+          this.likedEventIds.update((ids) => {
             const next = new Set(ids);
             if (recovered) {
               next.add(eventId);
@@ -446,7 +373,7 @@ export class EventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWillEnt
             return next;
           });
         }
-        this.attendBusyIds.update((ids) => {
+        this.likeBusyIds.update((ids) => {
           const next = new Set(ids);
           next.delete(eventId);
           return next;

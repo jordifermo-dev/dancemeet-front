@@ -20,13 +20,14 @@ export function buildEventCardView(
   eventTypesById: Map<string, EventType>,
   lang: AppLanguage | null,
   currentUserId: string | null | undefined,
-  /** IDs of events the *logged-in* user attends. `relation` on `event` isn't
-   * a safe stand-in for this - on user-events it describes how the profile
-   * being *viewed* relates to the event, which is a different person when
-   * browsing someone else's list. Pass this whenever that's a possibility
-   * (Events tab, user-events); omit only on Favorites, which is always the
-   * logged-in user's own list, so `event.relation` already is their own. */
-  attendedEventIds?: ReadonlySet<string>,
+  /** IDs of events the *logged-in* user has liked. `relation` on `event`
+   * isn't a safe stand-in for this - on user-events it describes how the
+   * profile being *viewed* relates to the event, which is a different person
+   * when browsing someone else's list. Pass this whenever that's a
+   * possibility (Events tab, user-events); omit only on Favorites, which is
+   * always the logged-in user's own list, so `event.relation` already is
+   * their own. */
+  likedEventIds?: ReadonlySet<string>,
 ): EventCardView {
   const eventTypeTags = event.typeIds
     .map((id) => eventTypesById.get(id))
@@ -60,11 +61,11 @@ export function buildEventCardView(
     isOwnEvent,
     // isOwnEvent first - the backend creates a real Favorite record for the
     // creator on createEvent() (and, the same way, for an accepted manager
-    // on respondToInvite() - see EventManagerService) so both attend their
-    // event without an explicit favorite action. On Favorites (the one
-    // screen that omits attendedEventIds - see the param comment above),
+    // on respondToInvite() - see EventManagerService) so both like their
+    // own event without an explicit like action. On Favorites (the one
+    // screen that omits likedEventIds - see the param comment above),
     // appearing in the list AT ALL - either relation value - already implies
-    // a real Favorite row exists, so any truthy `relation` means attending.
-    isAttending: isOwnEvent || (attendedEventIds ? attendedEventIds.has(event.id) : !!event.relation),
+    // a real Favorite row exists, so any truthy `relation` means liked.
+    isLiked: isOwnEvent || (likedEventIds ? likedEventIds.has(event.id) : !!event.relation),
   };
 }

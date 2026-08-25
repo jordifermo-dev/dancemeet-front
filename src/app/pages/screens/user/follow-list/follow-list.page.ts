@@ -29,7 +29,7 @@ import {
 } from 'ionicons/icons';
 import { AuthService } from '../../../../services/core/auth.service';
 import { FollowService } from '../../../../services/user/follow.service';
-import { FavoriteService } from '../../../../services/favorites/favorite.service';
+import { AttendanceService } from '../../../../services/attendance/attendance.service';
 import { DisciplineService } from '../../../../services/event/discipline.service';
 import { EventService } from '../../../../services/event/event.service';
 import { EventManagerService } from '../../../../services/event-managers/event-manager.service';
@@ -82,7 +82,7 @@ export class FollowListPage implements ViewWillEnter {
   private readonly route = inject(ActivatedRoute);
   private readonly authService = inject(AuthService);
   private readonly followService = inject(FollowService);
-  private readonly favoriteService = inject(FavoriteService);
+  private readonly attendanceService = inject(AttendanceService);
   private readonly disciplineService = inject(DisciplineService);
   private readonly eventService = inject(EventService);
   private readonly eventManagerService = inject(EventManagerService);
@@ -281,7 +281,7 @@ export class FollowListPage implements ViewWillEnter {
         return;
       }
       this.loading.set(true);
-      this.favoriteService.getEventAttendees(eventId).subscribe({
+      this.attendanceService.getEventAttendees(eventId).subscribe({
         next: (attendees) => {
           // Reuses FollowUser's shape/field name so the rest of this page
           // (search/sort/render) doesn't need to know about a second type.

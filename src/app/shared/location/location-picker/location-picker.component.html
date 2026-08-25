@@ -106,7 +106,7 @@
 
   @if (showDistance && !isExpanded()) {
     <p class="range-label">{{ 'register.distanceLabel' | translate: { km: distanceValue } }}</p>
-    <ion-range [min]="1" [max]="150" [value]="distanceValue" (ionChange)="onDistanceChange($event)"></ion-range>
+    <ion-range [min]="1" [max]="300" [value]="distanceValue" (ionChange)="onDistanceChange($event)"></ion-range>
   }
 
   @if (showDirectionsButton) {

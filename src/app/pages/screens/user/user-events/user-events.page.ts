@@ -42,6 +42,7 @@ import {
 } from 'ionicons/icons';
 import { AuthService } from '../../../../services/core/auth.service';
 import { FavoriteService } from '../../../../services/favorites/favorite.service';
+import { AttendanceService } from '../../../../services/attendance/attendance.service';
 import { EventListRefreshService } from '../../../../services/event/event-list-refresh.service';
 import { LanguageService } from '../../../../services/core/language.service';
 import { FavoritedEvent } from '../../../../models';
@@ -52,7 +53,6 @@ import { EventCardView } from '../../../../shared/event/event-card/event-card.mo
 import { buildEventCardView } from '../../../../shared/event/event-card/build-event-card-view';
 import { EventCalendarComponent } from '../../../../shared/calendar/event-calendar/event-calendar.component';
 import { CalendarGranularityToggleComponent } from '../../../../shared/calendar/event-calendar/calendar-granularity-toggle.component';
-import { SeriesAttendConfirmComponent } from '../../../../shared/event/series-attend-confirm/series-attend-confirm.component';
 import { recoverAttendState } from '../../../../shared/event/attend-toggle';
 import { createEventListFilters } from '../../../../shared/filters/event-list-filters';
 import { sortEvents } from '../../../../shared/event/event-sort';
@@ -95,7 +95,6 @@ import { ViewModeMenuComponent } from '../../../../shared/event/view-mode-menu/v
     LocationPickerComponent,
     EventCalendarComponent,
     CalendarGranularityToggleComponent,
-    SeriesAttendConfirmComponent,
     PhotoGridComponent,
     ViewModeMenuComponent,
   ],
@@ -105,6 +104,7 @@ export class UserEventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWil
   private readonly router = inject(Router);
   private readonly authService = inject(AuthService);
   private readonly favoriteService = inject(FavoriteService);
+  private readonly attendanceService = inject(AttendanceService);
   private readonly refreshNotifier = inject(EventListRefreshService);
   private readonly languageService = inject(LanguageService);
   private readonly ngZone = inject(NgZone);
@@ -120,11 +120,16 @@ export class UserEventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWil
   private overlayResizeObserver?: ResizeObserver;
 
   readonly allEvents = signal<FavoritedEvent[]>([]);
-  /** IDs of events the *logged-in* user attends - unlike `relation` on each
+  /** IDs of events the *logged-in* user has liked - unlike `relation` on each
    * event (which describes how the *viewed* profile relates to it), this is
    * always about "me", so it stays correct whether this is my own events
-   * list or someone else's. */
-  readonly attendedEventIds = signal<Set<string>>(new Set());
+   * list or someone else's. Drives the heart on each card. */
+  readonly likedEventIds = signal<Set<string>>(new Set());
+  /** IDs of events the *viewed* profile really attends (not just likes) -
+   * the "Asistente" filter pill checks against this instead of `relation`,
+   * which only reflects that profile's heart (see filteredEvents' own
+   * comment). Scoped to whichever profile is being viewed, unlike likedEventIds. */
+  readonly attendingEventIds = signal<Set<string>>(new Set());
 
   constructor() {
     addIcons({
@@ -191,7 +196,7 @@ export class UserEventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWil
       .filter((event) => statuses.includes(event.status))
       .filter((event) => {
         const isOrganizer = event.relation === 'creator';
-        const isAttendee = event.relation === 'favorite';
+        const isAttendee = this.attendingEventIds().has(event.id);
         return (wantsOrganizer && isOrganizer) || (wantsAttendee && isAttendee);
       })
       .filter((event) => priceOptions.includes(event.isFree ? 'free' : 'paid'))
@@ -212,7 +217,7 @@ export class UserEventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWil
     const lang = this.languageService.currentLang();
     const currentUserId = this.authService.currentUser()?.id;
     return sortEvents(this.filteredEvents(), this.filters.sortMode()).map((event) =>
-      buildEventCardView(event, disciplinesById, eventTypesById, lang, currentUserId, this.attendedEventIds()),
+      buildEventCardView(event, disciplinesById, eventTypesById, lang, currentUserId, this.likedEventIds()),
     );
   });
 
@@ -252,7 +257,7 @@ export class UserEventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWil
    * alive, so coming back here should still show fresh data. */
   ionViewWillEnter(): void {
     this.loadEvents();
-    this.loadAttendedEventIds();
+    this.loadLikedEventIds();
   }
 
   private loadEvents(): void {
@@ -269,143 +274,71 @@ export class UserEventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWil
       },
       error: () => this.filters.loading.set(false),
     });
+    this.attendanceService.getAttendedEvents(userId).subscribe({
+      next: (events) => this.attendingEventIds.set(new Set(events.map((event) => event.id))),
+      error: () => this.attendingEventIds.set(new Set()),
+    });
   }
 
-  private loadAttendedEventIds(): void {
+  private loadLikedEventIds(): void {
     const myId = this.authService.currentUser()?.id;
     if (!myId) {
-      this.attendedEventIds.set(new Set());
+      this.likedEventIds.set(new Set());
       return;
     }
     this.favoriteService.getFavoritedEvents(myId).subscribe({
-      next: (events) => this.attendedEventIds.set(new Set(events.map((event) => event.id))),
-      error: () => this.attendedEventIds.set(new Set()),
+      next: (events) => this.likedEventIds.set(new Set(events.map((event) => event.id))),
+      error: () => this.likedEventIds.set(new Set()),
     });
   }
 
-  /** Guards attend/unattend requests in flight per event id - a doubled tap
+  /** Guards like/unlike requests in flight per event id - a doubled tap
    * otherwise fires the handler twice before the first request's response
-   * updates attendedEventIds, sending a duplicate add/remove call the
-   * backend rejects with an "already favorited"/"not found" error. */
-  private readonly attendBusyIds = signal<Set<string>>(new Set());
+   * updates likedEventIds, sending a duplicate add/remove call the backend
+   * rejects with an "already favorited"/"not found" error. */
+  private readonly likeBusyIds = signal<Set<string>>(new Set());
 
-  /** Set instead of immediately toggling when the tapped card belongs to a
-   * recurring series - see onAttendToggle below and
-   * <app-series-attend-confirm>'s own doc comment. */
-  readonly pendingSeriesToggle = signal<{ eventId: string; seriesId: string; wasAttending: boolean } | null>(null);
-
-  /** <app-event-card>'s (attendToggle) - unattending only removes the card
-   * from *this* list when it's my own (no ?userId, or ?userId is me):
-   * someone else's events list is organized/favorited by *them*, so my own
-   * attendance toggling shouldn't make their card disappear from their list.
-   * A series instance asks "this day or the whole series?" first instead of
-   * assuming. */
-  onAttendToggle(eventId: string): void {
-    if (this.attendBusyIds().has(eventId)) {
-      return;
-    }
-    const event = this.allEvents().find((e) => e.id === eventId);
-    if (event?.seriesId) {
-      this.pendingSeriesToggle.set({ eventId, seriesId: event.seriesId, wasAttending: this.attendedEventIds().has(eventId) });
-      return;
-    }
-    this.toggleSingleAttend(eventId);
-  }
-
-  confirmSeriesDayOnly(): void {
-    const pending = this.pendingSeriesToggle();
-    this.pendingSeriesToggle.set(null);
-    if (pending) {
-      this.toggleSingleAttend(pending.eventId);
-    }
-  }
-
-  confirmSeriesWhole(): void {
-    const pending = this.pendingSeriesToggle();
+  /** <app-event-card>'s (likeToggle) - unliking only removes the card from
+   * *this* list when it's my own (no ?userId, or ?userId is me): someone
+   * else's events list is organized/favorited by *them*, so my own liking
+   * shouldn't make their card disappear from their list. A simple, immediate
+   * toggle per instance - even a recurring series' card only unlikes that
+   * one instance, unlike attending (see event-detail.page.ts). */
+  onLikeToggle(eventId: string): void {
     const myId = this.authService.currentUser()?.id;
-    this.pendingSeriesToggle.set(null);
-    if (!pending || !myId) {
+    if (!myId || this.likeBusyIds().has(eventId)) {
       return;
     }
-    this.attendBusyIds.update((ids) => new Set(ids).add(pending.eventId));
-    const seriesEventIds = this.allEvents()
-      .filter((e) => e.seriesId === pending.seriesId)
-      .map((e) => e.id);
-    const request$ = pending.wasAttending
-      ? this.favoriteService.removeSeriesFromFavorites(myId, pending.seriesId)
-      : this.favoriteService.addSeriesToFavorites(myId, pending.seriesId);
-    request$.subscribe({
-      next: () => {
-        this.attendedEventIds.update((ids) => {
-          const next = new Set(ids);
-          for (const id of seriesEventIds) {
-            if (pending.wasAttending) {
-              next.delete(id);
-            } else {
-              next.add(id);
-            }
-          }
-          return next;
-        });
-        this.attendBusyIds.update((ids) => {
-          const next = new Set(ids);
-          next.delete(pending.eventId);
-          return next;
-        });
-        const viewedUserId = this.route.snapshot.queryParamMap.get('userId') ?? myId;
-        if (pending.wasAttending && viewedUserId === myId) {
-          this.allEvents.update((events) => events.filter((event) => event.seriesId !== pending.seriesId));
-        }
-      },
-      error: () => {
-        this.attendBusyIds.update((ids) => {
-          const next = new Set(ids);
-          next.delete(pending.eventId);
-          return next;
-        });
-      },
-    });
-  }
-
-  cancelSeriesToggle(): void {
-    this.pendingSeriesToggle.set(null);
-  }
-
-  private toggleSingleAttend(eventId: string): void {
-    const myId = this.authService.currentUser()?.id;
-    if (!myId) {
-      return;
-    }
-    this.attendBusyIds.update((ids) => new Set(ids).add(eventId));
-    const wasAttending = this.attendedEventIds().has(eventId);
-    const request$ = wasAttending
+    this.likeBusyIds.update((ids) => new Set(ids).add(eventId));
+    const wasLiked = this.likedEventIds().has(eventId);
+    const request$ = wasLiked
       ? this.favoriteService.removeFromFavorites(myId, eventId)
       : this.favoriteService.addToFavorites(myId, eventId);
     request$.subscribe({
       next: () => {
-        this.attendedEventIds.update((ids) => {
+        this.likedEventIds.update((ids) => {
           const next = new Set(ids);
-          if (wasAttending) {
+          if (wasLiked) {
             next.delete(eventId);
           } else {
             next.add(eventId);
           }
           return next;
         });
-        this.attendBusyIds.update((ids) => {
+        this.likeBusyIds.update((ids) => {
           const next = new Set(ids);
           next.delete(eventId);
           return next;
         });
         const viewedUserId = this.route.snapshot.queryParamMap.get('userId') ?? myId;
-        if (wasAttending && viewedUserId === myId) {
+        if (wasLiked && viewedUserId === myId) {
           this.allEvents.update((events) => events.filter((event) => event.id !== eventId));
         }
       },
       error: (err) => {
-        const recovered = recoverAttendState(err, wasAttending);
+        const recovered = recoverAttendState(err, wasLiked);
         if (recovered !== null) {
-          this.attendedEventIds.update((ids) => {
+          this.likedEventIds.update((ids) => {
             const next = new Set(ids);
             if (recovered) {
               next.add(eventId);
@@ -419,7 +352,7 @@ export class UserEventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWil
             this.allEvents.update((events) => events.filter((event) => event.id !== eventId));
           }
         }
-        this.attendBusyIds.update((ids) => {
+        this.likeBusyIds.update((ids) => {
           const next = new Set(ids);
           next.delete(eventId);
           return next;

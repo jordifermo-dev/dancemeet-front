@@ -250,19 +250,37 @@
       <div class="creator-row">
         <a class="event-creator" [routerLink]="creatorProfileLink()">{{ event()!.creatorName }}</a>
         <div class="creator-row-right">
-          <div class="stat" (click)="goToAttendees()">
-            <span class="stat-count">{{ attendeesCount() }}</span>
-            <span class="stat-label">{{ 'eventDetail.attendeesLabel' | translate }}</span>
-          </div>
           <button
             type="button"
-            class="attend-heart-btn"
+            class="attend-toggle-btn"
             [class.active]="isAttending()"
             [disabled]="canManage() || attendLoading() || isEventOver()"
             [attr.aria-label]="(isAttending() ? 'eventDetail.unattendButton' : 'eventDetail.attendButton') | translate"
             (click)="toggleAttend()"
           >
-            <ion-icon [name]="attendFlash.active() ? 'checkmark-outline' : (isAttending() ? 'heart' : 'heart-outline')"></ion-icon>
+            <ion-icon
+              [name]="attendFlash.active() ? 'checkmark-outline' : (isAttending() ? 'person-remove-outline' : 'person-add-outline')"
+            ></ion-icon>
+          </button>
+          <button
+            type="button"
+            class="attendees-badge-btn"
+            [attr.aria-label]="'eventDetail.attendeesLabel' | translate"
+            (click)="goToAttendees()"
+          >
+            <ion-icon name="people-outline"></ion-icon>
+            <span class="count-badge">{{ attendeesCount() }}</span>
+          </button>
+          <button
+            type="button"
+            class="like-heart-btn"
+            [class.active]="isLiked()"
+            [disabled]="canManage() || likeLoading()"
+            [attr.aria-label]="(isLiked() ? 'eventDetail.unlikeButton' : 'eventDetail.likeButton') | translate"
+            (click)="toggleLike()"
+          >
+            <ion-icon [name]="likeFlash.active() ? 'checkmark-outline' : (isLiked() ? 'heart' : 'heart-outline')"></ion-icon>
+            <span class="count-badge">{{ likesCount() }}</span>
           </button>
         </div>
       </div>

@@ -78,7 +78,7 @@ export class EventCalendarComponent implements AfterViewInit, OnDestroy {
   readonly events = input<EventWithCreatorName[]>([]);
   readonly eventTypesById = input.required<Map<string, EventType>>();
   readonly disciplinesById = input.required<Map<string, Discipline>>();
-  readonly attendedEventIds = input<ReadonlySet<string>>(new Set());
+  readonly likedEventIds = input<ReadonlySet<string>>(new Set());
   /** = the host page's current "Ordenar" choice, so the day agenda orders
    * events the same way the list view does instead of always defaulting to
    * soonest-first regardless of what the user actually picked. */
@@ -93,7 +93,7 @@ export class EventCalendarComponent implements AfterViewInit, OnDestroy {
    * doc comment for why that toggle isn't rendered in here anymore). */
   readonly granularity = input.required<CalendarGranularity>();
 
-  @Output() readonly attendToggle = new EventEmitter<string>();
+  @Output() readonly likeToggle = new EventEmitter<string>();
 
   @ViewChild('swipeArea') private swipeAreaRef?: ElementRef<HTMLElement>;
   private gesture?: Gesture;
@@ -146,10 +146,10 @@ export class EventCalendarComponent implements AfterViewInit, OnDestroy {
     const eventTypesById = this.eventTypesById();
     const lang = this.languageService.currentLang();
     const currentUserId = this.authService.currentUser()?.id;
-    const attendedEventIds = this.attendedEventIds();
+    const likedEventIds = this.likedEventIds();
     const dayEvents = this.events().filter((event) => event.eventDateFrom <= dayEnd && event.eventDateTo >= dayStart);
     return sortEvents(dayEvents, this.sortMode()).map((event) =>
-      buildEventCardView(event, disciplinesById, eventTypesById, lang, currentUserId, attendedEventIds),
+      buildEventCardView(event, disciplinesById, eventTypesById, lang, currentUserId, likedEventIds),
     );
   });
 
@@ -264,8 +264,8 @@ export class EventCalendarComponent implements AfterViewInit, OnDestroy {
     }
   }
 
-  onAttendToggle(eventId: string): void {
-    this.attendToggle.emit(eventId);
+  onLikeToggle(eventId: string): void {
+    this.likeToggle.emit(eventId);
   }
 
   private targetAnchor(direction: 1 | -1): number {

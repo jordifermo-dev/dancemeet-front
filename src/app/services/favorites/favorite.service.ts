@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, map } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { Attendee, FavoritedEvent } from '../../models';
+import { FavoritedEvent } from '../../models';
 
 @Injectable({ providedIn: 'root' })
 export class FavoriteService {
@@ -19,13 +19,8 @@ export class FavoriteService {
       .pipe(map((res) => res.count));
   }
 
-  getEventAttendees(eventId: string): Observable<Attendee[]> {
-    return this.http.get<Attendee[]>(`${this.baseUrl}/event/${eventId}/attendees`);
-  }
-
-  /** "Attending" an event (event-detail's "Asistir" button) is just favoriting
-   * it from the attendee's side - same underlying Favorite record already
-   * used by the Favorites tab and the "Eventos" stat on Profile. */
+  /** Whether the user has given this event a heart - a plain "like" with no
+   * further implications (see AttendanceService for real RSVP/attendance). */
   isFavorited(userId: string, eventId: string): Observable<boolean> {
     return this.http
       .get<{ isFavorited: boolean }>(`${this.baseUrl}/check/${userId}/${eventId}`)

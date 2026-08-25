@@ -28,6 +28,7 @@ import {
 } from 'ionicons/icons';
 import { AuthService } from '../../../services/core/auth.service';
 import { FavoriteService } from '../../../services/favorites/favorite.service';
+import { AttendanceService } from '../../../services/attendance/attendance.service';
 import { EventListRefreshService } from '../../../services/event/event-list-refresh.service';
 import { LanguageService } from '../../../services/core/language.service';
 import { FavoritedEvent } from '../../../models';
@@ -37,7 +38,6 @@ import { NotificationBellComponent } from '../../../shared/notifications/notific
 import { EventCardView } from '../../../shared/event/event-card/event-card.model';
 import { buildEventCardView } from '../../../shared/event/event-card/build-event-card-view';
 import { EventCalendarComponent } from '../../../shared/calendar/event-calendar/event-calendar.component';
-import { SeriesAttendConfirmComponent } from '../../../shared/event/series-attend-confirm/series-attend-confirm.component';
 import { CalendarGranularityToggleComponent } from '../../../shared/calendar/event-calendar/calendar-granularity-toggle.component';
 import { recoverAttendState } from '../../../shared/event/attend-toggle';
 import { sortEvents } from '../../../shared/event/event-sort';
@@ -78,7 +78,6 @@ import { ViewModeMenuComponent } from '../../../shared/event/view-mode-menu/view
     LocationPickerComponent,
     EventCalendarComponent,
     CalendarGranularityToggleComponent,
-    SeriesAttendConfirmComponent,
     PhotoGridComponent,
     ViewModeMenuComponent,
   ],
@@ -87,6 +86,7 @@ export class FavoritesPage implements OnInit, AfterViewInit, OnDestroy, ViewWill
   private readonly router = inject(Router);
   private readonly authService = inject(AuthService);
   private readonly favoriteService = inject(FavoriteService);
+  private readonly attendanceService = inject(AttendanceService);
   private readonly refreshNotifier = inject(EventListRefreshService);
   private readonly languageService = inject(LanguageService);
   private readonly ngZone = inject(NgZone);
@@ -102,6 +102,10 @@ export class FavoritesPage implements OnInit, AfterViewInit, OnDestroy, ViewWill
   private overlayResizeObserver?: ResizeObserver;
 
   readonly allEvents = signal<FavoritedEvent[]>([]);
+  /** IDs of events the logged-in user really attends (not just likes) - the
+   * "Asistente" filter pill checks against this instead of `relation`, which
+   * only reflects the heart (see filteredEvents' own comment). */
+  readonly attendingEventIds = signal<Set<string>>(new Set());
 
   constructor() {
     addIcons({
@@ -164,7 +168,7 @@ export class FavoritesPage implements OnInit, AfterViewInit, OnDestroy, ViewWill
       .filter((event) => statuses.includes(event.status))
       .filter((event) => {
         const isOrganizer = event.relation === 'creator';
-        const isAttendee = event.relation === 'favorite';
+        const isAttendee = this.attendingEventIds().has(event.id);
         return (wantsOrganizer && isOrganizer) || (wantsAttendee && isAttendee);
       })
       .filter((event) => priceOptions.includes(event.isFree ? 'free' : 'paid'))
@@ -229,80 +233,32 @@ export class FavoritesPage implements OnInit, AfterViewInit, OnDestroy, ViewWill
     this.overlayResizeObserver?.disconnect();
   }
 
-  /** Guards attend/unattend requests in flight per event id - a doubled tap
+  /** Guards like/unlike requests in flight per event id - a doubled tap
    * otherwise fires the handler twice before the first request's response
    * updates the list, sending a duplicate remove call the backend rejects
    * with a "not found" error. */
-  private readonly attendBusyIds = signal<Set<string>>(new Set());
+  private readonly likeBusyIds = signal<Set<string>>(new Set());
 
-  /** Set instead of immediately toggling when the tapped card belongs to a
-   * recurring series - see onAttendToggle below and
-   * <app-series-attend-confirm>'s own doc comment. */
-  readonly pendingSeriesToggle = signal<{ eventId: string; seriesId: string } | null>(null);
-
-  /** <app-event-card>'s (attendToggle) - it already refuses to emit for the
+  /** <app-event-card>'s (likeToggle) - it already refuses to emit for the
    * organizer's own event or a finished/cancelled one, so every card here
-   * that can fire this is currently attending (that's the only way a
-   * non-organizer event lands in this list); un-attending removes it from
-   * the list entirely, since it's no longer one of "my" events. A series
-   * instance asks "this day or the whole series?" first instead of assuming. */
-  onAttendToggle(eventId: string): void {
-    if (this.attendBusyIds().has(eventId)) {
-      return;
-    }
-    const event = this.allEvents().find((e) => e.id === eventId);
-    if (event?.seriesId) {
-      this.pendingSeriesToggle.set({ eventId, seriesId: event.seriesId });
-      return;
-    }
-    this.removeSingleFromFavorites(eventId);
-  }
-
-  confirmSeriesDayOnly(): void {
-    const pending = this.pendingSeriesToggle();
-    this.pendingSeriesToggle.set(null);
-    if (pending) {
-      this.removeSingleFromFavorites(pending.eventId);
-    }
-  }
-
-  confirmSeriesWhole(): void {
-    const pending = this.pendingSeriesToggle();
+   * that can fire this is currently liked (that's the only way a
+   * non-organizer event lands in this list); unliking removes it from the
+   * list entirely, since it's no longer one of "my" events. A simple,
+   * immediate toggle per instance - even a recurring series' card only
+   * unlikes that one instance, unlike attending (see event-detail.page.ts). */
+  onLikeToggle(eventId: string): void {
     const userId = this.authService.currentUser()?.id;
-    this.pendingSeriesToggle.set(null);
-    if (!pending || !userId) {
+    if (!userId || this.likeBusyIds().has(eventId)) {
       return;
     }
-    this.attendBusyIds.update((ids) => new Set(ids).add(pending.eventId));
-    this.favoriteService.removeSeriesFromFavorites(userId, pending.seriesId).subscribe({
-      next: () => this.allEvents.update((events) => events.filter((event) => event.seriesId !== pending.seriesId)),
-      error: () => {
-        this.attendBusyIds.update((ids) => {
-          const next = new Set(ids);
-          next.delete(pending.eventId);
-          return next;
-        });
-      },
-    });
-  }
-
-  cancelSeriesToggle(): void {
-    this.pendingSeriesToggle.set(null);
-  }
-
-  private removeSingleFromFavorites(eventId: string): void {
-    const userId = this.authService.currentUser()?.id;
-    if (!userId) {
-      return;
-    }
-    this.attendBusyIds.update((ids) => new Set(ids).add(eventId));
+    this.likeBusyIds.update((ids) => new Set(ids).add(eventId));
     this.favoriteService.removeFromFavorites(userId, eventId).subscribe({
       next: () => this.allEvents.update((events) => events.filter((event) => event.id !== eventId)),
       error: (err) => {
         if (recoverAttendState(err, true) === false) {
           this.allEvents.update((events) => events.filter((event) => event.id !== eventId));
         }
-        this.attendBusyIds.update((ids) => {
+        this.likeBusyIds.update((ids) => {
           const next = new Set(ids);
           next.delete(eventId);
           return next;
@@ -324,6 +280,10 @@ export class FavoritesPage implements OnInit, AfterViewInit, OnDestroy, ViewWill
         this.filters.loading.set(false);
       },
       error: () => this.filters.loading.set(false),
+    });
+    this.attendanceService.getAttendedEvents(user.id).subscribe({
+      next: (events) => this.attendingEventIds.set(new Set(events.map((event) => event.id))),
+      error: () => this.attendingEventIds.set(new Set()),
     });
   }
 

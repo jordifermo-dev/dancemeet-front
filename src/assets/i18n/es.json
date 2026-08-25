@@ -368,6 +368,8 @@
     "attendeesLabel": "Asistentes",
     "attendButton": "Asistir",
     "unattendButton": "Dejar de asistir",
+    "likeButton": "Marcar me gusta",
+    "unlikeButton": "Quitar me gusta",
     "saveButton": "Guardar",
     "savedButton": "Guardado ✓",
     "cancelButton": "Cancelar",

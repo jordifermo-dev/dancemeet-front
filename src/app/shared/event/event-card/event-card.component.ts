@@ -25,19 +25,19 @@ export class EventCardComponent {
   @Input() origin?: string;
   /** The card itself stays a pure, presentational component with no service
    * dependencies of its own (see event-card.model.ts) - the page decides what
-   * attending/unattending actually does (call FavoriteService, update its
+   * liking/unliking actually does (call FavoriteService, update its
    * list/signals). */
-  @Output() readonly attendToggle = new EventEmitter<string>();
+  @Output() readonly likeToggle = new EventEmitter<string>();
 
   constructor() {
     addIcons({ calendarOutline, locationOutline, heart, heartOutline });
   }
 
-  onAttendToggle(event: Event): void {
+  onLikeToggle(event: Event): void {
     event.stopPropagation();
     if (this.view.isOwnEvent || this.view.status === 'finished' || this.view.status === 'cancelled') {
       return;
     }
-    this.attendToggle.emit(this.view.id);
+    this.likeToggle.emit(this.view.id);
   }
 }

@@ -41,6 +41,9 @@ import {
   trashOutline,
   heart,
   heartOutline,
+  personAddOutline,
+  personRemoveOutline,
+  peopleOutline,
   refreshOutline,
   arrowUndoOutline,
   arrowRedoOutline,
@@ -53,6 +56,7 @@ import {
 import { AuthService } from '../../../../services/core/auth.service';
 import { EventService } from '../../../../services/event/event.service';
 import { FavoriteService } from '../../../../services/favorites/favorite.service';
+import { AttendanceService } from '../../../../services/attendance/attendance.service';
 import { EventListRefreshService } from '../../../../services/event/event-list-refresh.service';
 import { DisciplineService } from '../../../../services/event/discipline.service';
 import { EventTypeService } from '../../../../services/event/event-type.service';
@@ -212,6 +216,7 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
   private readonly authService = inject(AuthService);
   private readonly eventService = inject(EventService);
   private readonly favoriteService = inject(FavoriteService);
+  private readonly attendanceService = inject(AttendanceService);
   private readonly refreshNotifier = inject(EventListRefreshService);
   private readonly disciplineService = inject(DisciplineService);
   private readonly eventTypeService = inject(EventTypeService);
@@ -239,6 +244,16 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
   readonly isCreateMode = signal(false);
   readonly showValidationModal = signal(false);
   readonly showDateInvalidModal = signal(false);
+  /** Plain "me gusta" - the heart. See isAttending below for the real RSVP. */
+  readonly isLiked = signal(false);
+  readonly likeLoading = signal(false);
+  readonly likeFlash = createSuccessFlash();
+  /** Badge on the heart - how many people have liked this event, same idea
+   * as attendeesCount below but for Favorite rather than Attendance. */
+  readonly likesCount = signal(0);
+  /** Real RSVP (AttendanceService) - drives the attendee list/count, gallery-
+   * posting permission (see canPostPhoto) and the organizer's notification.
+   * Not the same as isLiked - see this page's own "Like"/"Attend" sections. */
   readonly isAttending = signal(false);
   readonly attendLoading = signal(false);
   readonly attendFlash = createSuccessFlash();
@@ -766,6 +781,9 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
       trashOutline,
       heart,
       heartOutline,
+      personAddOutline,
+      personRemoveOutline,
+      peopleOutline,
       refreshOutline,
       arrowUndoOutline,
       arrowRedoOutline,
@@ -908,8 +926,10 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
         this.event.set(event);
         this.notFound.set(!event);
         this.loading.set(false);
-        this.refreshAttendingState(event);
+        this.refreshLikedState(event);
+        this.refreshAttendanceState(event);
         this.refreshAttendeesCount(id);
+        this.refreshLikesCount(id);
         this.refreshParticipants(id);
         this.refreshGallery(id);
       },
@@ -921,9 +941,16 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
   }
 
   private refreshAttendeesCount(eventId: string): void {
-    this.favoriteService.countByEvent(eventId).subscribe({
+    this.attendanceService.countByEvent(eventId).subscribe({
       next: (count) => this.attendeesCount.set(count),
       error: () => this.attendeesCount.set(0),
+    });
+  }
+
+  private refreshLikesCount(eventId: string): void {
+    this.favoriteService.countByEvent(eventId).subscribe({
+      next: (count) => this.likesCount.set(count),
+      error: () => this.likesCount.set(0),
     });
   }
 
@@ -970,10 +997,28 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
     });
   }
 
-  /** The organizer always attends their own event - the backend creates a
+  /** The organizer always likes their own event - the backend creates a
    * Favorite record for the creator on createEvent(), so this is true
    * without needing to ask, same as the heart on <app-event-card>. */
-  private refreshAttendingState(event: EventWithCreatorName | null): void {
+  private refreshLikedState(event: EventWithCreatorName | null): void {
+    const me = this.authService.currentUser();
+    if (!event || !me) {
+      this.isLiked.set(false);
+      return;
+    }
+    if (event.creatorId === me.id) {
+      this.isLiked.set(true);
+      return;
+    }
+    this.favoriteService.isFavorited(me.id, event.id).subscribe({
+      next: (isFavorited) => this.isLiked.set(isFavorited),
+      error: () => this.isLiked.set(false),
+    });
+  }
+
+  /** The organizer always attends their own event too - the backend creates
+   * a real Attendance record for the creator on createEvent(). */
+  private refreshAttendanceState(event: EventWithCreatorName | null): void {
     const me = this.authService.currentUser();
     if (!event || !me) {
       this.isAttending.set(false);
@@ -983,8 +1028,8 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
       this.isAttending.set(true);
       return;
     }
-    this.favoriteService.isFavorited(me.id, event.id).subscribe({
-      next: (isFavorited) => this.isAttending.set(isFavorited),
+    this.attendanceService.isAttending(me.id, event.id).subscribe({
+      next: (isAttending) => this.isAttending.set(isAttending),
       error: () => this.isAttending.set(false),
     });
   }
@@ -1217,21 +1262,64 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
   }
 
 
-  // --- Attend (favorite as attendee) ---------------------------------------
+  // --- Like (heart) -----------------------------------------------------
+
+  /** Simple, immediate toggle - a plain "me gusta" with no further
+   * implications and no series question, even on a recurring instance (see
+   * toggleAttend below for the real RSVP, which does ask "this day or the
+   * whole series?"). Same Favorite record the Favorites tab and Profile's
+   * "Eventos" stat already read from. */
+  toggleLike(): void {
+    const event = this.event();
+    const me = this.authService.currentUser();
+    if (!event || !me || this.canManage() || this.likeLoading()) {
+      return;
+    }
+    this.likeLoading.set(true);
+    const wasLiked = this.isLiked();
+    const request$ = wasLiked
+      ? this.favoriteService.removeFromFavorites(me.id, event.id)
+      : this.favoriteService.addToFavorites(me.id, event.id);
+    request$.subscribe({
+      next: () => {
+        this.likesCount.update((count) => Math.max(0, count + (wasLiked ? -1 : 1)));
+        this.likeFlash.trigger();
+        setTimeout(() => {
+          this.isLiked.set(!wasLiked);
+          this.likeLoading.set(false);
+        }, 900);
+      },
+      error: () => this.likeLoading.set(false),
+    });
+  }
+
+  // --- Attend (real RSVP) ------------------------------------------------
 
   /** Set instead of immediately toggling when this event belongs to a
    * recurring series - see toggleAttend below and
    * <app-series-attend-confirm>'s own doc comment. */
   readonly pendingSeriesToggle = signal<{ wasAttending: boolean } | null>(null);
 
-  /** Same Favorite record the Favorites tab and Profile's "Eventos" stat
-   * already read from - toggling this here just creates/removes that row,
-   * everything downstream picks it up with no extra wiring. A series
+  /** The single attend icon does double duty: an organizer/manager (always
+   * attending their own event, nothing to toggle) taps it to open the real
+   * attendee list/management screen instead; anyone else toggles their own
+   * attendance. */
+  onAttendIconClick(): void {
+    if (this.canManage()) {
+      this.goToAttendees();
+      return;
+    }
+    this.toggleAttend();
+  }
+
+  /** The real RSVP (AttendanceService) - creates/removes the Attendance
+   * record behind the attendee list, the count, gallery-posting permission
+   * and the organizer's notification, unlike the heart above. A series
    * instance asks "this day or the whole series?" first instead of assuming. */
   toggleAttend(): void {
     const event = this.event();
     const me = this.authService.currentUser();
-    if (!event || !me || event.creatorId === me.id || this.attendLoading() || this.isEventOver()) {
+    if (!event || !me || this.canManage() || this.attendLoading() || this.isEventOver()) {
       return;
     }
     if (event.seriesId) {
@@ -1257,12 +1345,22 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
     this.attendLoading.set(true);
     const wasAttending = pending.wasAttending;
     const request$ = wasAttending
-      ? this.favoriteService.removeSeriesFromFavorites(me.id, event.seriesId)
-      : this.favoriteService.addSeriesToFavorites(me.id, event.seriesId);
+      ? this.attendanceService.removeSeriesAttendance(me.id, event.seriesId)
+      : this.attendanceService.addSeriesAttendance(me.id, event.seriesId);
     request$.subscribe({
       next: () => {
         this.attendeesCount.update((count) => Math.max(0, count + (wasAttending ? -1 : 1)));
         this.attendFlash.trigger();
+        if (!wasAttending) {
+          // Marking attendance also likes the instance being viewed - see
+          // toggleLike's own doc comment on the like/attend split.
+          this.favoriteService.addToFavorites(me.id, event.id).subscribe({
+            next: () => {
+              this.isLiked.set(true);
+              this.likesCount.update((count) => count + 1);
+            },
+          });
+        }
         setTimeout(() => {
           this.isAttending.set(!wasAttending);
           this.attendLoading.set(false);
@@ -1285,12 +1383,20 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
     this.attendLoading.set(true);
     const wasAttending = this.isAttending();
     const request$ = wasAttending
-      ? this.favoriteService.removeFromFavorites(me.id, event.id)
-      : this.favoriteService.addToFavorites(me.id, event.id);
+      ? this.attendanceService.removeAttendance(me.id, event.id)
+      : this.attendanceService.addAttendance(me.id, event.id);
     request$.subscribe({
       next: () => {
         this.attendeesCount.update((count) => Math.max(0, count + (wasAttending ? -1 : 1)));
         this.attendFlash.trigger();
+        if (!wasAttending) {
+          this.favoriteService.addToFavorites(me.id, event.id).subscribe({
+            next: () => {
+              this.isLiked.set(true);
+              this.likesCount.update((count) => count + 1);
+            },
+          });
+        }
         // Same "flash the confirmation, then settle into the real state"
         // beat as saveEdit() - flipping isAttending immediately would swap
         // the icon/label straight to "No asistir" before anyone saw the

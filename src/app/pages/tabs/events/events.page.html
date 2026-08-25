@@ -93,7 +93,7 @@
         </div>
       } @else {
         @for (view of cardViews(); track view.id) {
-          <app-event-card [view]="view" origin="/tabs/events" (attendToggle)="onAttendToggle($event)"></app-event-card>
+          <app-event-card [view]="view" origin="/tabs/events" (likeToggle)="onLikeToggle($event)"></app-event-card>
         }
       }
     </div>
@@ -103,12 +103,12 @@
         [events]="events()"
         [eventTypesById]="eventTypesById()"
         [disciplinesById]="disciplinesById()"
-        [attendedEventIds]="attendedEventIds()"
+        [likedEventIds]="likedEventIds()"
         [sortMode]="sortMode()"
         [granularity]="calendarGranularity()"
         [minDate]="filters.appliedDateFrom() ?? null"
         [maxDate]="filters.appliedDateTo() ?? null"
-        (attendToggle)="onAttendToggle($event)"
+        (likeToggle)="onLikeToggle($event)"
       ></app-event-calendar>
     </div>
   } @else {
@@ -336,12 +336,4 @@
     </div>
   </ng-template>
 </ion-modal>
-
-<app-series-attend-confirm
-  [isOpen]="pendingSeriesToggle() !== null"
-  [removing]="pendingSeriesToggle()?.wasAttending ?? false"
-  (dayOnly)="confirmSeriesDayOnly()"
-  (wholeSeries)="confirmSeriesWhole()"
-  (cancelled)="cancelSeriesToggle()"
-></app-series-attend-confirm>
 

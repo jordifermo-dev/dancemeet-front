@@ -15,13 +15,13 @@
       >{{ view.creatorName }}</a>
       <button
         type="button"
-        class="attend-heart-btn"
-        [class.active]="view.isAttending"
+        class="like-heart-btn"
+        [class.active]="view.isLiked"
         [disabled]="view.isOwnEvent || view.status === 'finished' || view.status === 'cancelled'"
-        [attr.aria-label]="(view.isAttending ? 'eventDetail.unattendButton' : 'eventDetail.attendButton') | translate"
-        (click)="onAttendToggle($event)"
+        [attr.aria-label]="(view.isLiked ? 'eventDetail.unlikeButton' : 'eventDetail.likeButton') | translate"
+        (click)="onLikeToggle($event)"
       >
-        <ion-icon [name]="view.isAttending ? 'heart' : 'heart-outline'"></ion-icon>
+        <ion-icon [name]="view.isLiked ? 'heart' : 'heart-outline'"></ion-icon>
       </button>
     </div>
 

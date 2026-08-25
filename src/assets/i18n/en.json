@@ -368,6 +368,8 @@
     "attendeesLabel": "Attendees",
     "attendButton": "Attend",
     "unattendButton": "Stop attending",
+    "likeButton": "Like",
+    "unlikeButton": "Unlike",
     "saveButton": "Save",
     "savedButton": "Saved ✓",
     "cancelButton": "Cancel",

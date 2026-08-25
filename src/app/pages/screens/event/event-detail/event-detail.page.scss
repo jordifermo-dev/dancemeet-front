@@ -157,7 +157,9 @@
   gap: 12px;
 }
 
-.attend-heart-btn {
+// Icon-only toggle, no badge - shared shape for the "I'm attending" check
+// and the heart; each still picks its own active color below.
+%icon-toggle-btn {
   appearance: none;
   border: none;
   background: transparent;
@@ -171,14 +173,73 @@
     font-size: 1.6rem;
   }
 
-  &.active {
-    color: var(--ion-color-danger);
-  }
-
   &:disabled {
     opacity: 0.4;
     cursor: default;
   }
+}
+
+.like-heart-btn {
+  @extend %icon-toggle-btn;
+  position: relative;
+
+  &.active {
+    color: var(--ion-color-danger);
+  }
+}
+
+.attend-toggle-btn {
+  @extend %icon-toggle-btn;
+
+  // person-add-outline/person-remove-outline draw closer to the edge of
+  // their viewBox than the heart/people glyphs, so they read visibly bigger
+  // at the same font-size - scaled down to match them by eye.
+  ion-icon {
+    font-size: 1.35rem;
+  }
+
+  &.active {
+    color: var(--ion-color-primary);
+  }
+}
+
+// Icon + corner badge, same convention as the notification bell
+// (notification-bell.component.scss's .bell-btn/.bell-badge) and the
+// gallery grid's photo-count badge - opens the real attendee list/
+// management screen on tap (see goToAttendees), the count is purely
+// informational here, unlike attend-toggle-btn's own "am I attending" state.
+.attendees-badge-btn {
+  position: relative;
+  appearance: none;
+  border: none;
+  background: transparent;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  color: var(--app-text-strong);
+
+  ion-icon {
+    font-size: 1.6rem;
+  }
+}
+
+// Shared badge shape - carried by .attendees-badge-btn (attendee count) and
+// .like-heart-btn (like count).
+.count-badge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 3px;
+  border-radius: 999px;
+  background: var(--ion-color-primary);
+  color: var(--ion-color-primary-contrast);
+  font-size: 0.62rem;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
 }
 
 .event-creator {
@@ -186,24 +247,6 @@
   font-weight: 700;
   color: var(--ion-color-primary);
   text-decoration: none;
-}
-
-.stat {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  cursor: pointer;
-
-  .stat-count {
-    font-size: 1rem;
-    font-weight: 700;
-  }
-
-  .stat-label {
-    font-size: 0.75rem;
-    color: var(--ion-color-medium);
-  }
 }
 
 // Instagram-style icon-only tab row (Información/Galería) - same pattern as

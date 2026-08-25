@@ -39,10 +39,11 @@ export interface EventCardView {
    * otherwise all looked identical, making them hard to tell apart at a glance. */
   relation?: EventRelation;
   /** True when the currently logged-in user organizes this event - the heart
-   * (attend/unattend) is disabled rather than hidden for these, since an
+   * (like/unlike) is disabled rather than hidden for these, since an
    * organizer's own events must always stay listed in Favorites/user-events. */
   isOwnEvent: boolean;
-  /** Whether the logged-in user is currently attending (same underlying
-   * Favorite record the Favorites tab and event-detail's heart use). */
-  isAttending: boolean;
+  /** Whether the logged-in user has given this event a heart - a plain
+   * "like" with no further implications (see AttendanceService for real
+   * RSVP/attendance, which the card doesn't expose). */
+  isLiked: boolean;
 }

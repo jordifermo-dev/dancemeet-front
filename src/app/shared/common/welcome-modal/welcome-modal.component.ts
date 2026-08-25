@@ -70,10 +70,10 @@ function demoEventCard(
 ): EventCardView {
   return {
     isOwnEvent: relationLabelKey === 'favorites.relationCreatorBadge',
-    // Organizing an event means attending it too (the backend creates a real
+    // Organizing an event means liking it too (the backend creates a real
     // Favorite record for the creator on createEvent()), so the heart shows
-    // filled for both demo cards, not just the attendee one.
-    isAttending: relationLabelKey === 'favorites.relationCreatorBadge' || relationLabelKey === 'favorites.relationFavoriteBadge',
+    // filled for both demo cards, not just the liked one.
+    isLiked: relationLabelKey === 'favorites.relationCreatorBadge' || relationLabelKey === 'favorites.relationFavoriteBadge',
     id,
     imageUrl: `https://picsum.photos/1200/800?${photoId}`,
     title,
