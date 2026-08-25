@@ -14,6 +14,7 @@ import {
 } from '@angular/core';
 import { Router } from '@angular/router';
 import { IonModal, IonIcon } from '@ionic/angular/standalone';
+import { TranslatePipe } from '@ngx-translate/core';
 import { addIcons } from 'ionicons';
 import { closeOutline, chevronBackOutline, chevronForwardOutline } from 'ionicons/icons';
 import { LanguageService } from '../../../services/core/language.service';
@@ -31,6 +32,17 @@ export interface LightboxPhoto {
    * caption is simply omitted for that photo. */
   relatedLinkRoute?: string[];
   relatedLinkLabel?: string;
+  /** Extra per-photo actions (e.g. "Compartir en galería pública") - see
+   * event-detail.page.ts's own lightboxItems computed for how these are
+   * built per photo based on ownership/permissions. Empty/absent renders no
+   * action row at all, same as today. */
+  actions?: LightboxAction[];
+}
+
+export interface LightboxAction {
+  labelKey: string;
+  icon: string;
+  onClick: () => void;
 }
 
 /** Full-screen photo viewer with horizontal swipe/scroll between photos and
@@ -43,7 +55,7 @@ export interface LightboxPhoto {
   standalone: true,
   templateUrl: './photo-lightbox.component.html',
   styleUrl: './photo-lightbox.component.scss',
-  imports: [IonModal, IonIcon],
+  imports: [IonModal, IonIcon, TranslatePipe],
 })
 export class PhotoLightboxComponent implements OnChanges, AfterViewInit {
   @Input({ required: true }) photos!: LightboxPhoto[];

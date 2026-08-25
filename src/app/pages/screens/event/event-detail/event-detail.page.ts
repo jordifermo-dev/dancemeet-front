@@ -52,6 +52,10 @@ import {
   informationCircleOutline,
   gridOutline,
   cameraOutline,
+  peopleCircleOutline,
+  globeOutline,
+  lockClosedOutline,
+  eyeOffOutline,
 } from 'ionicons/icons';
 import { AuthService } from '../../../../services/core/auth.service';
 import { EventService } from '../../../../services/event/event.service';
@@ -115,7 +119,7 @@ import { EventManagerService } from '../../../../services/event-managers/event-m
 import { EventManager } from '../../../../models';
 import { canManageEvent, findMyParticipantRow } from '../../../../shared/event/event-manager-permissions';
 import { PhotoGridComponent } from '../../../../shared/gallery/photo-grid/photo-grid.component';
-import { LightboxPhoto, PhotoLightboxComponent } from '../../../../shared/gallery/photo-lightbox/photo-lightbox.component';
+import { LightboxAction, LightboxPhoto, PhotoLightboxComponent } from '../../../../shared/gallery/photo-lightbox/photo-lightbox.component';
 
 const MIN_ZOOM = 3;
 const MAX_ZOOM = 20;
@@ -313,28 +317,154 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
   });
   readonly inviteResponseBusy = signal(false);
 
-  // --- Instagram-style info/gallery toggle ------------------------------
+  // --- Instagram-style info/gallery/private-gallery toggle -----------------
 
-  readonly detailViewMode = signal<'info' | 'gallery'>('info');
+  readonly detailViewMode = signal<'info' | 'gallery' | 'privateGallery'>('info');
   readonly eventGallery = signal<GalleryPhotoWithPoster[]>([]);
+  /** The event's private, attendees-only gallery - only ever populated for
+   * someone who can actually see it (see canAccessPrivateArea); a 403 for
+   * anyone else just resolves to an empty list, same as any other
+   * permission-gated read in this page. */
+  readonly privateGallery = signal<GalleryPhotoWithPoster[]>([]);
 
   readonly galleryGridItems = computed(() => this.eventGallery().map((photo) => ({ id: photo.id, photoUrl: photo.photoUrl })));
+  readonly privateGalleryGridItems = computed(() =>
+    this.privateGallery().map((photo) => ({ id: photo.id, photoUrl: photo.photoUrl })),
+  );
 
-  readonly lightboxItems = computed<LightboxPhoto[]>(() =>
-    this.eventGallery().map((photo) => ({
+  /** Whether the current viewer belongs to this event's private area
+   * (private gallery today, real-time chat later) - same rule as the
+   * backend's EventService.assertCanAccessPrivateArea: the organizer/
+   * managers (via canManage) or a real attendee. */
+  readonly canAccessPrivateArea = computed(() => this.canManage() || this.isAttending());
+
+  readonly lightboxItems = computed<LightboxPhoto[]>(() => {
+    const isPrivateView = this.detailViewMode() === 'privateGallery';
+    const photos = isPrivateView ? this.privateGallery() : this.eventGallery();
+    return photos.map((photo) => ({
       id: photo.id,
       photoUrl: photo.photoUrl,
       createdAt: photo.createdAt,
       relatedLinkRoute: ['/users', photo.posterUserId],
       relatedLinkLabel: photo.posterUserName,
-    })),
-  );
+      actions: this.buildLightboxActions(photo, isPrivateView),
+    }));
+  });
+
+  /** "Compartir en galería pública"/"Mover (o quitar de) galería pública" -
+   * only for the photo's own poster or someone who can manage the event
+   * (same ownership rule the backend enforces in
+   * GalleryService.assertOwnsOrCanManage). A photo can be in both galleries
+   * at once (see shareToPublicGallery/moveToPrivateGallery's own comments),
+   * so the label reflects what will actually change, not a fixed pair of
+   * verbs:
+   * - Private view, already public too: nothing left to do from here -
+   *   no action offered (sharing again would be a harmless no-op, but a
+   *   button that does nothing is just confusing).
+   * - Public view, already private too: the underlying call is the same
+   *   moveToPrivateGallery (still safe/idempotent on the private flag), but
+   *   "mover a privada" would be misleading when it's already there - the
+   *   only real effect left is dropping the public copy. */
+  private buildLightboxActions(photo: GalleryPhotoWithPoster, isPrivateView: boolean): LightboxAction[] {
+    const event = this.event();
+    const me = this.authService.currentUser();
+    if (!event || !me) {
+      return [];
+    }
+    const isOwnerOrManager = photo.posterUserId === me.id || this.canManage();
+    if (!isOwnerOrManager) {
+      return [];
+    }
+    if (isPrivateView) {
+      if (photo.showInPublicGallery) {
+        return [];
+      }
+      return [
+        {
+          labelKey: 'eventDetail.shareToPublicGallery',
+          icon: 'globe-outline',
+          onClick: () => this.sharePhotoToPublicGallery(event.id, photo.id),
+        },
+      ];
+    }
+    if (!this.canAccessPrivateArea()) {
+      return [];
+    }
+    return [
+      photo.showInPrivateGallery
+        ? {
+            labelKey: 'eventDetail.removeFromPublicGallery',
+            icon: 'eye-off-outline',
+            onClick: () => this.movePhotoToPrivateGallery(event.id, photo.id),
+          }
+        : {
+            labelKey: 'eventDetail.moveToPrivateGallery',
+            icon: 'lock-closed-outline',
+            onClick: () => this.movePhotoToPrivateGallery(event.id, photo.id),
+          },
+    ];
+  }
+
+  private sharePhotoToPublicGallery(eventId: string, photoId: string): void {
+    this.galleryService.sharePhotoToPublicGallery(eventId, photoId).subscribe({
+      next: () => {
+        this.refreshGallery(eventId);
+        this.refreshPrivateGallery(eventId);
+        // Closes back to the grid rather than leaving the lightbox open -
+        // see movePhotoToPrivateGallery's own comment for why this matters
+        // most for the move direction, but doing it here too keeps both
+        // reclassify actions feeling consistent.
+        this.lightboxOpen.set(false);
+      },
+    });
+  }
+
+  private movePhotoToPrivateGallery(eventId: string, photoId: string): void {
+    this.galleryService.movePhotoToPrivateGallery(eventId, photoId).subscribe({
+      next: () => {
+        this.refreshGallery(eventId);
+        this.refreshPrivateGallery(eventId);
+        // The moved photo just left eventGallery, which lightboxItems is
+        // built from while viewing the public gallery - left open, the
+        // lightbox would silently reindex onto whatever photo now sits at
+        // the same position (looking like it jumped to "the next photo")
+        // instead of reflecting that the photo you were looking at is gone
+        // from this gallery. Closing back to the grid is the clear result.
+        this.lightboxOpen.set(false);
+      },
+    });
+  }
+
+  /** Switching to the gallery/private-gallery tab re-fetches, instead of
+   * only ever loading once when the page itself was entered - there's no
+   * live/push sync in this app yet (see PLANS.md's Fase 2 for the eventual
+   * real-time chat), so without this, a photo someone else moved/shared/
+   * deleted while you were looking at another tab would keep showing here
+   * (stale) until you left the event and came back. Cheap enough (one
+   * extra request per tab switch) to do unconditionally rather than only
+   * on a genuine change. */
+  openGalleryTab(): void {
+    this.detailViewMode.set('gallery');
+    const event = this.event();
+    if (event) {
+      this.refreshGallery(event.id);
+    }
+  }
+
+  openPrivateGalleryTab(): void {
+    this.detailViewMode.set('privateGallery');
+    const event = this.event();
+    if (event) {
+      this.refreshPrivateGallery(event.id);
+    }
+  }
 
   readonly lightboxOpen = signal(false);
   readonly lightboxStartIndex = signal(0);
 
   openLightbox(photoId: string): void {
-    const index = this.eventGallery().findIndex((photo) => photo.id === photoId);
+    const photos = this.detailViewMode() === 'privateGallery' ? this.privateGallery() : this.eventGallery();
+    const index = photos.findIndex((photo) => photo.id === photoId);
     if (index === -1) {
       return;
     }
@@ -342,8 +472,9 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
     this.lightboxOpen.set(true);
   }
 
-  /** Gates the "Añadir foto" button - only a UI-level shortcut, the real
-   * authorization check (assertCanPostPhoto) runs again on the backend. */
+  /** Gates the public gallery's "Añadir foto" button - only a UI-level
+   * shortcut, the real authorization check (assertCanPostPhoto) runs again
+   * on the backend. */
   readonly canPostPhoto = computed(() => {
     const event = this.event();
     return this.canManage() || (!!event?.allowAttendeePhotos && this.isAttending());
@@ -356,9 +487,24 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
     });
   }
 
+  private refreshPrivateGallery(eventId: string): void {
+    this.galleryService.getPrivateEventGallery(eventId).subscribe({
+      next: (photos) => this.privateGallery.set(photos),
+      error: () => this.privateGallery.set([]),
+    });
+  }
+
+  /** Shared by both toolbar "Añadir foto" buttons - routes to the public or
+   * private endpoint depending on which gallery tab is currently open. */
   onGalleryPhotoUploaded(url: string): void {
     const event = this.event();
     if (!event) {
+      return;
+    }
+    if (this.detailViewMode() === 'privateGallery') {
+      this.galleryService.postPrivateEventPhoto(event.id, url).subscribe({
+        next: () => this.refreshPrivateGallery(event.id),
+      });
       return;
     }
     this.galleryService.postEventPhoto(event.id, url).subscribe({
@@ -792,6 +938,10 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
       informationCircleOutline,
       gridOutline,
       cameraOutline,
+      peopleCircleOutline,
+      globeOutline,
+      lockClosedOutline,
+      eyeOffOutline,
     });
 
     this.disciplineService.getAll().subscribe({
@@ -932,6 +1082,7 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
         this.refreshLikesCount(id);
         this.refreshParticipants(id);
         this.refreshGallery(id);
+        this.refreshPrivateGallery(id);
       },
       error: () => {
         this.notFound.set(true);
@@ -971,6 +1122,17 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
       next: () => {
         this.inviteResponseBusy.set(false);
         this.refreshParticipants(event.id);
+        // Accepting grants real attendance (and a like) immediately on the
+        // backend (see EventManagerService.respondToInvite) - without this,
+        // isLiked/isAttending/canAccessPrivateArea stayed stuck on their
+        // stale pre-accept values (false) until the page was fully
+        // reloaded, so the private gallery tab (and the like/attend icons)
+        // wouldn't show up until leaving and re-entering the event.
+        this.refreshLikedState(event);
+        this.refreshAttendanceState(event);
+        this.refreshAttendeesCount(event.id);
+        this.refreshLikesCount(event.id);
+        this.refreshPrivateGallery(event.id);
       },
       error: () => this.inviteResponseBusy.set(false),
     });

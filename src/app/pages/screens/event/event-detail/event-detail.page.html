@@ -4,7 +4,12 @@
       <ion-back-button defaultHref="/tabs/explorer" text=""></ion-back-button>
     </ion-buttons>
     <ion-title>{{ isCreateMode() ? ('eventDetail.createTitle' | translate) : event()?.title }}</ion-title>
-    @if (!isCreateMode() && !isEditMode() && detailViewMode() === 'gallery' && canPostPhoto()) {
+    @if (
+      !isCreateMode() &&
+      !isEditMode() &&
+      ((detailViewMode() === 'gallery' && canPostPhoto()) ||
+        (detailViewMode() === 'privateGallery' && canAccessPrivateArea()))
+    ) {
       <ion-buttons slot="end">
         <ion-button
           class="add-photo-toolbar-button"
@@ -300,10 +305,21 @@
           type="button"
           class="detail-view-toggle-btn"
           [class.active]="detailViewMode() === 'gallery'"
-          (click)="detailViewMode.set('gallery')"
+          (click)="openGalleryTab()"
         >
           <ion-icon name="grid-outline"></ion-icon>
         </button>
+        @if (canAccessPrivateArea()) {
+          <button
+            type="button"
+            class="detail-view-toggle-btn"
+            [class.active]="detailViewMode() === 'privateGallery'"
+            [attr.aria-label]="'eventDetail.privateGalleryTab' | translate"
+            (click)="openPrivateGalleryTab()"
+          >
+            <ion-icon name="people-circle-outline"></ion-icon>
+          </button>
+        }
       </div>
 
       @if (myPendingInvite()) {
@@ -375,6 +391,14 @@
         <app-photo-grid
           [photos]="galleryGridItems()"
           emptyStateKey="gallery.emptyState"
+          (photoTap)="openLightbox($event)"
+        ></app-photo-grid>
+      }
+
+      @if (detailViewMode() === 'privateGallery') {
+        <app-photo-grid
+          [photos]="privateGalleryGridItems()"
+          emptyStateKey="eventDetail.privateGalleryEmptyState"
           (photoTap)="openLightbox($event)"
         ></app-photo-grid>
       }

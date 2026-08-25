@@ -39,6 +39,16 @@
             </button>
           }
           <span class="lightbox-caption-date">{{ currentPhotoDateLabel() }}</span>
+          @if (photo.actions?.length) {
+            <div class="lightbox-actions">
+              @for (action of photo.actions; track action.labelKey) {
+                <button type="button" class="lightbox-action-btn" (click)="action.onClick()">
+                  <ion-icon [name]="action.icon"></ion-icon>
+                  {{ action.labelKey | translate }}
+                </button>
+              }
+            </div>
+          }
         </div>
       }
     </div>

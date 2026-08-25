@@ -4,6 +4,11 @@ export interface GalleryPhoto {
   eventId?: string;
   posterUserId: string;
   photoUrl: string;
+  /** Only meaningful when eventId is set - independent, not two ends of one
+   * boolean (a photo can show in both galleries at once, see
+   * event-detail.page.ts's shareToPublicGallery/movePhotoToPrivateGallery). */
+  showInPublicGallery: boolean;
+  showInPrivateGallery: boolean;
   createdAt: number;
 }
 

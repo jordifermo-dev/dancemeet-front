@@ -23,6 +23,30 @@ export class GalleryService {
     return this.http.delete<{ success: boolean }>(`${this.eventsUrl}/${eventId}/gallery/${photoId}`);
   }
 
+  /** The event's private, attendees-only gallery - see AttendanceService for
+   * who counts as a real attendee. */
+  getPrivateEventGallery(eventId: string): Observable<GalleryPhotoWithPoster[]> {
+    return this.http.get<GalleryPhotoWithPoster[]>(`${this.eventsUrl}/${eventId}/private-gallery`);
+  }
+
+  postPrivateEventPhoto(eventId: string, photoUrl: string): Observable<GalleryPhoto> {
+    return this.http.post<GalleryPhoto>(`${this.eventsUrl}/${eventId}/private-gallery`, { photoUrl });
+  }
+
+  /** Makes a private photo also show in the public gallery - additive, the
+   * photo stays in the private gallery too (see moveToPrivateGallery for the
+   * reverse, a full move rather than a copy). */
+  sharePhotoToPublicGallery(eventId: string, photoId: string): Observable<{ success: boolean }> {
+    return this.http.patch<{ success: boolean }>(`${this.eventsUrl}/${eventId}/gallery/${photoId}/share-public`, {});
+  }
+
+  /** Moves a public photo (shared by mistake) to the private gallery only -
+   * it disappears from the public gallery and from the poster's own profile
+   * gallery. */
+  movePhotoToPrivateGallery(eventId: string, photoId: string): Observable<{ success: boolean }> {
+    return this.http.patch<{ success: boolean }>(`${this.eventsUrl}/${eventId}/gallery/${photoId}/move-private`, {});
+  }
+
   getUserGallery(userId: string): Observable<GalleryPhotoWithEvent[]> {
     return this.http.get<GalleryPhotoWithEvent[]>(`${this.usersUrl}/${userId}/gallery`);
   }
