@@ -23,6 +23,7 @@ import {
   IonCheckbox,
   ViewWillEnter,
   ViewWillLeave,
+  ToastController,
 } from '@ionic/angular/standalone';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { addIcons } from 'ionicons';
@@ -61,6 +62,7 @@ import {
   chatbubblesOutline,
   sendOutline,
   happyOutline,
+  ellipsisHorizontalOutline,
 } from 'ionicons/icons';
 import { AuthService } from '../../../../services/core/auth.service';
 import { EventService } from '../../../../services/event/event.service';
@@ -102,6 +104,7 @@ import {
 import { MapType } from '../../../../shared/location/maps';
 import { formatEventDateRange, formatEventDateOnly, formatTimeOnly, isSameDay, INTL_LOCALES } from '../../../../shared/calendar/event-date-format';
 import { buildGoogleCalendarUrl, buildIcs, downloadIcs } from '../../../../shared/calendar/calendar-export';
+import { downloadGalleryPhoto } from '../../../../shared/gallery/gallery-photo-download';
 import { LocationPickerComponent } from '../../../../shared/location/location-picker/location-picker.component';
 import { PhotoEditorComponent } from '../../../../shared/user/photo-editor/photo-editor.component';
 import { FilterSheetHeaderComponent } from '../../../../shared/filters/filter-sheet-header/filter-sheet-header.component';
@@ -255,6 +258,7 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
   private readonly shareService = inject(EventShareService);
   private readonly eventManagerService = inject(EventManagerService);
   private readonly galleryService = inject(GalleryService);
+  private readonly toastController = inject(ToastController);
   private readonly eventChatService = inject(EventChatService);
   private readonly eventChatSocketService = inject(EventChatSocketService);
   private readonly translate = inject(TranslateService);
@@ -322,8 +326,22 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
    * NotificationService.navigateFromNotificationData) - consumed once the
    * event and this user's private-area access are both resolved (see the
    * effect() in the constructor), so a notification for an event the reader
-   * can't access simply never opens the tab instead of erroring. */
-  private readonly pendingOpenChatFromNotification = signal(this.route.snapshot.queryParamMap.get('openChat') === '1');
+   * can't access simply never opens the tab instead of erroring. Read fresh
+   * in ionViewWillEnter (NOT seeded once here in the constructor) - Ionic
+   * reuses this page's own instance for an event already visited this
+   * session (IonicRouteStrategy), so the constructor never runs again on a
+   * second notification tap for the same event; only ionViewWillEnter is
+   * guaranteed to fire on every re-entry, reused instance or not. */
+  private readonly pendingOpenChatFromNotification = signal(false);
+  /** Set from a gallery-photo push notification's `?openGallery=public|private`
+   * (see NotificationService.navigateFromNotificationData) - same one-shot,
+   * "wait until resolved" consumption as pendingOpenChatFromNotification
+   * above (see the effect() in the constructor, and its own comment on why
+   * this is read in ionViewWillEnter rather than seeded in the constructor).
+   * 'private' additionally waits for canAccessPrivateArea() before opening,
+   * same reasoning as chat - a notification for a gallery the reader can no
+   * longer access simply never opens the tab instead of erroring. */
+  private readonly pendingOpenGalleryFromNotification = signal<'public' | 'private' | null>(null);
   /** Snapshot of the edit form the last time it was loaded/saved, used to
    * detect unsaved edits when navigating away - same pattern as Profile's
    * own baseline/buildSnapshot. Only meaningful while isEditMode() is true. */
@@ -372,7 +390,17 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
    * managers (via canManage) or a real attendee. */
   readonly canAccessPrivateArea = computed(() => this.canManage() || this.isAttending());
 
+  /** Set only when a photo mention thumbnail from the xat couldn't be found
+   * in either gallery anymore (deleted since being mentioned) - a minimal
+   * single-photo fallback view built from the message's own snapshot rather
+   * than a dead tap. Takes over lightboxItems entirely while set. */
+  readonly fallbackLightboxPhoto = signal<LightboxPhoto | null>(null);
+
   readonly lightboxItems = computed<LightboxPhoto[]>(() => {
+    const fallback = this.fallbackLightboxPhoto();
+    if (fallback) {
+      return [fallback];
+    }
     const isPrivateView = this.detailViewMode() === 'privateGallery';
     const photos = isPrivateView ? this.privateGallery() : this.eventGallery();
     return photos.map((photo) => ({
@@ -381,6 +409,7 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
       createdAt: photo.createdAt,
       relatedLinkRoute: ['/users', photo.posterUserId],
       relatedLinkLabel: photo.posterUserName,
+      reactions: photo.reactions,
       actions: this.buildLightboxActions(photo, isPrivateView),
     }));
   });
@@ -405,26 +434,40 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
     if (!event || !me) {
       return [];
     }
+    const actions: LightboxAction[] = [];
+    // Mentioning/downloading/sharing aren't ownership-gated the way
+    // reclassifying (share-public/move-private) below is - anyone who can
+    // even see this photo can do these.
+    if (this.canAccessPrivateArea()) {
+      actions.push({
+        labelKey: 'eventDetail.mentionInChat',
+        icon: 'chatbubbles-outline',
+        onClick: () => this.mentionPhotoInChat(photo),
+      });
+    }
+    actions.push(
+      { labelKey: 'eventDetail.galleryDownload', icon: 'download-outline', onClick: () => this.downloadPhoto(photo) },
+      { labelKey: 'eventDetail.galleryShare', icon: 'share-social-outline', onClick: () => this.shareGalleryPhoto(photo) },
+    );
+
     const isOwnerOrManager = photo.posterUserId === me.id || this.canManage();
     if (!isOwnerOrManager) {
-      return [];
+      return actions;
     }
     if (isPrivateView) {
-      if (photo.showInPublicGallery) {
-        return [];
-      }
-      return [
-        {
+      if (!photo.showInPublicGallery) {
+        actions.push({
           labelKey: 'eventDetail.shareToPublicGallery',
           icon: 'globe-outline',
           onClick: () => this.sharePhotoToPublicGallery(event.id, photo.id),
-        },
-      ];
+        });
+      }
+      return actions;
     }
     if (!this.canAccessPrivateArea()) {
-      return [];
+      return actions;
     }
-    return [
+    actions.push(
       photo.showInPrivateGallery
         ? {
             labelKey: 'eventDetail.removeFromPublicGallery',
@@ -436,7 +479,127 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
             icon: 'lock-closed-outline',
             onClick: () => this.movePhotoToPrivateGallery(event.id, photo.id),
           },
-    ];
+    );
+    return actions;
+  }
+
+  /** Closes the lightbox and jumps to the xat tab with this photo queued as
+   * a pending mention (see pendingMentionPhoto) - the compose bar shows it
+   * as a small removable preview, letting the user add optional text before
+   * actually sending (see sendChatMessage's own attachedPhotoId branch). */
+  private mentionPhotoInChat(photo: GalleryPhotoWithPoster): void {
+    this.lightboxOpen.set(false);
+    this.replyingTo.set(null);
+    this.editingMessageId.set(null);
+    this.pendingMentionPhoto.set({ galleryPhotoId: photo.id, photoUrl: photo.photoUrl });
+    this.openChatTab();
+  }
+
+  /** On native the save lands in a dedicated "DanceMeet" album (not the main
+   * camera roll), so without an explicit confirmation the user has no way to
+   * tell it worked - confirmed via on-device logcat that the save itself was
+   * succeeding silently. Failure gets a toast + console.error too, since both
+   * were previously swallowed completely (a bare `void asyncFn()` with no
+   * .catch() anywhere up the chain). */
+  private async downloadPhoto(photo: GalleryPhotoWithPoster): Promise<void> {
+    try {
+      await downloadGalleryPhoto(photo.photoUrl, `dancemeet-${photo.id}.jpg`);
+      await this.showActionToast('eventDetail.galleryDownloadSuccess');
+    } catch (err) {
+      console.error('[EventDetailPage] downloadPhoto failed:', err);
+      await this.showActionErrorToast('eventDetail.galleryDownloadError');
+    }
+  }
+
+  private async shareGalleryPhoto(photo: GalleryPhotoWithPoster): Promise<void> {
+    try {
+      await this.shareService.shareGalleryPhoto(photo.photoUrl);
+    } catch (err) {
+      console.error('[EventDetailPage] shareGalleryPhoto failed:', err);
+      await this.showActionErrorToast('eventDetail.galleryShareError');
+    }
+  }
+
+  private async showActionErrorToast(messageKey: string): Promise<void> {
+    const toast = await this.toastController.create({
+      message: this.translate.instant(messageKey),
+      duration: 3000,
+      position: 'bottom',
+    });
+    await toast.present();
+  }
+
+  private async showActionToast(messageKey: string): Promise<void> {
+    const toast = await this.toastController.create({
+      message: this.translate.instant(messageKey),
+      duration: 2000,
+      position: 'bottom',
+    });
+    await toast.present();
+  }
+
+  onLightboxReact(payload: { photoId: string; emoji: string }): void {
+    const event = this.event();
+    if (!event) {
+      return;
+    }
+    this.galleryService.reactToPhoto(event.id, payload.photoId, payload.emoji).subscribe({
+      next: (reactions) => this.patchPhotoReactions(payload.photoId, reactions),
+    });
+  }
+
+  onLightboxUnreact(payload: { photoId: string; emoji: string }): void {
+    const event = this.event();
+    if (!event) {
+      return;
+    }
+    this.galleryService.removeReactionFromPhoto(event.id, payload.photoId, payload.emoji).subscribe({
+      next: (reactions) => this.patchPhotoReactions(payload.photoId, reactions),
+    });
+  }
+
+  private patchPhotoReactions(photoId: string, reactions: MessageReactionSummary[]): void {
+    this.eventGallery.update((list) => list.map((p) => (p.id === photoId ? { ...p, reactions } : p)));
+    this.privateGallery.update((list) => list.map((p) => (p.id === photoId ? { ...p, reactions } : p)));
+  }
+
+  /** Navigates to a xat photo mention's real current gallery (public or
+   * private, whichever it's actually visible in now - it may have moved
+   * since being mentioned) and opens the real lightbox there; falls back to
+   * a single-photo view built from the message's own snapshot if the photo
+   * has since been deleted, rather than a dead tap. Closing the lightbox
+   * afterwards returns to the xat tab (see closeLightbox). */
+  openAttachedPhoto(attachedPhoto: { galleryPhotoId: string; photoUrl: string }): void {
+    const event = this.event();
+    if (!event) {
+      return;
+    }
+    this.galleryService.getPhoto(event.id, attachedPhoto.galleryPhotoId).subscribe({
+      next: (photo) => {
+        this.returnToChatOnLightboxClose.set(true);
+        const targetIsPrivate = photo.showInPrivateGallery && !photo.showInPublicGallery;
+        this.detailViewMode.set(targetIsPrivate ? 'privateGallery' : 'gallery');
+        const gallery$ = targetIsPrivate ? this.galleryService.getPrivateEventGallery(event.id) : this.galleryService.getEventGallery(event.id);
+        gallery$.subscribe({
+          next: (photos) => {
+            if (targetIsPrivate) {
+              this.privateGallery.set(photos);
+            } else {
+              this.eventGallery.set(photos);
+            }
+            const index = photos.findIndex((p) => p.id === photo.id);
+            this.lightboxStartIndex.set(index === -1 ? 0 : index);
+            this.lightboxOpen.set(true);
+          },
+        });
+      },
+      error: () => {
+        this.returnToChatOnLightboxClose.set(true);
+        this.fallbackLightboxPhoto.set({ id: attachedPhoto.galleryPhotoId, photoUrl: attachedPhoto.photoUrl, createdAt: Date.now() });
+        this.lightboxStartIndex.set(0);
+        this.lightboxOpen.set(true);
+      },
+    });
   }
 
   private sharePhotoToPublicGallery(eventId: string, photoId: string): void {
@@ -448,7 +611,7 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
         // see movePhotoToPrivateGallery's own comment for why this matters
         // most for the move direction, but doing it here too keeps both
         // reclassify actions feeling consistent.
-        this.lightboxOpen.set(false);
+        this.closeLightbox();
       },
     });
   }
@@ -464,9 +627,23 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
         // the same position (looking like it jumped to "the next photo")
         // instead of reflecting that the photo you were looking at is gone
         // from this gallery. Closing back to the grid is the clear result.
-        this.lightboxOpen.set(false);
+        this.closeLightbox();
       },
     });
+  }
+
+  /** Whether the lightbox was opened via a xat photo mention (see
+   * openAttachedPhoto) - if so, closing it returns to the xat tab instead of
+   * leaving detailViewMode on whichever gallery it navigated to. */
+  readonly returnToChatOnLightboxClose = signal(false);
+
+  closeLightbox(): void {
+    this.lightboxOpen.set(false);
+    this.fallbackLightboxPhoto.set(null);
+    if (this.returnToChatOnLightboxClose()) {
+      this.returnToChatOnLightboxClose.set(false);
+      this.detailViewMode.set('chat');
+    }
   }
 
   /** Switching to the gallery/private-gallery tab re-fetches, instead of
@@ -478,7 +655,6 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
    * extra request per tab switch) to do unconditionally rather than only
    * on a genuine change. */
   openGalleryTab(): void {
-    this.leaveChatIfNeeded();
     this.detailViewMode.set('gallery');
     const event = this.event();
     if (event) {
@@ -487,7 +663,6 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
   }
 
   openPrivateGalleryTab(): void {
-    this.leaveChatIfNeeded();
     this.detailViewMode.set('privateGallery');
     const event = this.event();
     if (event) {
@@ -496,42 +671,51 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
   }
 
   goToInfoTab(): void {
-    this.leaveChatIfNeeded();
     this.detailViewMode.set('info');
   }
 
   // --- Xat privado del evento (tiempo real, ver xat-privado-evento.md) -----
 
-  /** connect() first, then joinEvent (so the socket is already subscribed to
-   * the room), only then the REST history - any live message that arrives in
-   * the gap lands in the socket service's own list and setInitialHistory
-   * merges rather than overwrites it (see its own doc comment). */
+  /** Which event's xat room the socket is currently connected/joined to -
+   * the connection lives for as long as this event is open (any tab, not
+   * just 'chat'), so the unread badge (see unreadChatCount below) can react
+   * to a live 'new-message' while sitting on Información/Galería. Guards the
+   * connect effect (below) against re-connecting on every unrelated signal
+   * change that merely re-evaluates it, and also gates the one-shot REST
+   * history fetch that effect performs (see its own comment on why that
+   * fetch must be sequenced strictly after join, not raced against it from
+   * openChatTab as an earlier version of this did). */
+  private chatConnectedForEventId: string | null = null;
+  readonly unreadChatCount = signal(0);
+
+  /** Switching tabs no longer connects/joins/fetches anything itself - the
+   * connect effect in the constructor already did all of that as soon as
+   * this event's private-area access was confirmed, however long before the
+   * user actually taps here. Just switches the tab and marks read. */
   openChatTab(): void {
     this.detailViewMode.set('chat');
-    const event = this.event();
-    if (!event) {
+    if (!this.event()) {
       return;
     }
-    this.eventChatSocketService.connect().then(() => {
-      this.eventChatSocketService.joinEvent(event.id);
-      this.eventChatService.getMessages(event.id).subscribe({
-        next: (history) => this.eventChatSocketService.setInitialHistory(history),
-      });
-    });
+    this.eventChatSocketService.markChatRead();
+    this.unreadChatCount.set(0);
   }
 
-  /** Called before switching to any other tab, and from ionViewWillLeave -
-   * disconnecting outside the chat tab would be a harmless no-op, but this
-   * keeps it from ever tearing down a socket that isn't actually open. */
-  private leaveChatIfNeeded(): void {
-    if (this.detailViewMode() === 'chat') {
-      this.eventChatSocketService.disconnect();
-    }
-  }
-
+  /** The chat socket now stays connected for the whole time this event is
+   * open (any tab), not just while the 'chat' tab itself is active - leaving
+   * the page entirely is the only thing that tears it down. */
   ionViewWillLeave(): void {
-    this.leaveChatIfNeeded();
+    this.eventChatSocketService.disconnect();
+    this.chatConnectedForEventId = null;
   }
+
+  /** Set right before navigating to a message sender's profile from the xat
+   * tab (see goToChatSenderProfile) - consumed by ionViewWillEnter so
+   * returning here (whether via a real back button, for /users/:id, or by
+   * manually switching back to this tab, for the own-profile /tabs/profile
+   * jump - see that method's own doc comment on why those two cases differ)
+   * lands back on the xat instead of the usual default of Información. */
+  private returnToChatOnNextEnter = false;
 
   readonly quickReactions = QUICK_REACTIONS;
   readonly chatDraft = signal('');
@@ -580,14 +764,135 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
     }
   }
 
+  /** Reply preview / edit banner / photo-mention preview share the same slot
+   * above the compose input and are mutually exclusive - starting one clears
+   * the others (see replyToMessage/startEditMessage/mentionPhotoInChat). */
+  readonly replyingTo = signal<EventMessage | null>(null);
+  readonly editingMessageId = signal<string | null>(null);
+  readonly pendingMentionPhoto = signal<{ galleryPhotoId: string; photoUrl: string } | null>(null);
+  /** Which message's "..." action sheet (Responder/Copiar/Editar/Eliminar)
+   * is currently open - at most one at a time. */
+  readonly messageActionsFor = signal<EventMessage | null>(null);
+  readonly confirmDeleteMessage = signal<EventMessage | null>(null);
+
   sendChatMessage(): void {
     const text = this.chatDraft().trim();
-    if (!text) {
+    const editingId = this.editingMessageId();
+    if (editingId) {
+      if (!text) {
+        return;
+      }
+      this.eventChatSocketService.editMessage(editingId, text);
+      this.editingMessageId.set(null);
+      this.chatDraft.set('');
       return;
     }
-    this.eventChatSocketService.sendMessage(text);
+    const mention = this.pendingMentionPhoto();
+    if (!text && !mention) {
+      return;
+    }
+    this.eventChatSocketService.sendMessage(text, {
+      replyToMessageId: this.replyingTo()?.id,
+      attachedPhotoId: mention?.galleryPhotoId,
+    });
     this.eventChatSocketService.sendStopTyping();
     this.chatDraft.set('');
+    this.replyingTo.set(null);
+    this.pendingMentionPhoto.set(null);
+  }
+
+  openMessageActions(message: EventMessage): void {
+    this.messageActionsFor.set(message);
+  }
+
+  closeMessageActions(): void {
+    this.messageActionsFor.set(null);
+  }
+
+  replyToMessage(message: EventMessage): void {
+    this.editingMessageId.set(null);
+    this.pendingMentionPhoto.set(null);
+    this.replyingTo.set(message);
+    this.messageActionsFor.set(null);
+  }
+
+  cancelReply(): void {
+    this.replyingTo.set(null);
+  }
+
+  async copyMessageText(message: EventMessage): Promise<void> {
+    this.messageActionsFor.set(null);
+    if (navigator.clipboard) {
+      await navigator.clipboard.writeText(message.text);
+    }
+  }
+
+  /** Reuses the compose input itself for editing (there's no existing
+   * "inline edit in place" pattern anywhere in this app to build on) - the
+   * input is pre-filled and the send button becomes a confirm-edit button
+   * (see sendChatMessage's own editingMessageId branch). */
+  startEditMessage(message: EventMessage): void {
+    this.replyingTo.set(null);
+    this.pendingMentionPhoto.set(null);
+    this.editingMessageId.set(message.id);
+    this.chatDraft.set(message.text);
+    this.messageActionsFor.set(null);
+  }
+
+  cancelEditMessage(): void {
+    this.editingMessageId.set(null);
+    this.chatDraft.set('');
+  }
+
+  requestDeleteMessage(message: EventMessage): void {
+    this.messageActionsFor.set(null);
+    this.confirmDeleteMessage.set(message);
+  }
+
+  cancelDeleteMessage(): void {
+    this.confirmDeleteMessage.set(null);
+  }
+
+  deleteMessageConfirmed(): void {
+    const message = this.confirmDeleteMessage();
+    if (!message) {
+      return;
+    }
+    this.eventChatSocketService.deleteMessage(message.id);
+    this.confirmDeleteMessage.set(null);
+  }
+
+  cancelMentionPhoto(): void {
+    this.pendingMentionPhoto.set(null);
+  }
+
+  /** Sender name/avatar link - always that user's public profile page. */
+  chatSenderProfileLink(senderId: string): string[] {
+    // Always /users/:id, even for your own message - /tabs/profile is a tab
+    // root in its own IonRouterOutlet, with no back-stack relationship to
+    // this page at all (confirmed on-device: the back button did nothing).
+    // /users/:id is a normal pushed route with a working back button even
+    // when it's your own id (UserDetailPage only hides the follow/unfollow
+    // actions for that case, it doesn't redirect).
+    return ['/users', senderId];
+  }
+
+  /** Navigates there programmatically (not a plain [routerLink]) so
+   * returnToChatOnNextEnter can be armed first - see ionViewWillLeave's own
+   * doc comment on why the two possible destinations need this differently:
+   * /users/:id is a normal pushed route (a real back button already returns
+   * here), while /tabs/profile for your own message jumps to a different
+   * tab entirely (no "back" relationship to this page at all) - either way,
+   * this page's own ionViewWillEnter is what actually restores the tab. */
+  goToChatSenderProfile(senderId: string): void {
+    if (this.detailViewMode() === 'chat') {
+      this.returnToChatOnNextEnter = true;
+    }
+    void this.router.navigate(this.chatSenderProfileLink(senderId));
+  }
+
+  isOwnChatMessage(message: EventMessage): boolean {
+    return message.senderId === this.authService.currentUser()?.id;
   }
 
   toggleReactionPicker(messageId: string): void {
@@ -627,6 +932,8 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
     if (index === -1) {
       return;
     }
+    this.fallbackLightboxPhoto.set(null);
+    this.returnToChatOnLightboxClose.set(false);
     this.lightboxStartIndex.set(index);
     this.lightboxOpen.set(true);
   }
@@ -674,13 +981,15 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
   readonly confirmDelete = signal(false);
   readonly deleting = signal(false);
 
+  // Always /users/:id, even for your own event - see chatSenderProfileLink's
+  // own doc comment on why /tabs/profile's tab-root back-button dead end
+  // was replaced everywhere it appeared.
   readonly creatorProfileLink = computed<string[]>(() => {
     const event = this.event();
-    const me = this.authService.currentUser();
     if (!event) {
       return [];
     }
-    return me && event.creatorId === me.id ? ['/tabs/profile'] : ['/users', event.creatorId];
+    return ['/users', event.creatorId];
   });
 
   /** Read-mode tags - an event can be more than one type/discipline, so each
@@ -1104,12 +1413,75 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
       chatbubblesOutline,
       sendOutline,
       happyOutline,
+      ellipsisHorizontalOutline,
     });
 
     effect(() => {
       if (this.pendingOpenChatFromNotification() && this.event() && this.canAccessPrivateArea()) {
         this.pendingOpenChatFromNotification.set(false);
         this.openChatTab();
+      }
+    });
+
+    effect(() => {
+      const target = this.pendingOpenGalleryFromNotification();
+      if (!target || !this.event()) {
+        return;
+      }
+      if (target === 'private') {
+        if (!this.canAccessPrivateArea()) {
+          return;
+        }
+        this.pendingOpenGalleryFromNotification.set(null);
+        this.openPrivateGalleryTab();
+      } else {
+        this.pendingOpenGalleryFromNotification.set(null);
+        this.openGalleryTab();
+      }
+    });
+
+    // Keeps the xat socket connected/joined for as long as this event is
+    // open, regardless of which tab is active - not just while the 'chat'
+    // tab itself is showing (see openChatTab/ionViewWillLeave's own
+    // comments). This is what lets unreadChatCount react live to a
+    // 'new-message' while sitting on Información/Galería.
+    //
+    // The REST history fetch is chained strictly *after* joinEvent resolves,
+    // not fired independently - joinEvent() clears the socket service's own
+    // message list every time it (re)joins a room (correct: switching to a
+    // genuinely different event must never show stale messages), so a REST
+    // fetch racing against it could still lose that race and get wiped
+    // afterward, leaving the chat looking empty until a live message
+    // happened to arrive. Chaining the fetch onto the same promise as the
+    // join removes the race outright - setInitialHistory can now only ever
+    // run after the wipe, never before it.
+    effect(() => {
+      const event = this.event();
+      if (!event || !this.canAccessPrivateArea() || this.chatConnectedForEventId === event.id) {
+        return;
+      }
+      this.chatConnectedForEventId = event.id;
+      this.eventChatSocketService.connect().then(() => {
+        this.eventChatSocketService.joinEvent(event.id);
+        this.eventChatService.getMessages(event.id).subscribe({
+          next: (history) => this.eventChatSocketService.setInitialHistory(history),
+        });
+      });
+      this.eventChatService.getUnreadCount(event.id).subscribe({
+        next: ({ count }) => this.unreadChatCount.set(count),
+        error: () => this.unreadChatCount.set(0),
+      });
+    });
+
+    // Bumps the badge for a live message from someone else while the xat
+    // tab isn't the active view - lastReceivedMessage is only ever set by
+    // the 'new-message' socket event (never by a history load), so this
+    // can't miscount a REST history fetch as unread activity.
+    effect(() => {
+      const message = this.eventChatSocketService.lastReceivedMessage();
+      const me = this.authService.currentUser();
+      if (message && message.senderId !== me?.id && this.detailViewMode() !== 'chat') {
+        this.unreadChatCount.update((count) => count + 1);
       }
     });
 
@@ -1183,12 +1555,43 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
    * state until the whole app was reloaded. Re-fetching is skipped while
    * actively editing/creating, so it can't clobber in-progress form edits. */
   ionViewWillEnter(): void {
+    // Read fresh every time, not just once in the constructor - Ionic reuses
+    // this same page instance across visits to an event already opened this
+    // session, so a second notification tap (or any other re-entry) never
+    // re-runs the constructor; only this lifecycle hook is guaranteed to
+    // fire on every entry. See pendingOpenChatFromNotification/
+    // pendingOpenGalleryFromNotification's own doc comments.
+    const queryParams = this.route.snapshot.queryParamMap;
+    const openChat = queryParams.get('openChat') === '1';
+    const openGalleryRaw = queryParams.get('openGallery');
+    const openGallery = openGalleryRaw === 'public' || openGalleryRaw === 'private' ? openGalleryRaw : null;
+    if (openChat || openGallery) {
+      // One-shot - strips the query params from the URL so simply leaving
+      // and returning to this same cached instance later (with no fresh
+      // notification tap) doesn't replay them.
+      this.location.replaceState(this.location.path().split('?')[0]);
+    }
+
     // Always land on Información, not whatever tab this cached instance was
     // last left on (Ionic reuses the same page instance when you return to
     // an event you've already visited this session) - most noticeably, the
     // gallery lightbox's own "go to this event/user" link kept dropping you
-    // straight into Galería if you'd left that event there before.
-    this.detailViewMode.set('info');
+    // straight into Galería if you'd left that event there before. The
+    // deliberate exceptions are returnToChatOnNextEnter (a message sender's
+    // name was tapped from the xat itself) and the two notification deep
+    // links above - all three restore something other than Información.
+    if (this.returnToChatOnNextEnter) {
+      this.returnToChatOnNextEnter = false;
+      this.openChatTab();
+    } else if (openChat) {
+      this.pendingOpenChatFromNotification.set(true);
+      this.detailViewMode.set('info');
+    } else if (openGallery) {
+      this.pendingOpenGalleryFromNotification.set(openGallery);
+      this.detailViewMode.set('info');
+    } else {
+      this.detailViewMode.set('info');
+    }
     const event = this.event();
     if (!event || this.isEditMode()) {
       return;

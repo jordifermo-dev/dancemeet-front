@@ -130,6 +130,72 @@
   font-size: 0.72rem;
 }
 
+.lightbox-reactions-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.lightbox-reaction-add {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.85);
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+
+  ion-icon {
+    font-size: 1.05rem;
+  }
+}
+
+.lightbox-reaction-chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px;
+}
+
+.lightbox-reaction-chip {
+  appearance: none;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  background: transparent;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 0.72rem;
+  color: #ffffff;
+  cursor: pointer;
+
+  &.active {
+    border-color: var(--ion-color-primary-fill);
+    background: rgba(255, 255, 255, 0.2);
+  }
+}
+
+.lightbox-reaction-picker {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+  padding: 4px 10px;
+  background: rgba(0, 0, 0, 0.55);
+  border-radius: 999px;
+
+  button {
+    appearance: none;
+    border: none;
+    background: transparent;
+    font-size: 1.15rem;
+    line-height: 1;
+    padding: 2px;
+    cursor: pointer;
+  }
+}
+
 .lightbox-actions {
   display: flex;
   flex-wrap: wrap;

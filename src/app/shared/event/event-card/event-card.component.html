@@ -2,7 +2,7 @@
   class="event-card"
   [class.faded]="view.isFaded"
   [routerLink]="['/events', view.id]"
-  [queryParams]="origin ? { origin } : undefined"
+  [queryParams]="queryParams"
 >
   <img class="event-card-image" [src]="view.imageUrl" [alt]="view.title" />
   <div class="event-card-body">

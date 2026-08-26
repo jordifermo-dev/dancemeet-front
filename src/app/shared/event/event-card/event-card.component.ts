@@ -23,6 +23,13 @@ export class EventCardComponent {
    * later navigate straight back here on save instead of landing on the new
    * event's own detail page - see event-detail.page.ts's originUrl. */
   @Input() origin?: string;
+  /** Extra query params to forward alongside/instead of `origin` - e.g. the
+   * notifications inbox uses this to pass `openChat`/`openGallery` so tapping
+   * a notification's event card deep-links straight to the right tab
+   * (event-detail.page.ts's own pendingOpenChatFromNotification/
+   * pendingOpenGalleryFromNotification), same as tapping the equivalent OS
+   * push notification already does via NotificationService. */
+  @Input() extraQueryParams?: Record<string, string>;
   /** The card itself stays a pure, presentational component with no service
    * dependencies of its own (see event-card.model.ts) - the page decides what
    * liking/unliking actually does (call FavoriteService, update its
@@ -31,6 +38,13 @@ export class EventCardComponent {
 
   constructor() {
     addIcons({ calendarOutline, locationOutline, heart, heartOutline });
+  }
+
+  get queryParams(): Record<string, string> {
+    return {
+      ...(this.origin ? { origin: this.origin } : {}),
+      ...(this.extraQueryParams ?? {}),
+    };
   }
 
   onLikeToggle(event: Event): void {

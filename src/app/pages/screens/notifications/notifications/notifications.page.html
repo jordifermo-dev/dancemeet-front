@@ -81,7 +81,7 @@
             @if (followUserFor(item); as followUser) {
               <app-user-card [user]="followUser" [disciplinesById]="disciplinesMap()"></app-user-card>
             } @else if (eventCardFor(item); as eventCard) {
-              <app-event-card [view]="eventCard"></app-event-card>
+              <app-event-card [view]="eventCard" [extraQueryParams]="eventCardQueryParamsFor(item)"></app-event-card>
             }
           </div>
         }

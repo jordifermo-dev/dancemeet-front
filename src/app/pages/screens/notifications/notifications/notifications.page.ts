@@ -406,6 +406,19 @@ export class NotificationsPage implements ViewWillEnter, AfterViewInit, OnDestro
     return eventId ? this.eventCardById().get(eventId) : undefined;
   }
 
+  /** Same deep-link intent as NotificationService.navigateFromNotificationData
+   * (used for OS push-notification taps) - tapping the equivalent card here,
+   * in the in-app inbox, should land on the same tab. */
+  eventCardQueryParamsFor(item: AppNotification): Record<string, string> | undefined {
+    if (item.type === 'event_chat_message') {
+      return { openChat: '1' };
+    }
+    if (item.type === 'gallery_photo_attending' || item.type === 'gallery_photo_followed') {
+      return { openGallery: item.data?.['gallery'] === 'private' ? 'private' : 'public' };
+    }
+    return undefined;
+  }
+
   followUserFor(item: AppNotification): FollowUser | undefined {
     const fromUserId = item.data?.['fromUserId'];
     return item.type === 'new_follower' && fromUserId ? this.followUserById().get(fromUserId) : undefined;

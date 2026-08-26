@@ -39,6 +39,34 @@
             </button>
           }
           <span class="lightbox-caption-date">{{ currentPhotoDateLabel() }}</span>
+          @if (photo.reactions) {
+            <div class="lightbox-reactions-row">
+              <button type="button" class="lightbox-reaction-add" (click)="toggleReactionPicker()">
+                <ion-icon name="happy-outline"></ion-icon>
+              </button>
+              @if (photo.reactions.length) {
+                <div class="lightbox-reaction-chips">
+                  @for (reaction of photo.reactions; track reaction.emoji) {
+                    <button
+                      type="button"
+                      class="lightbox-reaction-chip"
+                      [class.active]="reaction.reactedByMe"
+                      (click)="toggleReactionChip(reaction)"
+                    >
+                      {{ reaction.emoji }} {{ reaction.count }}
+                    </button>
+                  }
+                </div>
+              }
+            </div>
+            @if (reactionPickerOpen()) {
+              <div class="lightbox-reaction-picker">
+                @for (emoji of quickReactions; track emoji) {
+                  <button type="button" (click)="pickReaction(emoji)">{{ emoji }}</button>
+                }
+              </div>
+            }
+          }
           @if (photo.actions?.length) {
             <div class="lightbox-actions">
               @for (action of photo.actions; track action.labelKey) {

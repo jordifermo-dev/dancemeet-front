@@ -44,7 +44,11 @@ export function buildEventCardView(
     title: event.title,
     creatorId: event.creatorId,
     creatorName: event.creatorName,
-    creatorProfileLink: isOwnEvent ? ['/tabs/profile'] : ['/users', event.creatorId],
+    // Always /users/:id, even for your own event - /tabs/profile is a tab
+    // root with no back-stack relationship to wherever the card was tapped
+    // from, so the back button dead-ended there. /users/:id works fine for
+    // your own id too (UserDetailPage just hides the follow actions).
+    creatorProfileLink: ['/users', event.creatorId],
     eventTypeTags,
     disciplineTags,
     status: event.status,

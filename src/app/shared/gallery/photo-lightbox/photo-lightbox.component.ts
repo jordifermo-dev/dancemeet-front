@@ -16,9 +16,16 @@ import { Router } from '@angular/router';
 import { IonModal, IonIcon } from '@ionic/angular/standalone';
 import { TranslatePipe } from '@ngx-translate/core';
 import { addIcons } from 'ionicons';
-import { closeOutline, chevronBackOutline, chevronForwardOutline } from 'ionicons/icons';
+import { closeOutline, chevronBackOutline, chevronForwardOutline, happyOutline } from 'ionicons/icons';
 import { LanguageService } from '../../../services/core/language.service';
 import { formatDateTimeNumeric } from '../../calendar/event-date-format';
+import { MessageReactionSummary } from '../../../models';
+
+/** Same fixed 6-emoji quick-reaction set as the xat's own
+ * QUICK_REACTIONS (event-detail.page.ts) - kept as its own local constant
+ * rather than imported, since this component doesn't otherwise depend on
+ * anything xat-specific. */
+const QUICK_REACTIONS = ['👍', '❤️', '😂', '😮', '😢', '🙏'];
 
 export interface LightboxPhoto {
   id: string;
@@ -37,6 +44,10 @@ export interface LightboxPhoto {
    * built per photo based on ownership/permissions. Empty/absent renders no
    * action row at all, same as today. */
   actions?: LightboxAction[];
+  /** Absent (not just empty) for a lightbox usage that doesn't support
+   * reactions at all (e.g. a user's own profile gallery) - only renders the
+   * reaction bar when actually given. */
+  reactions?: MessageReactionSummary[];
 }
 
 export interface LightboxAction {
@@ -62,6 +73,8 @@ export class PhotoLightboxComponent implements OnChanges, AfterViewInit {
   @Input({ required: true }) startIndex!: number;
   @Input() isOpen = false;
   @Output() readonly closed = new EventEmitter<void>();
+  @Output() readonly reactPhoto = new EventEmitter<{ photoId: string; emoji: string }>();
+  @Output() readonly unreactPhoto = new EventEmitter<{ photoId: string; emoji: string }>();
 
   private readonly router = inject(Router);
   private readonly languageService = inject(LanguageService);
@@ -75,12 +88,47 @@ export class PhotoLightboxComponent implements OnChanges, AfterViewInit {
     return photo ? formatDateTimeNumeric(photo.createdAt, this.languageService.currentLang()) : '';
   });
 
+  readonly quickReactions = QUICK_REACTIONS;
+  readonly reactionPickerOpen = signal(false);
+
+  toggleReactionPicker(): void {
+    this.reactionPickerOpen.update((open) => !open);
+  }
+
+  /** Same toggle-on-repeat convention as the xat's own pickReaction - picking
+   * the emoji you already reacted with removes it instead of no-oping. */
+  pickReaction(emoji: string): void {
+    const photo = this.currentPhoto();
+    if (!photo) {
+      return;
+    }
+    const already = photo.reactions?.some((r) => r.emoji === emoji && r.reactedByMe);
+    if (already) {
+      this.unreactPhoto.emit({ photoId: photo.id, emoji });
+    } else {
+      this.reactPhoto.emit({ photoId: photo.id, emoji });
+    }
+    this.reactionPickerOpen.set(false);
+  }
+
+  toggleReactionChip(reaction: MessageReactionSummary): void {
+    const photo = this.currentPhoto();
+    if (!photo) {
+      return;
+    }
+    if (reaction.reactedByMe) {
+      this.unreactPhoto.emit({ photoId: photo.id, emoji: reaction.emoji });
+    } else {
+      this.reactPhoto.emit({ photoId: photo.id, emoji: reaction.emoji });
+    }
+  }
+
   /** Set by onCaptionTap, consumed by onDidDismiss - see its own doc comment
    * for why the navigation is deferred there instead of firing immediately. */
   private pendingNavigationRoute: string[] | null = null;
 
   constructor() {
-    addIcons({ closeOutline, chevronBackOutline, chevronForwardOutline });
+    addIcons({ closeOutline, chevronBackOutline, chevronForwardOutline, happyOutline });
   }
 
   /** Only records where to go and starts the normal close - see
@@ -117,6 +165,9 @@ export class PhotoLightboxComponent implements OnChanges, AfterViewInit {
     const index = Math.round(track.scrollLeft / track.clientWidth);
     if (index !== this.currentIndex() && index >= 0 && index < this.photos.length) {
       this.currentIndex.set(index);
+      // A picker open for the photo just scrolled away from would otherwise
+      // keep floating over whichever photo is now showing.
+      this.reactionPickerOpen.set(false);
     }
   }
 

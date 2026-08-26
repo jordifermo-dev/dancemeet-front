@@ -321,12 +321,15 @@
           </button>
           <button
             type="button"
-            class="detail-view-toggle-btn"
+            class="detail-view-toggle-btn chat-toggle-btn"
             [class.active]="detailViewMode() === 'chat'"
             [attr.aria-label]="'eventDetail.chatTab' | translate"
             (click)="openChatTab()"
           >
             <ion-icon name="chatbubbles-outline"></ion-icon>
+            @if (unreadChatCount() > 0) {
+              <span class="chat-unread-badge">{{ unreadChatCount() > 9 ? '9+' : unreadChatCount() }}</span>
+            }
           </button>
         }
       </div>
@@ -425,46 +428,85 @@
               <div class="chat-message-row" [class.mine]="item.isMine">
                 @if (item.showHeader) {
                   <div class="chat-message-header">
-                    @if (item.message.senderPhotoUrl) {
-                      <img class="chat-avatar" [src]="item.message.senderPhotoUrl" [alt]="item.message.senderName" />
-                    } @else {
-                      <div class="chat-avatar chat-avatar-placeholder">{{ item.message.senderName.charAt(0) }}</div>
-                    }
-                    <span class="chat-sender-name">{{ item.message.senderName }}</span>
+                    <button type="button" class="chat-sender-link" (click)="goToChatSenderProfile(item.message.senderId)">
+                      @if (item.message.senderPhotoUrl) {
+                        <img class="chat-avatar" [src]="item.message.senderPhotoUrl" [alt]="item.message.senderName" />
+                      } @else {
+                        <div class="chat-avatar chat-avatar-placeholder">{{ item.message.senderName.charAt(0) }}</div>
+                      }
+                      <span class="chat-sender-name">{{ item.message.senderName }}</span>
+                    </button>
                     <span class="chat-message-time">{{ chatMessageTime(item.message) }}</span>
                   </div>
                 }
-                <div class="chat-bubble-row">
-                  <div class="chat-bubble">{{ item.message.text }}</div>
-                  <button
-                    type="button"
-                    class="chat-reaction-add"
-                    [attr.aria-label]="'eventDetail.chatAddReaction' | translate"
-                    (click)="toggleReactionPicker(item.message.id)"
-                  >
-                    <ion-icon name="happy-outline"></ion-icon>
-                  </button>
-                </div>
-                @if (reactionPickerMessageId() === item.message.id) {
-                  <div class="chat-reaction-picker">
-                    @for (emoji of quickReactions; track emoji) {
-                      <button type="button" (click)="pickReaction(item.message.id, emoji)">{{ emoji }}</button>
-                    }
+                @if (item.message.deleted) {
+                  <p class="chat-deleted-text">{{ 'eventDetail.chatMessageDeleted' | translate }}</p>
+                } @else {
+                  <div class="chat-bubble-row">
+                    <div class="chat-bubble">
+                      @if (item.message.replyTo; as quote) {
+                        <div class="chat-reply-quote">
+                          @if (quote.deleted) {
+                            <span class="chat-reply-quote-text">{{ 'eventDetail.chatMessageDeleted' | translate }}</span>
+                          } @else {
+                            <span class="chat-reply-quote-sender">{{ quote.senderName }}</span>
+                            <span class="chat-reply-quote-text">{{ quote.text }}</span>
+                          }
+                        </div>
+                      }
+                      @if (item.message.attachedPhoto) {
+                        <img
+                          class="chat-attached-photo"
+                          [src]="item.message.attachedPhoto.photoUrl"
+                          [alt]="'eventDetail.chatMentionedPhoto' | translate"
+                          (click)="openAttachedPhoto(item.message.attachedPhoto)"
+                        />
+                      }
+                      @if (item.message.text) {
+                        <p class="chat-bubble-text">{{ item.message.text }}</p>
+                      }
+                      @if (item.message.editedAt) {
+                        <span class="chat-edited-label">{{ 'eventDetail.chatEdited' | translate }}</span>
+                      }
+                    </div>
+                    <button
+                      type="button"
+                      class="chat-reaction-add"
+                      [attr.aria-label]="'eventDetail.chatAddReaction' | translate"
+                      (click)="toggleReactionPicker(item.message.id)"
+                    >
+                      <ion-icon name="happy-outline"></ion-icon>
+                    </button>
+                    <button
+                      type="button"
+                      class="chat-message-more"
+                      [attr.aria-label]="'eventDetail.chatMessageActions' | translate"
+                      (click)="openMessageActions(item.message)"
+                    >
+                      <ion-icon name="ellipsis-horizontal-outline"></ion-icon>
+                    </button>
                   </div>
-                }
-                @if (item.message.reactions.length) {
-                  <div class="chat-reaction-chips">
-                    @for (reaction of item.message.reactions; track reaction.emoji) {
-                      <button
-                        type="button"
-                        class="chat-reaction-chip"
-                        [class.active]="reaction.reactedByMe"
-                        (click)="toggleReactionChip(item.message.id, reaction)"
-                      >
-                        {{ reaction.emoji }} {{ reaction.count }}
-                      </button>
-                    }
-                  </div>
+                  @if (reactionPickerMessageId() === item.message.id) {
+                    <div class="chat-reaction-picker">
+                      @for (emoji of quickReactions; track emoji) {
+                        <button type="button" (click)="pickReaction(item.message.id, emoji)">{{ emoji }}</button>
+                      }
+                    </div>
+                  }
+                  @if (item.message.reactions.length) {
+                    <div class="chat-reaction-chips">
+                      @for (reaction of item.message.reactions; track reaction.emoji) {
+                        <button
+                          type="button"
+                          class="chat-reaction-chip"
+                          [class.active]="reaction.reactedByMe"
+                          (click)="toggleReactionChip(item.message.id, reaction)"
+                        >
+                          {{ reaction.emoji }} {{ reaction.count }}
+                        </button>
+                      }
+                    </div>
+                  }
                 }
               </div>
             }
@@ -564,6 +606,23 @@
 
 @if (!isCreateMode() && !isEditMode() && detailViewMode() === 'chat') {
   <ion-footer class="chat-footer">
+    @if (editingMessageId()) {
+      <div class="chat-compose-banner">
+        <span>{{ 'eventDetail.chatEditingBanner' | translate }}</span>
+        <button type="button" (click)="cancelEditMessage()"><ion-icon name="close-outline"></ion-icon></button>
+      </div>
+    } @else if (replyingTo(); as replying) {
+      <div class="chat-compose-banner">
+        <span>{{ 'eventDetail.chatReplyingTo' | translate: { name: replying.senderName } }}</span>
+        <button type="button" (click)="cancelReply()"><ion-icon name="close-outline"></ion-icon></button>
+      </div>
+    } @else if (pendingMentionPhoto(); as mention) {
+      <div class="chat-compose-banner chat-mention-banner">
+        <img class="chat-mention-thumb" [src]="mention.photoUrl" alt="" />
+        <span>{{ 'eventDetail.chatMentioningPhoto' | translate }}</span>
+        <button type="button" (click)="cancelMentionPhoto()"><ion-icon name="close-outline"></ion-icon></button>
+      </div>
+    }
     <div class="chat-input-row">
       <ion-textarea
         class="chat-input"
@@ -576,21 +635,82 @@
       <button
         type="button"
         class="chat-send-button"
-        [disabled]="!chatDraft().trim()"
-        [attr.aria-label]="'eventDetail.chatSendButton' | translate"
+        [disabled]="!chatDraft().trim() && !pendingMentionPhoto()"
+        [attr.aria-label]="(editingMessageId() ? 'eventDetail.chatConfirmEdit' : 'eventDetail.chatSendButton') | translate"
         (click)="sendChatMessage()"
       >
-        <ion-icon name="send-outline"></ion-icon>
+        <ion-icon [name]="editingMessageId() ? 'checkmark-outline' : 'send-outline'"></ion-icon>
       </button>
     </div>
   </ion-footer>
 }
 
+<ion-modal
+  [isOpen]="messageActionsFor() !== null"
+  [initialBreakpoint]="0.4"
+  [breakpoints]="[0, 0.4]"
+  (didDismiss)="closeMessageActions()"
+>
+  <ng-template>
+    <div class="filter-sheet">
+      <app-filter-sheet-header titleKey="eventDetail.chatMessageActions" (closed)="closeMessageActions()"></app-filter-sheet-header>
+      @if (messageActionsFor(); as message) {
+        <div class="message-actions-list">
+          <button type="button" class="message-action-item" (click)="replyToMessage(message)">
+            <ion-icon name="arrow-undo-outline"></ion-icon>
+            {{ 'eventDetail.chatReply' | translate }}
+          </button>
+          <button type="button" class="message-action-item" (click)="copyMessageText(message)">
+            <ion-icon name="copy-outline"></ion-icon>
+            {{ 'eventDetail.chatCopy' | translate }}
+          </button>
+          @if (isOwnChatMessage(message)) {
+            <button type="button" class="message-action-item" (click)="startEditMessage(message)">
+              <ion-icon name="create-outline"></ion-icon>
+              {{ 'eventDetail.chatEdit' | translate }}
+            </button>
+            <button type="button" class="message-action-item message-action-danger" (click)="requestDeleteMessage(message)">
+              <ion-icon name="trash-outline"></ion-icon>
+              {{ 'eventDetail.chatDelete' | translate }}
+            </button>
+          }
+        </div>
+      }
+    </div>
+  </ng-template>
+</ion-modal>
+
+<ion-modal
+  [isOpen]="confirmDeleteMessage() !== null"
+  [initialBreakpoint]="0.35"
+  [breakpoints]="[0, 0.35]"
+  (didDismiss)="cancelDeleteMessage()"
+>
+  <ng-template>
+    <div class="filter-sheet">
+      <app-filter-sheet-header titleKey="eventDetail.chatDeleteConfirmTitle" (closed)="cancelDeleteMessage()"></app-filter-sheet-header>
+      <p>{{ 'eventDetail.chatDeleteConfirmMessage' | translate }}</p>
+      <app-filter-actions-row>
+        <ion-button expand="block" fill="outline" color="primary" (click)="cancelDeleteMessage()">
+          <ion-icon slot="start" name="close-outline"></ion-icon>
+          {{ 'common.cancel' | translate }}
+        </ion-button>
+        <ion-button expand="block" class="btn-fill" color="danger" (click)="deleteMessageConfirmed()">
+          <ion-icon slot="start" name="trash-outline"></ion-icon>
+          {{ 'eventDetail.chatDelete' | translate }}
+        </ion-button>
+      </app-filter-actions-row>
+    </div>
+  </ng-template>
+</ion-modal>
+
 <app-photo-lightbox
   [photos]="lightboxItems()"
   [startIndex]="lightboxStartIndex()"
   [isOpen]="lightboxOpen()"
-  (closed)="lightboxOpen.set(false)"
+  (closed)="closeLightbox()"
+  (reactPhoto)="onLightboxReact($event)"
+  (unreactPhoto)="onLightboxUnreact($event)"
 ></app-photo-lightbox>
 
 <ion-modal

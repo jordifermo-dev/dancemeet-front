@@ -1,3 +1,5 @@
+import { MessageReactionSummary } from '../chat/chat.model';
+
 export interface GalleryPhoto {
   id: string;
   /** Absent for a photo posted directly to a profile, with no event involved. */
@@ -13,10 +15,11 @@ export interface GalleryPhoto {
 }
 
 /** For an event's own gallery - who posted each photo, so a tap can jump to
- * that person's profile. */
+ * that person's profile, plus this viewer's own reaction summary per photo. */
 export interface GalleryPhotoWithPoster extends GalleryPhoto {
   posterUserName: string;
   posterUserPhotoUrl?: string;
+  reactions: MessageReactionSummary[];
 }
 
 /** For a user's own gallery - which event each photo came from, so a tap

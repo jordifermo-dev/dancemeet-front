@@ -216,4 +216,26 @@ export class EventShareService {
       }
     }
   }
+
+  /** Shares a single gallery photo as a real image file - same fetch→blob→
+   * base64→Filesystem.writeFile(Cache)→Share.share({files}) shape as
+   * shareEventImage above, just without that method's event-specific
+   * fallback chain (a gallery photo has no "fallback text" to fall back to -
+   * failing here just means the native share sheet never opened). */
+  async shareGalleryPhoto(photoUrl: string): Promise<void> {
+    const response = await fetch(photoUrl);
+    const blob = await response.blob();
+    const base64 = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve((reader.result as string).split(',')[1]);
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(blob);
+    });
+    const { uri } = await Filesystem.writeFile({
+      path: `dancemeet-gallery-${Date.now()}.jpg`,
+      data: base64,
+      directory: Directory.Cache,
+    });
+    await Share.share({ title: 'DanceMeet', files: [uri] });
+  }
 }

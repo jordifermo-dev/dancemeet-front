@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { GalleryCover, GalleryPhoto, GalleryPhotoWithEvent, GalleryPhotoWithPoster } from '../../models';
+import { GalleryCover, GalleryPhoto, GalleryPhotoWithEvent, GalleryPhotoWithPoster, MessageReactionSummary } from '../../models';
 
 @Injectable({ providedIn: 'root' })
 export class GalleryService {
@@ -45,6 +45,20 @@ export class GalleryService {
    * gallery. */
   movePhotoToPrivateGallery(eventId: string, photoId: string): Observable<{ success: boolean }> {
     return this.http.patch<{ success: boolean }>(`${this.eventsUrl}/${eventId}/gallery/${photoId}/move-private`, {});
+  }
+
+  /** Looks up one photo by id, wherever it currently lives (public/private/
+   * both) - used to navigate to a xat photo mention's real current gallery. */
+  getPhoto(eventId: string, photoId: string): Observable<GalleryPhotoWithPoster> {
+    return this.http.get<GalleryPhotoWithPoster>(`${this.eventsUrl}/${eventId}/gallery/${photoId}`);
+  }
+
+  reactToPhoto(eventId: string, photoId: string, emoji: string): Observable<MessageReactionSummary[]> {
+    return this.http.patch<MessageReactionSummary[]>(`${this.eventsUrl}/${eventId}/gallery/${photoId}/react`, { emoji });
+  }
+
+  removeReactionFromPhoto(eventId: string, photoId: string, emoji: string): Observable<MessageReactionSummary[]> {
+    return this.http.patch<MessageReactionSummary[]>(`${this.eventsUrl}/${eventId}/gallery/${photoId}/unreact`, { emoji });
   }
 
   getUserGallery(userId: string): Observable<GalleryPhotoWithEvent[]> {

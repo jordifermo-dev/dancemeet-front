@@ -31,6 +31,12 @@ export class EventChatSocketService {
    * chat UI only ever needs to read this one signal. */
   readonly messages = signal<EventMessage[]>([]);
   readonly typingUsers = signal<TypingUser[]>([]);
+  /** Set only by the 'new-message' socket event (never by setInitialHistory,
+   * which would otherwise look identical to N brand-new messages arriving
+   * at once) - event-detail.page.ts watches this alone to bump its unread
+   * badge while the xat tab isn't the active view, so a history load never
+   * gets miscounted as unread activity. */
+  readonly lastReceivedMessage = signal<EventMessage | null>(null);
 
   private readonly typingTimeouts = new Map<string, ReturnType<typeof setTimeout>>();
   private lastTypingSentAt = 0;
@@ -60,12 +66,19 @@ export class EventChatSocketService {
 
     this.socket.on('new-message', (message: EventMessage) => {
       this.messages.update((list) => (list.some((m) => m.id === message.id) ? list : [...list, message]));
+      this.lastReceivedMessage.set(message);
     });
 
     this.socket.on('message-reaction-updated', (payload: { messageId: string; reactions: MessageReactionSummary[] }) => {
       this.messages.update((list) =>
         list.map((message) => (message.id === payload.messageId ? { ...message, reactions: payload.reactions } : message)),
       );
+    });
+
+    // Covers both an edit and a (soft) delete - a deleted message is just a
+    // message whose `deleted` flag flipped, same event either way.
+    this.socket.on('message-updated', (message: EventMessage) => {
+      this.messages.update((list) => list.map((m) => (m.id === message.id ? message : m)));
     });
 
     this.socket.on('user-typing', (payload: TypingUser) => this.markTyping(payload));
@@ -78,6 +91,7 @@ export class EventChatSocketService {
     this.currentEventId = eventId;
     this.messages.set([]);
     this.typingUsers.set([]);
+    this.lastReceivedMessage.set(null);
     if (this.socket?.connected) {
       this.socket.emit('join-event', { eventId });
     }
@@ -95,12 +109,39 @@ export class EventChatSocketService {
     });
   }
 
-  sendMessage(text: string): void {
+  sendMessage(text: string, options?: { replyToMessageId?: string; attachedPhotoId?: string }): void {
+    const trimmed = text.trim();
+    if (!this.currentEventId || (!trimmed && !options?.attachedPhotoId)) {
+      return;
+    }
+    this.socket?.emit('send-message', {
+      eventId: this.currentEventId,
+      text: trimmed,
+      replyToMessageId: options?.replyToMessageId,
+      attachedPhotoId: options?.attachedPhotoId,
+    });
+  }
+
+  editMessage(messageId: string, text: string): void {
     const trimmed = text.trim();
     if (!this.currentEventId || !trimmed) {
       return;
     }
-    this.socket?.emit('send-message', { eventId: this.currentEventId, text: trimmed });
+    this.socket?.emit('edit-message', { eventId: this.currentEventId, messageId, text: trimmed });
+  }
+
+  deleteMessage(messageId: string): void {
+    if (!this.currentEventId) {
+      return;
+    }
+    this.socket?.emit('delete-message', { eventId: this.currentEventId, messageId });
+  }
+
+  markChatRead(): void {
+    if (!this.currentEventId) {
+      return;
+    }
+    this.socket?.emit('mark-chat-read', { eventId: this.currentEventId });
   }
 
   reactToMessage(messageId: string, emoji: string): void {
@@ -154,6 +195,7 @@ export class EventChatSocketService {
     this.currentEventId = null;
     this.messages.set([]);
     this.typingUsers.set([]);
+    this.lastReceivedMessage.set(null);
     for (const timeout of this.typingTimeouts.values()) {
       clearTimeout(timeout);
     }

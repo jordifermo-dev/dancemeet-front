@@ -260,6 +260,7 @@
 }
 
 .detail-view-toggle-btn {
+  position: relative;
   flex: 1;
   appearance: none;
   border: none;
@@ -280,6 +281,25 @@
     color: var(--app-text-strong);
     border-bottom-color: var(--app-text-strong);
   }
+}
+
+// Same "urgent activity" convention as the notification bell's own
+// .bell-badge (red, gated on >0, "9+" cap) rather than .count-badge's
+// passive-stat teal - unread xat messages read as something to act on.
+.chat-unread-badge {
+  position: absolute;
+  top: 4px;
+  right: calc(50% - 22px);
+  min-width: 16px;
+  height: 16px;
+  padding: 0 3px;
+  border-radius: 999px;
+  background: var(--ion-color-danger);
+  color: #fff;
+  font-size: 0.62rem;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
 }
 
 // Matches the notification bell/settings icons elsewhere in the app's
@@ -709,6 +729,20 @@ app-recurrence-quick-picker {
   text-transform: uppercase;
 }
 
+.chat-sender-link {
+  appearance: none;
+  border: none;
+  background: transparent;
+  padding: 0;
+  font: inherit;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+}
+
 .chat-sender-name {
   font-weight: 700;
   color: var(--app-text-strong);
@@ -732,8 +766,12 @@ app-recurrence-quick-picker {
   padding: 8px 12px;
   font-size: 0.88rem;
   line-height: 1.35;
-  white-space: pre-line;
   overflow-wrap: anywhere;
+}
+
+.chat-bubble-text {
+  margin: 0;
+  white-space: pre-line;
 }
 
 .chat-message-row.mine .chat-bubble {
@@ -741,7 +779,55 @@ app-recurrence-quick-picker {
   color: var(--ion-color-primary-contrast);
 }
 
-.chat-reaction-add {
+.chat-deleted-text {
+  margin: 0;
+  padding: 8px 12px;
+  font-size: 0.85rem;
+  font-style: italic;
+  color: var(--ion-color-medium);
+}
+
+.chat-edited-label {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.66rem;
+  opacity: 0.7;
+}
+
+.chat-reply-quote {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin-bottom: 6px;
+  padding: 4px 8px;
+  border-left: 3px solid var(--ion-color-primary);
+  background: rgba(var(--ion-color-primary-rgb, 0, 84, 233), 0.08);
+  border-radius: 6px;
+  font-size: 0.78rem;
+}
+
+.chat-reply-quote-sender {
+  font-weight: 700;
+  color: var(--ion-color-primary);
+}
+
+.chat-reply-quote-text {
+  color: var(--ion-color-medium);
+  overflow-wrap: anywhere;
+}
+
+.chat-attached-photo {
+  display: block;
+  width: 160px;
+  height: 160px;
+  object-fit: cover;
+  border-radius: 12px;
+  margin-bottom: 6px;
+  cursor: pointer;
+}
+
+.chat-reaction-add,
+.chat-message-more {
   appearance: none;
   border: none;
   background: transparent;
@@ -758,14 +844,17 @@ app-recurrence-quick-picker {
   }
 }
 
-.chat-message-row:hover .chat-reaction-add {
+.chat-message-row:hover .chat-reaction-add,
+.chat-message-row:hover .chat-message-more {
   opacity: 1;
 }
 
-// Touch devices have no hover - the reaction button stays reachable at all
-// times there rather than hidden behind a gesture this page doesn't wire up.
+// Touch devices have no hover - the reaction/actions buttons stay reachable
+// at all times there rather than hidden behind a gesture this page doesn't
+// wire up.
 @media (hover: none) {
-  .chat-reaction-add {
+  .chat-reaction-add,
+  .chat-message-more {
     opacity: 1;
   }
 }
@@ -819,6 +908,51 @@ app-recurrence-quick-picker {
   font-size: 0.76rem;
   font-style: italic;
   color: var(--ion-color-medium);
+}
+
+// Replying-to / editing / photo-mention preview - mutually exclusive, sits
+// directly above the input row inside the same fixed footer (see
+// event-detail.page.html - editingMessageId/replyingTo/pendingMentionPhoto).
+.chat-compose-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 6px 20px;
+  background: var(--ion-color-light-shade);
+  font-size: 0.8rem;
+  color: var(--app-text-strong);
+
+  span {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  button {
+    appearance: none;
+    border: none;
+    background: transparent;
+    color: var(--ion-color-medium);
+    display: flex;
+    align-items: center;
+    padding: 2px;
+    cursor: pointer;
+
+    ion-icon {
+      font-size: 1.1rem;
+    }
+  }
+}
+
+.chat-mention-thumb {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  object-fit: cover;
+  flex: 0 0 auto;
 }
 
 // A real <ion-footer> (see event-detail.page.html) rather than a "position:
@@ -887,6 +1021,44 @@ app-recurrence-quick-picker {
     opacity: 0.4;
     cursor: default;
   }
+}
+
+// Same look as .social-picker-list/.social-picker-option (Profile's own
+// social-network picker sheet) - the message "..." action sheet reuses this
+// list-of-tappable-rows convention rather than inventing a new one.
+.message-actions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.message-action-item {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  border: none;
+  border-radius: 12px;
+  padding: 12px 8px;
+  background: transparent;
+  color: var(--app-text-strong);
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+
+  ion-icon {
+    font-size: 1.2rem;
+  }
+
+  &:active {
+    background: var(--ion-color-light-shade);
+  }
+}
+
+.message-action-danger {
+  color: var(--ion-color-danger);
 }
 
 .validation-warning {

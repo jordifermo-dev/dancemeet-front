@@ -196,10 +196,19 @@ export class NotificationService {
     const eventId = data?.['eventId'];
     const fromUserId = data?.['fromUserId'];
     if (typeof eventId === 'string' && eventId) {
-      // A xat message notification lands the reader straight on the xat tab
-      // instead of Información - see event-detail.page.ts's own reading of
-      // this query param (openChatTab()).
-      const queryParams = data?.['type'] === 'event_chat_message' ? { openChat: '1' } : undefined;
+      // A xat message notification lands the reader straight on the xat tab,
+      // and a gallery-photo one straight on the right gallery tab (public or
+      // private, see the `gallery` field GalleryService.postPhoto/
+      // postPrivatePhoto attach) - instead of the usual Información default.
+      // See event-detail.page.ts's own reading of these query params
+      // (openChatTab()/the pendingOpenGalleryFromNotification effect).
+      const type = data?.['type'];
+      let queryParams: Record<string, string> | undefined;
+      if (type === 'event_chat_message') {
+        queryParams = { openChat: '1' };
+      } else if (type === 'gallery_photo_attending' || type === 'gallery_photo_followed') {
+        queryParams = { openGallery: data?.['gallery'] === 'private' ? 'private' : 'public' };
+      }
       this.router.navigate(['/events', eventId], { queryParams });
     } else if (typeof fromUserId === 'string' && fromUserId) {
       this.router.navigateByUrl(`/users/${fromUserId}`);

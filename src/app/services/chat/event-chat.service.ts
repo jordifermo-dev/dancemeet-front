@@ -18,4 +18,8 @@ export class EventChatService {
       params: before !== undefined ? { before: String(before) } : {},
     });
   }
+
+  getUnreadCount(eventId: string): Observable<{ count: number }> {
+    return this.http.get<{ count: number }>(`${this.baseUrl}/${eventId}/messages/unread-count`);
+  }
 }
