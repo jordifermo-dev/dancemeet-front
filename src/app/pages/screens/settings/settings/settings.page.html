@@ -41,13 +41,35 @@
     </div>
 
     <div class="type-list">
-      @for (type of allTypes; track type) {
-        <div class="type-row">
-          <div class="type-icon">
-            <ion-icon [name]="typeIcons[type]"></ion-icon>
-          </div>
-          <span class="type-label">{{ typeLabelKeys[type] | translate }}</span>
-          <ion-toggle [checked]="isEnabled(type)" (ionChange)="toggle(type, $event.detail.checked)"></ion-toggle>
+      @for (category of categories; track category.id) {
+        <div class="type-category">
+          <button
+            type="button"
+            class="type-category-header"
+            [attr.aria-expanded]="isCategoryExpanded(category.id)"
+            (click)="toggleCategoryExpanded(category.id)"
+          >
+            <ion-icon [name]="isCategoryExpanded(category.id) ? 'chevron-down-outline' : 'chevron-forward-outline'"></ion-icon>
+            <span class="type-category-title">{{ category.labelKey | translate }}</span>
+            <ion-toggle
+              [checked]="isCategoryEnabled(category)"
+              (click)="$event.stopPropagation()"
+              (ionChange)="toggleCategory(category, $event.detail.checked)"
+            ></ion-toggle>
+          </button>
+          @if (isCategoryExpanded(category.id)) {
+            <div class="type-category-body">
+              @for (type of category.types; track type) {
+                <div class="type-row">
+                  <div class="type-icon">
+                    <ion-icon [name]="typeIcons[type]"></ion-icon>
+                  </div>
+                  <span class="type-label">{{ typeLabelKeys[type] | translate }}</span>
+                  <ion-toggle [checked]="isEnabled(type)" (ionChange)="toggle(type, $event.detail.checked)"></ion-toggle>
+                </div>
+              }
+            </div>
+          }
         </div>
       }
     </div>

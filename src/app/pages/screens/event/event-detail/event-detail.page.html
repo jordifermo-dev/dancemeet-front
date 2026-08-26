@@ -417,7 +417,7 @@
 
       @if (detailViewMode() === 'chat') {
         <div class="chat-panel">
-          <div class="chat-messages">
+          <div class="chat-messages" #chatMessagesRef>
             @if (!chatDisplayItems().length) {
               <p class="empty-message chat-empty">{{ 'eventDetail.chatEmptyState' | translate }}</p>
             }
@@ -698,6 +698,30 @@
         <ion-button expand="block" class="btn-fill" color="danger" (click)="deleteMessageConfirmed()">
           <ion-icon slot="start" name="trash-outline"></ion-icon>
           {{ 'eventDetail.chatDelete' | translate }}
+        </ion-button>
+      </app-filter-actions-row>
+    </div>
+  </ng-template>
+</ion-modal>
+
+<ion-modal
+  [isOpen]="confirmDeletePhoto() !== null"
+  [initialBreakpoint]="0.35"
+  [breakpoints]="[0, 0.35]"
+  (didDismiss)="cancelDeletePhoto()"
+>
+  <ng-template>
+    <div class="filter-sheet">
+      <app-filter-sheet-header titleKey="eventDetail.galleryDeleteConfirmTitle" (closed)="cancelDeletePhoto()"></app-filter-sheet-header>
+      <p>{{ 'eventDetail.galleryDeleteConfirmMessage' | translate }}</p>
+      <app-filter-actions-row>
+        <ion-button expand="block" fill="outline" color="primary" (click)="cancelDeletePhoto()">
+          <ion-icon slot="start" name="close-outline"></ion-icon>
+          {{ 'common.cancel' | translate }}
+        </ion-button>
+        <ion-button expand="block" class="btn-fill" color="danger" (click)="deletePhotoConfirmed()">
+          <ion-icon slot="start" name="trash-outline"></ion-icon>
+          {{ 'eventDetail.galleryDelete' | translate }}
         </ion-button>
       </app-filter-actions-row>
     </div>

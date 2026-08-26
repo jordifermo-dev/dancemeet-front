@@ -133,7 +133,27 @@
       <app-filter-sheet-header titleKey="explorer.filterAllTitle" (closed)="isFilterModalOpen.set(false)"></app-filter-sheet-header>
 
       <app-filter-section titleKey="notifications.filterTypeLabel">
-        <app-chip-grid [items]="typeChipItems()" (chipClick)="toggleDraftType($event)"></app-chip-grid>
+        @for (category of categories; track category.id) {
+          <div class="type-category">
+            <button
+              type="button"
+              class="type-category-header"
+              [attr.aria-expanded]="isFilterCategoryExpanded(category.id)"
+              (click)="toggleFilterCategoryExpanded(category.id)"
+            >
+              <ion-icon [name]="isFilterCategoryExpanded(category.id) ? 'chevron-down-outline' : 'chevron-forward-outline'"></ion-icon>
+              <span class="type-category-title">{{ category.labelKey | translate }}</span>
+              <ion-toggle
+                [checked]="isFilterCategorySelected(category)"
+                (click)="$event.stopPropagation()"
+                (ionChange)="toggleFilterCategory(category, $event.detail.checked)"
+              ></ion-toggle>
+            </button>
+            @if (isFilterCategoryExpanded(category.id)) {
+              <app-chip-grid [items]="chipItemsForCategory(category)" (chipClick)="toggleDraftType($event)"></app-chip-grid>
+            }
+          </div>
+        }
         @if (minSelectionWarning.isActive('notificationTypes')) {
           <p class="min-selection-warning">{{ 'explorer.minSelectionWarning' | translate }}</p>
         }

@@ -4,6 +4,15 @@
  * its own `.filter-sheet { }` rule and layers page-specific selectors (or a
  * `p` margin override) on top of this. */
 @mixin filter-sheet-base {
+  // A raw div (not ion-content) doesn't get Ionic's automatic scroll
+  // handling inside an ion-modal sheet - without an explicit height + own
+  // overflow, content taller than the current breakpoint just gets clipped,
+  // with swipes dragging the sheet instead of scrolling its content. Harmless
+  // for every shorter sheet using this mixin (no scrollbar unless content
+  // actually overflows the box ion-modal gives it).
+  height: 100%;
+  overflow-y: auto;
+  box-sizing: border-box;
   padding: 20px 20px 16px;
 
   p {

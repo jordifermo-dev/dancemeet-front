@@ -8,12 +8,11 @@ import {
   Output,
   SimpleChanges,
   ViewChild,
-  computed,
   inject,
   signal,
 } from '@angular/core';
 import { Router } from '@angular/router';
-import { IonModal, IonIcon } from '@ionic/angular/standalone';
+import { IonModal, IonIcon, IonButton } from '@ionic/angular/standalone';
 import { TranslatePipe } from '@ngx-translate/core';
 import { addIcons } from 'ionicons';
 import { closeOutline, chevronBackOutline, chevronForwardOutline, happyOutline } from 'ionicons/icons';
@@ -66,7 +65,7 @@ export interface LightboxAction {
   standalone: true,
   templateUrl: './photo-lightbox.component.html',
   styleUrl: './photo-lightbox.component.scss',
-  imports: [IonModal, IonIcon, TranslatePipe],
+  imports: [IonModal, IonIcon, IonButton, TranslatePipe],
 })
 export class PhotoLightboxComponent implements OnChanges, AfterViewInit {
   @Input({ required: true }) photos!: LightboxPhoto[];
@@ -82,11 +81,19 @@ export class PhotoLightboxComponent implements OnChanges, AfterViewInit {
   @ViewChild('track') private trackRef?: ElementRef<HTMLElement>;
 
   readonly currentIndex = signal(0);
-  readonly currentPhoto = computed(() => this.photos[this.currentIndex()]);
-  readonly currentPhotoDateLabel = computed(() => {
+  // Plain methods, not computed() - `photos` is a regular @Input, not a
+  // signal, so a computed() here would only ever track `currentIndex` as a
+  // dependency and keep returning a stale photo (with stale reactions) after
+  // the parent pushes a new `photos` array reference, only refreshing once
+  // currentIndex itself changed (e.g. swiping, which is what made switching
+  // tabs "fix" it - closing/reopening resets currentIndex via ngOnChanges).
+  currentPhoto(): LightboxPhoto | undefined {
+    return this.photos[this.currentIndex()];
+  }
+  currentPhotoDateLabel(): string {
     const photo = this.currentPhoto();
     return photo ? formatDateTimeNumeric(photo.createdAt, this.languageService.currentLang()) : '';
-  });
+  }
 
   readonly quickReactions = QUICK_REACTIONS;
   readonly reactionPickerOpen = signal(false);

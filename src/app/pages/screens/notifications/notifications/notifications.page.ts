@@ -14,6 +14,7 @@ import {
   IonSpinner,
   IonIcon,
   IonModal,
+  IonToggle,
   ViewWillEnter,
 } from '@ionic/angular/standalone';
 import { TranslatePipe } from '@ngx-translate/core';
@@ -31,6 +32,7 @@ import {
   mailUnreadOutline,
   mailOutline,
   chevronDownOutline,
+  chevronForwardOutline,
   refreshOutline,
   checkmarkOutline,
   closeOutline,
@@ -58,8 +60,10 @@ import { EventCardComponent } from '../../../../shared/event/event-card/event-ca
 import { UserCardComponent } from '../../../../shared/user/user-card/user-card.component';
 import {
   ALL_NOTIFICATION_TYPES,
+  NOTIFICATION_CATEGORIES,
   NOTIFICATION_TYPE_ICONS,
   NOTIFICATION_TYPE_LABEL_KEYS,
+  NotificationCategory,
 } from '../../../../shared/notifications/notification-types';
 import { FilterSheetHeaderComponent } from '../../../../shared/filters/filter-sheet-header/filter-sheet-header.component';
 import { FilterSectionComponent } from '../../../../shared/filters/filter-section/filter-section.component';
@@ -107,6 +111,7 @@ const SORT_OPTIONS: { id: SortMode; labelKey: string }[] = [
     IonSpinner,
     IonIcon,
     IonModal,
+    IonToggle,
     RouterLink,
     TranslatePipe,
     EventCardComponent,
@@ -172,6 +177,49 @@ export class NotificationsPage implements ViewWillEnter, AfterViewInit, OnDestro
   readonly draftReadFilter = signal<ReadFilter>('all');
   readonly isFilterModalOpen = signal(false);
 
+  readonly categories = NOTIFICATION_CATEGORIES;
+  // Collapsed by default, same as Settings' own notification categories -
+  // consistent presentation, and what actually keeps the sheet short enough
+  // to fit without needing to scroll through every chip at once.
+  readonly expandedFilterCategories = signal<Set<string>>(new Set());
+
+  isFilterCategoryExpanded(categoryId: string): boolean {
+    return this.expandedFilterCategories().has(categoryId);
+  }
+
+  toggleFilterCategoryExpanded(categoryId: string): void {
+    this.expandedFilterCategories.update((current) => {
+      const next = new Set(current);
+      if (next.has(categoryId)) {
+        next.delete(categoryId);
+      } else {
+        next.add(categoryId);
+      }
+      return next;
+    });
+  }
+
+  /** Same per-category "select/deselect all" toggle as Settings' own
+   * notification categories (toggleCategory there) - selects or clears every
+   * type in this category at once within the current filter draft. */
+  isFilterCategorySelected(category: NotificationCategory): boolean {
+    return category.types.every((type) => this.draftTypes().includes(type));
+  }
+
+  toggleFilterCategory(category: NotificationCategory, selected: boolean): void {
+    this.draftTypes.update((current) => {
+      if (selected) {
+        return [...new Set([...current, ...category.types])];
+      }
+      const next = current.filter((type) => !category.types.includes(type));
+      if (next.length === 0) {
+        this.minSelectionWarning.flash('notificationTypes');
+        return current;
+      }
+      return next;
+    });
+  }
+
   readonly typeChipItems = computed<ChipGridItem[]>(() =>
     this.allTypes.map((type) => ({
       id: type,
@@ -182,6 +230,13 @@ export class NotificationsPage implements ViewWillEnter, AfterViewInit, OnDestro
       disabledBadgeKey: 'notifications.disabledBadge',
     })),
   );
+
+  /** Same chip items as typeChipItems, scoped to one category - the filter
+   * modal groups them by category (see NOTIFICATION_CATEGORIES) instead of
+   * one flat wall of 13 chips. */
+  chipItemsForCategory(category: NotificationCategory): ChipGridItem[] {
+    return this.typeChipItems().filter((item) => category.types.includes(item.id as NotificationType));
+  }
 
   readonly readFilterChipItems = computed<ChipGridItem[]>(() =>
     this.readFilterOptions.map((option) => ({
@@ -258,6 +313,7 @@ export class NotificationsPage implements ViewWillEnter, AfterViewInit, OnDestro
       mailUnreadOutline,
       mailOutline,
       chevronDownOutline,
+      chevronForwardOutline,
       refreshOutline,
       checkmarkOutline,
       closeOutline,

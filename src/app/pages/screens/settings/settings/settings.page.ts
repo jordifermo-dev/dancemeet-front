@@ -37,6 +37,8 @@ import {
   eyeOutline,
   eyeOffOutline,
   chatbubblesOutline,
+  chevronDownOutline,
+  chevronForwardOutline,
 } from 'ionicons/icons';
 import { AuthService } from '../../../../services/core/auth.service';
 import { UserService } from '../../../../services/user/user.service';
@@ -44,7 +46,13 @@ import { OnboardingService } from '../../../../services/core/onboarding.service'
 import { resetSharePreviewHint } from '../../../../shared/sharing/share-hint';
 import { ThemeService, ThemeMode } from '../../../../services/core/theme.service';
 import { NotificationType } from '../../../../models';
-import { ALL_NOTIFICATION_TYPES, NOTIFICATION_TYPE_ICONS, NOTIFICATION_TYPE_LABEL_KEYS } from '../../../../shared/notifications/notification-types';
+import {
+  ALL_NOTIFICATION_TYPES,
+  NOTIFICATION_CATEGORIES,
+  NOTIFICATION_TYPE_ICONS,
+  NOTIFICATION_TYPE_LABEL_KEYS,
+  NotificationCategory,
+} from '../../../../shared/notifications/notification-types';
 import { createSuccessFlash } from '../../../../shared/common/success-flash';
 import { firebaseErrorMessage } from '../../../../shared/auth/firebase-error-message';
 import { passwordsMatchValidator, STRONG_PASSWORD_PATTERN } from '../../../../shared/auth/password-validators';
@@ -93,6 +101,10 @@ export class SettingsPage {
   readonly allTypes = ALL_NOTIFICATION_TYPES;
   readonly typeIcons = NOTIFICATION_TYPE_ICONS;
   readonly typeLabelKeys = NOTIFICATION_TYPE_LABEL_KEYS;
+  readonly categories = NOTIFICATION_CATEGORIES;
+  // Collapsed by default - this is exactly what's meant to cut down the wall
+  // of toggles the flat list used to be.
+  readonly expandedCategories = signal<Set<string>>(new Set());
 
   readonly themeMode = this.themeService.mode;
   readonly themeOptions: { mode: ThemeMode; icon: string; labelKey: string }[] = [
@@ -150,7 +162,41 @@ export class SettingsPage {
       eyeOutline,
       eyeOffOutline,
       chatbubblesOutline,
+      chevronDownOutline,
+      chevronForwardOutline,
     });
+  }
+
+  isCategoryExpanded(categoryId: string): boolean {
+    return this.expandedCategories().has(categoryId);
+  }
+
+  toggleCategoryExpanded(categoryId: string): void {
+    this.expandedCategories.update((current) => {
+      const next = new Set(current);
+      if (next.has(categoryId)) {
+        next.delete(categoryId);
+      } else {
+        next.add(categoryId);
+      }
+      return next;
+    });
+  }
+
+  isCategoryEnabled(category: NotificationCategory): boolean {
+    return category.types.every((type) => this.isEnabled(type));
+  }
+
+  toggleCategory(category: NotificationCategory, enabled: boolean): void {
+    const next = new Set(this.disabledTypes());
+    for (const type of category.types) {
+      if (enabled) {
+        next.delete(type);
+      } else {
+        next.add(type);
+      }
+    }
+    this.save(next);
   }
 
   setTheme(mode: ThemeMode): void {

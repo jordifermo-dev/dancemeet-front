@@ -6,39 +6,43 @@
 >
   <ng-template>
     <div class="lightbox">
-      <button type="button" class="lightbox-close" (click)="close()">
-        <ion-icon name="close-outline"></ion-icon>
-      </button>
+      <div class="lightbox-viewer">
+        <button type="button" class="lightbox-close" (click)="close()">
+          <ion-icon name="close-outline"></ion-icon>
+        </button>
 
-      <div class="lightbox-track" #track (scroll)="onScroll()">
-        @for (photo of photos; track photo.id) {
-          <div class="lightbox-slide">
-            <img [src]="photo.photoUrl" alt="" />
-          </div>
+        <div class="lightbox-track" #track (scroll)="onScroll()">
+          @for (photo of photos; track photo.id) {
+            <div class="lightbox-slide">
+              <img [src]="photo.photoUrl" alt="" />
+            </div>
+          }
+        </div>
+
+        @if (photos.length > 1) {
+          @if (currentIndex() > 0) {
+            <button type="button" class="lightbox-nav lightbox-nav-prev" (click)="goPrev()">
+              <ion-icon name="chevron-back-outline"></ion-icon>
+            </button>
+          }
+          @if (currentIndex() < photos.length - 1) {
+            <button type="button" class="lightbox-nav lightbox-nav-next" (click)="goNext()">
+              <ion-icon name="chevron-forward-outline"></ion-icon>
+            </button>
+          }
         }
       </div>
 
-      @if (photos.length > 1) {
-        @if (currentIndex() > 0) {
-          <button type="button" class="lightbox-nav lightbox-nav-prev" (click)="goPrev()">
-            <ion-icon name="chevron-back-outline"></ion-icon>
-          </button>
-        }
-        @if (currentIndex() < photos.length - 1) {
-          <button type="button" class="lightbox-nav lightbox-nav-next" (click)="goNext()">
-            <ion-icon name="chevron-forward-outline"></ion-icon>
-          </button>
-        }
-      }
-
       @if (currentPhoto(); as photo) {
-        <div class="lightbox-caption">
-          @if (photo.relatedLinkRoute) {
-            <button type="button" class="lightbox-caption-link" (click)="onCaptionTap()">
-              {{ photo.relatedLinkLabel }}
-            </button>
-          }
-          <span class="lightbox-caption-date">{{ currentPhotoDateLabel() }}</span>
+        <div class="lightbox-panel">
+          <div class="lightbox-meta">
+            @if (photo.relatedLinkRoute) {
+              <button type="button" class="lightbox-caption-link" (click)="onCaptionTap()">
+                {{ photo.relatedLinkLabel }}
+              </button>
+            }
+            <span class="lightbox-caption-date">{{ currentPhotoDateLabel() }}</span>
+          </div>
           @if (photo.reactions) {
             <div class="lightbox-reactions-row">
               <button type="button" class="lightbox-reaction-add" (click)="toggleReactionPicker()">
@@ -70,10 +74,10 @@
           @if (photo.actions?.length) {
             <div class="lightbox-actions">
               @for (action of photo.actions; track action.labelKey) {
-                <button type="button" class="lightbox-action-btn" (click)="action.onClick()">
-                  <ion-icon [name]="action.icon"></ion-icon>
+                <ion-button fill="outline" size="small" (click)="action.onClick()">
+                  <ion-icon slot="start" [name]="action.icon"></ion-icon>
                   {{ action.labelKey | translate }}
-                </button>
+                </ion-button>
               }
             </div>
           }

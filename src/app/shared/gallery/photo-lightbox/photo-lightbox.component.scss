@@ -1,10 +1,22 @@
-// Fixed dark chrome regardless of app theme - same convention every photo
-// viewer uses (Instagram, Photos apps, ...): maximum contrast for the image
-// itself, not something that should flip with light/dark mode.
+// The image viewer sits above a solid info panel now (not a caption floating
+// over the photo) - .lightbox itself is the theme-aware ground behind both;
+// .lightbox-viewer is where the close/nav buttons still float directly over
+// arbitrary photo content, so those specific controls keep their fixed
+// dark-with-white-text look (see their own rules below) rather than
+// following the theme.
 .lightbox {
   position: relative;
   height: 100%;
-  background: #000000;
+  background: var(--app-surface-card);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.lightbox-viewer {
+  position: relative;
+  flex: 1;
+  min-height: 0;
   overflow: hidden;
 }
 
@@ -88,23 +100,22 @@
   right: 12px;
 }
 
-.lightbox-caption {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: max(env(safe-area-inset-bottom), 16px);
-  z-index: 2;
+// The solid panel below the image - same surface/text tokens as any other
+// card in the app (settings rows, event actions-row, ...), left-aligned
+// content instead of the old centered floating bubble.
+.lightbox-panel {
+  flex: 0 0 auto;
+  padding: 12px 16px max(env(safe-area-inset-bottom), 12px);
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  margin: 0 auto;
-  width: fit-content;
-  max-width: calc(100% - 32px);
-  padding: 8px 16px;
-  border-radius: 16px;
-  background: rgba(0, 0, 0, 0.55);
-  text-align: center;
+  gap: 8px;
+}
+
+.lightbox-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
 }
 
 .lightbox-caption-link {
@@ -113,11 +124,11 @@
   background: transparent;
   padding: 0;
   margin: 0;
-  color: var(--ion-color-primary-fill);
-  font-weight: 600;
-  font-size: 0.85rem;
+  color: var(--ion-color-primary);
+  font-weight: 700;
+  font-size: 0.88rem;
   font-family: inherit;
-  text-align: center;
+  text-align: start;
   cursor: pointer;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -126,7 +137,7 @@
 }
 
 .lightbox-caption-date {
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--ion-color-medium);
   font-size: 0.72rem;
 }
 
@@ -134,16 +145,15 @@
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 6px;
-  margin-top: 4px;
 }
 
 .lightbox-reaction-add {
   appearance: none;
   border: none;
   background: transparent;
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--ion-color-primary);
   padding: 2px;
   display: flex;
   align-items: center;
@@ -157,33 +167,34 @@
 .lightbox-reaction-chips {
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 4px;
 }
 
 .lightbox-reaction-chip {
   appearance: none;
-  border: 1px solid rgba(255, 255, 255, 0.4);
+  border: 1px solid var(--ion-color-primary);
   background: transparent;
   border-radius: 999px;
   padding: 2px 8px;
   font-size: 0.72rem;
-  color: #ffffff;
+  color: var(--app-text-strong);
   cursor: pointer;
 
   &.active {
     border-color: var(--ion-color-primary-fill);
-    background: rgba(255, 255, 255, 0.2);
+    background: var(--ion-color-primary-fill);
+    color: var(--ion-color-primary-contrast);
   }
 }
 
 .lightbox-reaction-picker {
   display: flex;
   gap: 6px;
-  margin-top: 4px;
   padding: 4px 10px;
-  background: rgba(0, 0, 0, 0.55);
+  background: var(--ion-color-light-shade);
   border-radius: 999px;
+  width: fit-content;
 
   button {
     appearance: none;
@@ -196,32 +207,19 @@
   }
 }
 
+// Same outline-pill ion-button language as event-detail's own .actions-row
+// (Add to calendar / Share / ...), not the app's solid-fill treatment - this
+// panel is a plain themed surface now, not floating chrome over a photo, so
+// it reads better with the same buttons any other card in the app would use.
 .lightbox-actions {
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
   gap: 8px;
-  margin-top: 6px;
   padding-top: 6px;
-  border-top: 1px solid rgba(255, 255, 255, 0.2);
-}
+  border-top: 1px solid var(--ion-color-light-shade);
 
-.lightbox-action-btn {
-  appearance: none;
-  border: 1px solid rgba(255, 255, 255, 0.4);
-  border-radius: 999px;
-  background: transparent;
-  color: #ffffff;
-  padding: 4px 10px;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 0.72rem;
-  font-weight: 600;
-  cursor: pointer;
-  white-space: nowrap;
-
-  ion-icon {
-    font-size: 0.9rem;
+  ion-button {
+    --box-shadow: none;
+    margin: 0;
   }
 }

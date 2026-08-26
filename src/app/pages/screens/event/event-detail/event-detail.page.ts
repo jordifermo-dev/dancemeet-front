@@ -454,6 +454,11 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
     if (!isOwnerOrManager) {
       return actions;
     }
+    actions.push({
+      labelKey: 'eventDetail.galleryDelete',
+      icon: 'trash-outline',
+      onClick: () => this.requestDeletePhoto(photo),
+    });
     if (isPrivateView) {
       if (!photo.showInPublicGallery) {
         actions.push({
@@ -493,6 +498,30 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
     this.editingMessageId.set(null);
     this.pendingMentionPhoto.set({ galleryPhotoId: photo.id, photoUrl: photo.photoUrl });
     this.openChatTab();
+  }
+
+  requestDeletePhoto(photo: GalleryPhotoWithPoster): void {
+    this.confirmDeletePhoto.set(photo);
+  }
+
+  cancelDeletePhoto(): void {
+    this.confirmDeletePhoto.set(null);
+  }
+
+  deletePhotoConfirmed(): void {
+    const photo = this.confirmDeletePhoto();
+    const event = this.event();
+    if (!photo || !event) {
+      return;
+    }
+    this.galleryService.deletePhoto(event.id, photo.id).subscribe({
+      next: () => {
+        this.eventGallery.update((list) => list.filter((p) => p.id !== photo.id));
+        this.privateGallery.update((list) => list.filter((p) => p.id !== photo.id));
+        this.confirmDeletePhoto.set(null);
+        this.lightboxOpen.set(false);
+      },
+    });
   }
 
   /** On native the save lands in a dedicated "DanceMeet" album (not the main
@@ -687,6 +716,7 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
    * openChatTab as an earlier version of this did). */
   private chatConnectedForEventId: string | null = null;
   readonly unreadChatCount = signal(0);
+  private readonly ionContentRef = viewChild(IonContent);
 
   /** Switching tabs no longer connects/joins/fetches anything itself - the
    * connect effect in the constructor already did all of that as soon as
@@ -925,6 +955,7 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
 
   readonly lightboxOpen = signal(false);
   readonly lightboxStartIndex = signal(0);
+  readonly confirmDeletePhoto = signal<GalleryPhotoWithPoster | null>(null);
 
   openLightbox(photoId: string): void {
     const photos = this.detailViewMode() === 'privateGallery' ? this.privateGallery() : this.eventGallery();
@@ -1482,6 +1513,21 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
       const me = this.authService.currentUser();
       if (message && message.senderId !== me?.id && this.detailViewMode() !== 'chat') {
         this.unreadChatCount.update((count) => count + 1);
+      }
+    });
+
+    // Keeps the xat pinned to its latest message - covers opening the tab
+    // (history already loaded by the ambient-connect effect above),
+    // history arriving while already on the tab, and a new live message
+    // arriving while already on the tab. Reruns on either signal changing,
+    // so switching detailViewMode into 'chat' alone is enough to trigger it
+    // even if chatDisplayItems() itself didn't change this tick.
+    effect(() => {
+      const items = this.chatDisplayItems();
+      if (this.detailViewMode() === 'chat' && items.length) {
+        // Wait for this tick's items to actually paint before measuring
+        // scroll height - same reasoning as the lightbox's own scrollToIndex.
+        setTimeout(() => this.ionContentRef()?.scrollToBottom(0), 0);
       }
     });
 

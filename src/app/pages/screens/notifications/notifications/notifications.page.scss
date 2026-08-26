@@ -270,6 +270,45 @@
   @include fs.filter-sheet-base;
 }
 
+// Same collapsible-category presentation as Settings' own notification list
+// (settings.page.scss's .type-category-header/.type-category-title) - kept
+// visually consistent between the two places notification types get listed.
+.type-category {
+  &:not(:last-child) {
+    margin-bottom: 4px;
+  }
+}
+
+.type-category-header {
+  appearance: none;
+  border: none;
+  background: transparent;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 0;
+  cursor: pointer;
+  font-family: inherit;
+
+  > ion-icon {
+    flex: 0 0 auto;
+    font-size: 1rem;
+    color: var(--ion-color-primary);
+  }
+}
+
+// Same text treatment as settings.page.scss's own .type-category-title -
+// sentence case (the translated string itself, e.g. "Asistencia e
+// invitaciones"), not an all-caps section label.
+.type-category-title {
+  flex: 1;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--app-text-strong);
+  text-align: start;
+}
+
 .min-selection-warning {
   margin: 8px 0 0;
   font-size: 0.8rem;
