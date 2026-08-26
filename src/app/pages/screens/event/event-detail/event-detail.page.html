@@ -297,7 +297,7 @@
           type="button"
           class="detail-view-toggle-btn"
           [class.active]="detailViewMode() === 'info'"
-          (click)="detailViewMode.set('info')"
+          (click)="goToInfoTab()"
         >
           <ion-icon name="information-circle-outline"></ion-icon>
         </button>
@@ -318,6 +318,15 @@
             (click)="openPrivateGalleryTab()"
           >
             <ion-icon name="people-circle-outline"></ion-icon>
+          </button>
+          <button
+            type="button"
+            class="detail-view-toggle-btn"
+            [class.active]="detailViewMode() === 'chat'"
+            [attr.aria-label]="'eventDetail.chatTab' | translate"
+            (click)="openChatTab()"
+          >
+            <ion-icon name="chatbubbles-outline"></ion-icon>
           </button>
         }
       </div>
@@ -401,6 +410,69 @@
           emptyStateKey="eventDetail.privateGalleryEmptyState"
           (photoTap)="openLightbox($event)"
         ></app-photo-grid>
+      }
+
+      @if (detailViewMode() === 'chat') {
+        <div class="chat-panel">
+          <div class="chat-messages">
+            @if (!chatDisplayItems().length) {
+              <p class="empty-message chat-empty">{{ 'eventDetail.chatEmptyState' | translate }}</p>
+            }
+            @for (item of chatDisplayItems(); track item.message.id) {
+              @if (item.dateSeparatorLabel) {
+                <p class="chat-date-separator">{{ item.dateSeparatorLabel }}</p>
+              }
+              <div class="chat-message-row" [class.mine]="item.isMine">
+                @if (item.showHeader) {
+                  <div class="chat-message-header">
+                    @if (item.message.senderPhotoUrl) {
+                      <img class="chat-avatar" [src]="item.message.senderPhotoUrl" [alt]="item.message.senderName" />
+                    } @else {
+                      <div class="chat-avatar chat-avatar-placeholder">{{ item.message.senderName.charAt(0) }}</div>
+                    }
+                    <span class="chat-sender-name">{{ item.message.senderName }}</span>
+                    <span class="chat-message-time">{{ chatMessageTime(item.message) }}</span>
+                  </div>
+                }
+                <div class="chat-bubble-row">
+                  <div class="chat-bubble">{{ item.message.text }}</div>
+                  <button
+                    type="button"
+                    class="chat-reaction-add"
+                    [attr.aria-label]="'eventDetail.chatAddReaction' | translate"
+                    (click)="toggleReactionPicker(item.message.id)"
+                  >
+                    <ion-icon name="happy-outline"></ion-icon>
+                  </button>
+                </div>
+                @if (reactionPickerMessageId() === item.message.id) {
+                  <div class="chat-reaction-picker">
+                    @for (emoji of quickReactions; track emoji) {
+                      <button type="button" (click)="pickReaction(item.message.id, emoji)">{{ emoji }}</button>
+                    }
+                  </div>
+                }
+                @if (item.message.reactions.length) {
+                  <div class="chat-reaction-chips">
+                    @for (reaction of item.message.reactions; track reaction.emoji) {
+                      <button
+                        type="button"
+                        class="chat-reaction-chip"
+                        [class.active]="reaction.reactedByMe"
+                        (click)="toggleReactionChip(item.message.id, reaction)"
+                      >
+                        {{ reaction.emoji }} {{ reaction.count }}
+                      </button>
+                    }
+                  </div>
+                }
+              </div>
+            }
+          </div>
+          @if (chatTypingLabel()) {
+            <p class="chat-typing-indicator">{{ chatTypingLabel() }}</p>
+          }
+        </div>
       }
 
       @if (detailViewMode() === 'info') {
@@ -489,6 +561,30 @@
     </div>
   }
 </ion-content>
+
+@if (!isCreateMode() && !isEditMode() && detailViewMode() === 'chat') {
+  <ion-footer class="chat-footer">
+    <div class="chat-input-row">
+      <ion-textarea
+        class="chat-input"
+        [autoGrow]="true"
+        [rows]="1"
+        [placeholder]="'eventDetail.chatInputPlaceholder' | translate"
+        [value]="chatDraft()"
+        (ionInput)="onChatDraftChange($event.detail.value ?? '')"
+      ></ion-textarea>
+      <button
+        type="button"
+        class="chat-send-button"
+        [disabled]="!chatDraft().trim()"
+        [attr.aria-label]="'eventDetail.chatSendButton' | translate"
+        (click)="sendChatMessage()"
+      >
+        <ion-icon name="send-outline"></ion-icon>
+      </button>
+    </div>
+  </ion-footer>
+}
 
 <app-photo-lightbox
   [photos]="lightboxItems()"

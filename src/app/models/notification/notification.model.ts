@@ -10,7 +10,8 @@ export type NotificationType =
   | 'event_attendee_invite'
   | 'gallery_photo_followed'
   | 'gallery_photo_attending'
-  | 'gallery_photo_profile';
+  | 'gallery_photo_profile'
+  | 'event_chat_message';
 
 export interface AppNotification {
   id: string;

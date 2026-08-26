@@ -35,13 +35,14 @@ import { EventService } from '../../../../services/event/event.service';
 import { EventManagerService } from '../../../../services/event-managers/event-manager.service';
 import { UserService } from '../../../../services/user/user.service';
 import { FollowSortMode, SortPreferenceService } from '../../../../services/filters/sort-preference.service';
-import { Discipline, DISCIPLINE_NAMES, EventManager, EventManagerRole, EventWithCreatorName, FollowUser } from '../../../../models';
+import { ChatHistoryAccess, Discipline, DISCIPLINE_NAMES, EventManager, EventManagerRole, EventWithCreatorName, FollowUser } from '../../../../models';
 import { sortByNameOrder } from '../../../../shared/event/icon-catalog';
 import { createApplyFlash } from '../../../../shared/common/success-flash';
 import { UserCardComponent, UserCardAction } from '../../../../shared/user/user-card/user-card.component';
 import { FilterSheetHeaderComponent } from '../../../../shared/filters/filter-sheet-header/filter-sheet-header.component';
 import { FilterActionsRowComponent } from '../../../../shared/filters/filter-actions-row/filter-actions-row.component';
 import { ChipGridComponent, ChipGridItem } from '../../../../shared/filters/chip-grid/chip-grid.component';
+import { InviteParticipantSheetComponent } from '../../../../shared/event/invite-participant-sheet/invite-participant-sheet.component';
 import { canManageEvent } from '../../../../shared/event/event-manager-permissions';
 
 type FollowListMode = 'followers' | 'following' | 'attendees';
@@ -76,6 +77,7 @@ const SORT_OPTIONS: { id: SortMode; labelKey: string }[] = [
     FilterSheetHeaderComponent,
     FilterActionsRowComponent,
     ChipGridComponent,
+    InviteParticipantSheetComponent,
   ],
 })
 export class FollowListPage implements ViewWillEnter {
@@ -428,7 +430,10 @@ export class FollowListPage implements ViewWillEnter {
 
   /** Only rendered for the "new" group's rows (via <app-user-card>'s
    * extraActions), and only when this viewer can manage the event - replaces
-   * the follow button there with the actual reason that row is showing. */
+   * the follow button there with the actual reason that row is showing.
+   * Tapping either action opens the invite sheet (see pendingInvite below)
+   * instead of firing the invite immediately - the inviter still needs to
+   * choose the xat history access first. */
   inviteActionsFor(user: FollowUser): UserCardAction[] | undefined {
     if (this.mode !== 'attendees' || !this.canManageAttendees()) {
       return undefined;
@@ -439,25 +444,42 @@ export class FollowListPage implements ViewWillEnter {
         labelKey: 'followList.inviteAsAttendee',
         icon: 'person-add-outline',
         busy,
-        onClick: (u) => this.inviteParticipant(u, 'attendee'),
+        onClick: (u) => this.openInviteSheet(u, 'attendee'),
       },
       {
         labelKey: 'followList.inviteAsOrganizer',
         icon: 'ribbon-outline',
         busy,
-        onClick: (u) => this.inviteParticipant(u, 'manager'),
+        onClick: (u) => this.openInviteSheet(u, 'manager'),
       },
     ];
   }
 
-  private inviteParticipant(user: FollowUser, role: EventManagerRole): void {
+  /** Set while the invite sheet is open - cleared by either
+   * onInviteConfirmed or onInviteCancelled. */
+  readonly pendingInvite = signal<{ user: FollowUser; role: EventManagerRole } | null>(null);
+
+  private openInviteSheet(user: FollowUser, role: EventManagerRole): void {
+    if (this.inviteBusyUserId()) {
+      return;
+    }
+    this.pendingInvite.set({ user, role });
+  }
+
+  onInviteCancelled(): void {
+    this.pendingInvite.set(null);
+  }
+
+  onInviteConfirmed(chatHistoryAccess: ChatHistoryAccess): void {
+    const pending = this.pendingInvite();
     const eventId = this.event()?.id;
-    if (!eventId || this.inviteBusyUserId()) {
+    this.pendingInvite.set(null);
+    if (!pending || !eventId || this.inviteBusyUserId()) {
       return;
     }
     this.actionErrorMessage.set(null);
-    this.inviteBusyUserId.set(user.id);
-    this.eventManagerService.inviteParticipant(eventId, user.id, role).subscribe({
+    this.inviteBusyUserId.set(pending.user.id);
+    this.eventManagerService.inviteParticipant(eventId, pending.user.id, pending.role, chatHistoryAccess).subscribe({
       next: () => {
         this.inviteBusyUserId.set(null);
         this.loadParticipants(eventId);

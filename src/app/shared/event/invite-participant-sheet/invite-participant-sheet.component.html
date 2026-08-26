@@ -1,0 +1,32 @@
+<ion-modal [isOpen]="isOpen" [initialBreakpoint]="0.5" [breakpoints]="[0, 0.5]" (didDismiss)="cancel()">
+  <ng-template>
+    <div class="invite-sheet">
+      <app-filter-sheet-header
+        [titleKey]="role === 'manager' ? 'followList.inviteAsOrganizer' : 'followList.inviteAsAttendee'"
+        (closed)="cancel()"
+      ></app-filter-sheet-header>
+
+      <p class="invite-sheet-name">{{ userName }}</p>
+
+      <ion-item lines="none" class="toggle-row">
+        <ion-toggle [checked]="fullHistory()" (ionChange)="onToggleChange($event.detail.checked)">
+          {{ 'followList.chatHistoryAccessToggle' | translate }}
+        </ion-toggle>
+      </ion-item>
+      <p class="invite-sheet-hint">
+        {{ (fullHistory() ? 'followList.chatHistoryAccessHintFull' : 'followList.chatHistoryAccessHintFromJoin') | translate }}
+      </p>
+
+      <app-filter-actions-row>
+        <ion-button expand="block" fill="outline" color="primary" (click)="cancel()">
+          <ion-icon slot="start" name="close-outline"></ion-icon>
+          {{ 'eventDetail.cancelButton' | translate }}
+        </ion-button>
+        <ion-button expand="block" class="btn-fill" (click)="confirm()">
+          <ion-icon slot="start" name="checkmark-outline"></ion-icon>
+          {{ 'followList.confirmInvite' | translate }}
+        </ion-button>
+      </app-filter-actions-row>
+    </div>
+  </ng-template>
+</ion-modal>

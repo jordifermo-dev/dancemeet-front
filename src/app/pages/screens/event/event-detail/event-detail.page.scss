@@ -631,6 +631,264 @@ app-recurrence-quick-picker {
   color: var(--ion-color-danger);
 }
 
+// --- Xat privado del evento --------------------------------------------
+// Messenger/Instagram-DM style: mine on the right, everyone else's on the
+// left, with a per-run avatar+name+time header (Discord/Slack-style
+// consecutive-message grouping) rather than repeating it on every bubble.
+
+.chat-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.chat-messages {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 200px;
+}
+
+.chat-empty {
+  text-align: center;
+  padding: 24px 0;
+}
+
+.chat-date-separator {
+  align-self: center;
+  margin: 14px 0 4px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--ion-color-light);
+  color: var(--ion-color-medium);
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.chat-message-row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  margin-top: 10px;
+
+  &.mine {
+    align-items: flex-end;
+  }
+}
+
+.chat-message-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+  font-size: 0.72rem;
+  color: var(--ion-color-medium);
+}
+
+.chat-message-row.mine .chat-message-header {
+  flex-direction: row-reverse;
+}
+
+.chat-avatar {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--ion-color-light-shade);
+  flex: 0 0 auto;
+}
+
+.chat-avatar-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--ion-color-primary-fill);
+  color: var(--ion-color-primary-contrast);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.chat-sender-name {
+  font-weight: 700;
+  color: var(--app-text-strong);
+}
+
+.chat-bubble-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  max-width: 78%;
+}
+
+.chat-message-row.mine .chat-bubble-row {
+  flex-direction: row-reverse;
+}
+
+.chat-bubble {
+  background: var(--ion-color-light);
+  color: var(--app-text-strong);
+  border-radius: 16px;
+  padding: 8px 12px;
+  font-size: 0.88rem;
+  line-height: 1.35;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+.chat-message-row.mine .chat-bubble {
+  background: var(--ion-color-primary-fill);
+  color: var(--ion-color-primary-contrast);
+}
+
+.chat-reaction-add {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--ion-color-medium);
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s;
+
+  ion-icon {
+    font-size: 1.1rem;
+  }
+}
+
+.chat-message-row:hover .chat-reaction-add {
+  opacity: 1;
+}
+
+// Touch devices have no hover - the reaction button stays reachable at all
+// times there rather than hidden behind a gesture this page doesn't wire up.
+@media (hover: none) {
+  .chat-reaction-add {
+    opacity: 1;
+  }
+}
+
+.chat-reaction-picker {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+  padding: 4px 8px;
+  background: var(--app-surface-card);
+  border: 1px solid var(--ion-color-light-shade);
+  border-radius: 999px;
+
+  button {
+    appearance: none;
+    border: none;
+    background: transparent;
+    font-size: 1.2rem;
+    line-height: 1;
+    padding: 2px;
+    cursor: pointer;
+  }
+}
+
+.chat-reaction-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.chat-reaction-chip {
+  appearance: none;
+  border: 1px solid var(--ion-color-light-shade);
+  background: var(--app-surface-card);
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 0.76rem;
+  color: var(--app-text-strong);
+  cursor: pointer;
+
+  &.active {
+    border-color: var(--ion-color-primary);
+    background: var(--ion-color-primary-fill);
+    color: var(--ion-color-primary-contrast);
+  }
+}
+
+.chat-typing-indicator {
+  margin: 0;
+  font-size: 0.76rem;
+  font-style: italic;
+  color: var(--ion-color-medium);
+}
+
+// A real <ion-footer> (see event-detail.page.html) rather than a "position:
+// sticky" row inside ion-content - sticky only sticks to its own scrolling
+// ancestor, which here is ion-content's own inner scroll port with its own
+// padding/max-width column, so the input ended up looking offset instead of
+// pinned flush to the bottom of the screen. ion-page's own flex layout
+// (header/content/footer) gives ion-footer that flush-bottom placement for
+// free, the same way any other Ionic chat UI does it.
+.chat-input-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 8px 20px calc(8px + var(--ion-safe-area-bottom, 0px));
+  background: var(--ion-color-light);
+  border-top: 1px solid var(--ion-color-light-shade);
+}
+
+.chat-input {
+  flex: 1;
+  --background: var(--app-surface-card);
+  --border-radius: 18px;
+  --padding-start: 14px;
+  --padding-end: 14px;
+  --padding-top: 8px;
+  --padding-bottom: 8px;
+  // ion-textarea's own default host min-height is 44px (baked in for a
+  // labeled field's touch target, see textarea.ios/md.css), and the native
+  // <textarea> inside is grid-stretched to fill it - a browser's own
+  // textarea always top-anchors its text/placeholder *within its own box*,
+  // so no amount of align-items on an ancestor wrapper can re-center it
+  // once that box is taller than one line (this is what the earlier
+  // ::ng-deep .textarea-wrapper attempt got wrong: that wrapper was never
+  // the one with leftover space, the textarea's own inflated box was).
+  // Shrinking min-height down to one line's worth removes the leftover
+  // space outright, so the placeholder needs no re-centering at all. Direct
+  // class selector on the host itself - no ::ng-deep needed since min-height
+  // isn't an internal-DOM property, it's set on <ion-textarea> directly.
+  min-height: 38px;
+  border: 1px solid var(--ion-color-light-shade);
+  border-radius: 18px;
+  font-size: 0.9rem;
+}
+
+.chat-send-button {
+  appearance: none;
+  border: none;
+  background: var(--ion-color-primary);
+  color: var(--ion-color-primary-contrast);
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex: 0 0 auto;
+
+  ion-icon {
+    font-size: 1.1rem;
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+}
+
 .validation-warning {
   margin-top: 14px;
   padding: 12px 14px;

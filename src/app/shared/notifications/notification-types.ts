@@ -13,6 +13,7 @@ export const ALL_NOTIFICATION_TYPES: NotificationType[] = [
   'gallery_photo_followed',
   'gallery_photo_attending',
   'gallery_photo_profile',
+  'event_chat_message',
 ];
 
 export const NOTIFICATION_TYPE_ICONS: Record<NotificationType, string> = {
@@ -28,6 +29,7 @@ export const NOTIFICATION_TYPE_ICONS: Record<NotificationType, string> = {
   gallery_photo_followed: 'images-outline',
   gallery_photo_attending: 'images-outline',
   gallery_photo_profile: 'images-outline',
+  event_chat_message: 'chatbubbles-outline',
 };
 
 export const NOTIFICATION_TYPE_LABEL_KEYS: Record<NotificationType, string> = {
@@ -43,4 +45,5 @@ export const NOTIFICATION_TYPE_LABEL_KEYS: Record<NotificationType, string> = {
   gallery_photo_followed: 'notifications.typeGalleryPhotoFollowed',
   gallery_photo_attending: 'notifications.typeGalleryPhotoAttending',
   gallery_photo_profile: 'notifications.typeGalleryPhotoProfile',
+  event_chat_message: 'notifications.typeEventChatMessage',
 };

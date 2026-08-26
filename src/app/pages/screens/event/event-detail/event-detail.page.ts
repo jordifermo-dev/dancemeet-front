@@ -1,5 +1,5 @@
 import { Location } from '@angular/common';
-import { Component, ElementRef, computed, inject, signal, viewChild } from '@angular/core';
+import { Component, ElementRef, computed, effect, inject, signal, viewChild } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -10,6 +10,7 @@ import {
   IonButtons,
   IonBackButton,
   IonContent,
+  IonFooter,
   IonIcon,
   IonButton,
   IonSpinner,
@@ -21,6 +22,7 @@ import {
   IonDatetime,
   IonCheckbox,
   ViewWillEnter,
+  ViewWillLeave,
 } from '@ionic/angular/standalone';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { addIcons } from 'ionicons';
@@ -56,6 +58,9 @@ import {
   globeOutline,
   lockClosedOutline,
   eyeOffOutline,
+  chatbubblesOutline,
+  sendOutline,
+  happyOutline,
 } from 'ionicons/icons';
 import { AuthService } from '../../../../services/core/auth.service';
 import { EventService } from '../../../../services/event/event.service';
@@ -67,6 +72,8 @@ import { EventTypeService } from '../../../../services/event/event-type.service'
 import { LanguageService } from '../../../../services/core/language.service';
 import { CitySuggestion, GeocodingService } from '../../../../services/location/geocoding.service';
 import { GalleryService } from '../../../../services/gallery/gallery.service';
+import { EventChatService } from '../../../../services/chat/event-chat.service';
+import { EventChatSocketService } from '../../../../services/chat/event-chat-socket.service';
 import {
   CreateEventPayload,
   CreateEventSeriesPayload,
@@ -81,6 +88,8 @@ import {
   RecurrenceRule,
   SocialLinks,
   UpdateEventPayload,
+  EventMessage,
+  MessageReactionSummary,
 } from '../../../../models';
 import {
   disciplineIconUrl,
@@ -91,7 +100,7 @@ import {
   sortByNameOrder,
 } from '../../../../shared/event/icon-catalog';
 import { MapType } from '../../../../shared/location/maps';
-import { formatEventDateRange, formatEventDateOnly, INTL_LOCALES } from '../../../../shared/calendar/event-date-format';
+import { formatEventDateRange, formatEventDateOnly, formatTimeOnly, isSameDay, INTL_LOCALES } from '../../../../shared/calendar/event-date-format';
 import { buildGoogleCalendarUrl, buildIcs, downloadIcs } from '../../../../shared/calendar/calendar-export';
 import { LocationPickerComponent } from '../../../../shared/location/location-picker/location-picker.component';
 import { PhotoEditorComponent } from '../../../../shared/user/photo-editor/photo-editor.component';
@@ -134,6 +143,22 @@ const STATUS_OPTIONS = EVENT_STATUSES.map((id) => ({ id, labelKey: STATUS_LABEL_
 // has already passed, not something the organizer picks when creating/editing.
 const EDITABLE_STATUS_OPTIONS = STATUS_OPTIONS.filter((option) => option.id !== 'finished');
 const DEFAULT_EVENT_DURATION_MS = 2 * 60 * 60 * 1000;
+// Fixed quick-reaction set (v1 scope, see xat-privado-evento.md) - same
+// criterion as Slack/Facebook's own quick bar, not a free emoji picker.
+const QUICK_REACTIONS = ['👍', '❤️', '😂', '😮', '😢', '🙏'];
+
+interface ChatDisplayItem {
+  message: EventMessage;
+  isMine: boolean;
+  /** Avatar/name/time header only on the first message of a consecutive run
+   * from the same sender - same grouping convention as Discord/Slack,
+   * applied independently on each side of the mine/theirs split. */
+  showHeader: boolean;
+  /** Set on the first message of each calendar day - each bubble's own
+   * header only ever shows the time (see chatMessageTime), so without this
+   * separator there was no way to tell which day a message was sent on. */
+  dateSeparatorLabel: string | null;
+}
 
 interface SocialLinkRow {
   key: keyof SocialLinks;
@@ -189,6 +214,7 @@ function withTimePart(base: number, timeValue: string): number {
     IonButtons,
     IonBackButton,
     IonContent,
+    IonFooter,
     IonIcon,
     IonButton,
     IonSpinner,
@@ -212,7 +238,7 @@ function withTimePart(base: number, timeValue: string): number {
     PhotoLightboxComponent,
   ],
 })
-export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnter {
+export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnter, ViewWillLeave {
   private readonly fb = inject(FormBuilder);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -229,6 +255,8 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
   private readonly shareService = inject(EventShareService);
   private readonly eventManagerService = inject(EventManagerService);
   private readonly galleryService = inject(GalleryService);
+  private readonly eventChatService = inject(EventChatService);
+  private readonly eventChatSocketService = inject(EventChatSocketService);
   private readonly translate = inject(TranslateService);
   readonly minSelectionWarning = inject(MinSelectionWarningService);
 
@@ -290,6 +318,12 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
    * only reliably re-fires ionViewWillEnter (which is what refreshes the
    * list) on a normal forward navigation, not a multi-step history jump. */
   private originUrl: string | null = null;
+  /** Set from a xat push notification's `?openChat=1` (see
+   * NotificationService.navigateFromNotificationData) - consumed once the
+   * event and this user's private-area access are both resolved (see the
+   * effect() in the constructor), so a notification for an event the reader
+   * can't access simply never opens the tab instead of erroring. */
+  private readonly pendingOpenChatFromNotification = signal(this.route.snapshot.queryParamMap.get('openChat') === '1');
   /** Snapshot of the edit form the last time it was loaded/saved, used to
    * detect unsaved edits when navigating away - same pattern as Profile's
    * own baseline/buildSnapshot. Only meaningful while isEditMode() is true. */
@@ -319,7 +353,7 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
 
   // --- Instagram-style info/gallery/private-gallery toggle -----------------
 
-  readonly detailViewMode = signal<'info' | 'gallery' | 'privateGallery'>('info');
+  readonly detailViewMode = signal<'info' | 'gallery' | 'privateGallery' | 'chat'>('info');
   readonly eventGallery = signal<GalleryPhotoWithPoster[]>([]);
   /** The event's private, attendees-only gallery - only ever populated for
    * someone who can actually see it (see canAccessPrivateArea); a 403 for
@@ -444,6 +478,7 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
    * extra request per tab switch) to do unconditionally rather than only
    * on a genuine change. */
   openGalleryTab(): void {
+    this.leaveChatIfNeeded();
     this.detailViewMode.set('gallery');
     const event = this.event();
     if (event) {
@@ -452,10 +487,134 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
   }
 
   openPrivateGalleryTab(): void {
+    this.leaveChatIfNeeded();
     this.detailViewMode.set('privateGallery');
     const event = this.event();
     if (event) {
       this.refreshPrivateGallery(event.id);
+    }
+  }
+
+  goToInfoTab(): void {
+    this.leaveChatIfNeeded();
+    this.detailViewMode.set('info');
+  }
+
+  // --- Xat privado del evento (tiempo real, ver xat-privado-evento.md) -----
+
+  /** connect() first, then joinEvent (so the socket is already subscribed to
+   * the room), only then the REST history - any live message that arrives in
+   * the gap lands in the socket service's own list and setInitialHistory
+   * merges rather than overwrites it (see its own doc comment). */
+  openChatTab(): void {
+    this.detailViewMode.set('chat');
+    const event = this.event();
+    if (!event) {
+      return;
+    }
+    this.eventChatSocketService.connect().then(() => {
+      this.eventChatSocketService.joinEvent(event.id);
+      this.eventChatService.getMessages(event.id).subscribe({
+        next: (history) => this.eventChatSocketService.setInitialHistory(history),
+      });
+    });
+  }
+
+  /** Called before switching to any other tab, and from ionViewWillLeave -
+   * disconnecting outside the chat tab would be a harmless no-op, but this
+   * keeps it from ever tearing down a socket that isn't actually open. */
+  private leaveChatIfNeeded(): void {
+    if (this.detailViewMode() === 'chat') {
+      this.eventChatSocketService.disconnect();
+    }
+  }
+
+  ionViewWillLeave(): void {
+    this.leaveChatIfNeeded();
+  }
+
+  readonly quickReactions = QUICK_REACTIONS;
+  readonly chatDraft = signal('');
+  /** Which message's quick-reaction bar is currently open (the "+" button) -
+   * at most one at a time, same pattern as showDateFromPicker/ToPicker above. */
+  readonly reactionPickerMessageId = signal<string | null>(null);
+
+  readonly chatDisplayItems = computed<ChatDisplayItem[]>(() => {
+    const me = this.authService.currentUser();
+    const messages = this.eventChatSocketService.messages();
+    const lang = this.languageService.currentLang();
+    return messages.map((message, index) => {
+      const previous = messages[index - 1];
+      return {
+        message,
+        isMine: message.senderId === me?.id,
+        showHeader: !previous || previous.senderId !== message.senderId,
+        dateSeparatorLabel: !previous || !isSameDay(previous.createdAt, message.createdAt)
+          ? formatEventDateOnly(message.createdAt, lang)
+          : null,
+      };
+    });
+  });
+
+  readonly chatTypingLabel = computed(() => {
+    const users = this.eventChatSocketService.typingUsers();
+    if (!users.length) {
+      return '';
+    }
+    if (users.length === 1) {
+      return this.translate.instant('eventDetail.chatTypingOne', { name: users[0].userName });
+    }
+    return this.translate.instant('eventDetail.chatTypingMany');
+  });
+
+  chatMessageTime(message: EventMessage): string {
+    return formatTimeOnly(message.createdAt, this.languageService.currentLang());
+  }
+
+  onChatDraftChange(value: string): void {
+    this.chatDraft.set(value);
+    if (value.trim()) {
+      this.eventChatSocketService.sendTyping();
+    } else {
+      this.eventChatSocketService.sendStopTyping();
+    }
+  }
+
+  sendChatMessage(): void {
+    const text = this.chatDraft().trim();
+    if (!text) {
+      return;
+    }
+    this.eventChatSocketService.sendMessage(text);
+    this.eventChatSocketService.sendStopTyping();
+    this.chatDraft.set('');
+  }
+
+  toggleReactionPicker(messageId: string): void {
+    this.reactionPickerMessageId.update((current) => (current === messageId ? null : messageId));
+  }
+
+  /** Picking an emoji from the "+" bar toggles it - reacting again with the
+   * same emoji you already put removes it, instead of the (nonexistent)
+   * server-side dedup silently doing nothing on a second tap. */
+  pickReaction(messageId: string, emoji: string): void {
+    const message = this.eventChatSocketService.messages().find((m) => m.id === messageId);
+    const alreadyReacted = message?.reactions.some((r) => r.emoji === emoji && r.reactedByMe);
+    if (alreadyReacted) {
+      this.eventChatSocketService.removeReaction(messageId, emoji);
+    } else {
+      this.eventChatSocketService.reactToMessage(messageId, emoji);
+    }
+    this.reactionPickerMessageId.set(null);
+  }
+
+  /** Tapping an existing reaction chip also toggles it, without reopening
+   * the picker bar. */
+  toggleReactionChip(messageId: string, reaction: MessageReactionSummary): void {
+    if (reaction.reactedByMe) {
+      this.eventChatSocketService.removeReaction(messageId, reaction.emoji);
+    } else {
+      this.eventChatSocketService.reactToMessage(messageId, reaction.emoji);
     }
   }
 
@@ -942,6 +1101,16 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
       globeOutline,
       lockClosedOutline,
       eyeOffOutline,
+      chatbubblesOutline,
+      sendOutline,
+      happyOutline,
+    });
+
+    effect(() => {
+      if (this.pendingOpenChatFromNotification() && this.event() && this.canAccessPrivateArea()) {
+        this.pendingOpenChatFromNotification.set(false);
+        this.openChatTab();
+      }
     });
 
     this.disciplineService.getAll().subscribe({

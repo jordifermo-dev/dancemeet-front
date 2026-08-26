@@ -174,3 +174,11 @@
     </div>
   </ng-template>
 </ion-modal>
+
+<app-invite-participant-sheet
+  [isOpen]="pendingInvite() !== null"
+  [userName]="pendingInvite()?.user?.name ?? ''"
+  [role]="pendingInvite()?.role ?? 'attendee'"
+  (confirmed)="onInviteConfirmed($event)"
+  (cancelled)="onInviteCancelled()"
+></app-invite-participant-sheet>

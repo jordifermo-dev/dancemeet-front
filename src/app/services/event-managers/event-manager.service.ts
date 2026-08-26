@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { EventManager, EventManagerRole } from '../../models';
+import { ChatHistoryAccess, EventManager, EventManagerRole } from '../../models';
 
 @Injectable({ providedIn: 'root' })
 export class EventManagerService {
@@ -13,8 +13,13 @@ export class EventManagerService {
     return this.http.get<EventManager[]>(`${this.baseUrl}/${eventId}/managers`);
   }
 
-  inviteParticipant(eventId: string, userId: string, role: EventManagerRole): Observable<{ success: boolean }> {
-    return this.http.post<{ success: boolean }>(`${this.baseUrl}/${eventId}/managers`, { userId, role });
+  inviteParticipant(
+    eventId: string,
+    userId: string,
+    role: EventManagerRole,
+    chatHistoryAccess: ChatHistoryAccess,
+  ): Observable<{ success: boolean }> {
+    return this.http.post<{ success: boolean }>(`${this.baseUrl}/${eventId}/managers`, { userId, role, chatHistoryAccess });
   }
 
   respondToInvite(eventId: string, accept: boolean): Observable<{ success: boolean }> {

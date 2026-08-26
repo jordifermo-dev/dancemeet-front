@@ -36,6 +36,7 @@ import {
   keyOutline,
   eyeOutline,
   eyeOffOutline,
+  chatbubblesOutline,
 } from 'ionicons/icons';
 import { AuthService } from '../../../../services/core/auth.service';
 import { UserService } from '../../../../services/user/user.service';
@@ -148,6 +149,7 @@ export class SettingsPage {
       keyOutline,
       eyeOutline,
       eyeOffOutline,
+      chatbubblesOutline,
     });
   }
 

@@ -196,7 +196,11 @@ export class NotificationService {
     const eventId = data?.['eventId'];
     const fromUserId = data?.['fromUserId'];
     if (typeof eventId === 'string' && eventId) {
-      this.router.navigateByUrl(`/events/${eventId}`);
+      // A xat message notification lands the reader straight on the xat tab
+      // instead of Información - see event-detail.page.ts's own reading of
+      // this query param (openChatTab()).
+      const queryParams = data?.['type'] === 'event_chat_message' ? { openChat: '1' } : undefined;
+      this.router.navigate(['/events', eventId], { queryParams });
     } else if (typeof fromUserId === 'string' && fromUserId) {
       this.router.navigateByUrl(`/users/${fromUserId}`);
     } else {

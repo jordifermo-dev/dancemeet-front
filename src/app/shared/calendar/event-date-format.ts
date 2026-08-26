@@ -6,7 +6,7 @@ export const INTL_LOCALES: Record<AppLanguage, string> = {
   en: 'en-GB',
 };
 
-function isSameDay(a: number, b: number): boolean {
+export function isSameDay(a: number, b: number): boolean {
   const da = new Date(a);
   const db = new Date(b);
   return da.getFullYear() === db.getFullYear() && da.getMonth() === db.getMonth() && da.getDate() === db.getDate();
@@ -50,6 +50,15 @@ export function formatEventDateOnly(timestamp: number, lang: AppLanguage | null)
  * on that per-language name table at all, only on digit/separator
  * conventions, which are far more reliably present. Used for the gallery
  * lightbox's "posted at" timestamp. */
+/** "20:00" - time only, no date. Used by the event chat's per-message
+ * timestamp, where the date is implied by the message's position in the
+ * conversation rather than repeated on every bubble. */
+export function formatTimeOnly(timestamp: number, lang: AppLanguage | null): string {
+  const locale = INTL_LOCALES[lang ?? 'es'];
+  const formatter = new Intl.DateTimeFormat(locale, { hour: '2-digit', minute: '2-digit' });
+  return formatter.format(new Date(timestamp));
+}
+
 export function formatDateTimeNumeric(timestamp: number, lang: AppLanguage | null): string {
   const locale = INTL_LOCALES[lang ?? 'es'];
   const formatter = new Intl.DateTimeFormat(locale, {

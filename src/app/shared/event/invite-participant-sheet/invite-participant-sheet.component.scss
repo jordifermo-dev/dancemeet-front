@@ -1,0 +1,22 @@
+@use '../../filters/styles/filter-sheet' as fs;
+
+.invite-sheet {
+  @include fs.filter-sheet-base;
+}
+
+.invite-sheet-name {
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--app-text-strong);
+  margin: 0 0 12px;
+}
+
+.toggle-row {
+  --padding-start: 0;
+  --inner-padding-end: 0;
+  --min-height: 0;
+}
+
+.invite-sheet-hint {
+  margin-top: 4px;
+}

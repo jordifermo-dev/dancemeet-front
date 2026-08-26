@@ -4,6 +4,11 @@ export type EventManagerStatus = 'pending' | 'accepted';
  * others rights - shown in the UI as "Organizador/Administrador". */
 export type EventManagerRole = 'attendee' | 'manager';
 
+/** Chosen by whoever sends the invite (see InviteParticipantSheetComponent)
+ * - whether accepting grants the full xat history or only messages from the
+ * moment of acceptance onward. */
+export type ChatHistoryAccess = 'full' | 'fromJoin';
+
 /** One row of an event's participant list (the "Asistentes" screen's
  * organizer-only sections) - same hydration idea as Attendee/FollowUser
  * (enough profile info to render a row without a second request per row). */
