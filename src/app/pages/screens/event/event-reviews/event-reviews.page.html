@@ -1,0 +1,61 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/tabs/explorer" text=""></ion-back-button>
+    </ion-buttons>
+    <ion-title>{{ 'eventDetail.reviewsSection' | translate }}</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="event-reviews-content">
+  @if (loading()) {
+    <div class="state-row">
+      <ion-spinner name="crescent"></ion-spinner>
+    </div>
+  } @else if (notFound() || !event()) {
+    <div class="state-row">
+      <p>{{ 'userDetail.notFound' | translate }}</p>
+    </div>
+  } @else {
+    <div class="event-reviews-container">
+      <h1 class="event-reviews-title">{{ event()!.title }}</h1>
+
+      @if (reviews().length) {
+        <div class="reviews-summary">
+          <app-star-rating [value]="averageRating()" [readonly]="true"></app-star-rating>
+          <span class="reviews-summary-count">{{ averageRating().toFixed(1) }} · {{ reviews().length }}</span>
+        </div>
+      }
+
+      @if (canWriteReview()) {
+        <ion-button expand="block" fill="outline" (click)="openReviewForm()">
+          <ion-icon slot="start" name="star-outline"></ion-icon>
+          {{ (myReview() ? 'reviews.editReview' : 'reviews.writeReview') | translate }}
+        </ion-button>
+      }
+
+      @if (!reviews().length) {
+        <p class="empty-message">{{ 'eventDetail.reviewsEmptyState' | translate }}</p>
+      } @else {
+        @for (review of reviews(); track review.id) {
+          <app-review-card
+            [review]="review"
+            [isMine]="isMyReview(review)"
+            [canReply]="canManage()"
+            (editReview)="openReviewForm()"
+            (deleteReview)="deleteMyReview()"
+            (reply)="replyToReview(review, $event)"
+            (deleteReply)="deleteOrganizerReply(review)"
+          ></app-review-card>
+        }
+      }
+    </div>
+  }
+</ion-content>
+
+<app-review-form
+  [isOpen]="reviewFormOpen()"
+  [existingReview]="myReview()"
+  (closed)="closeReviewForm()"
+  (submitted)="submitReview($event)"
+></app-review-form>

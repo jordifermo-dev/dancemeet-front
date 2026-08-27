@@ -45,10 +45,28 @@
   }
 }
 
+.user-name-block {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
 .user-name {
   font-size: 1.3rem;
   font-weight: 800;
   margin: 0;
+}
+
+.organizer-rating-badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.organizer-rating-count {
+  font-size: 0.78rem;
+  color: var(--ion-color-medium);
 }
 
 .stats-row {

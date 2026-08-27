@@ -1,0 +1,37 @@
+.state-row {
+  display: flex;
+  justify-content: center;
+  padding: 48px 0;
+  color: var(--ion-color-medium);
+}
+
+.event-reviews-container {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.event-reviews-title {
+  font-size: 1.15rem;
+  font-weight: 800;
+  margin: 0;
+}
+
+.reviews-summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.reviews-summary-count {
+  font-size: 0.85rem;
+  color: var(--ion-color-medium);
+}
+
+.empty-message {
+  font-size: 0.82rem;
+  color: var(--ion-color-medium);
+  font-style: italic;
+  margin: 0;
+}

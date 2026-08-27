@@ -8,3 +8,4 @@ export * from './attendance/attendance.model';
 export * from './chat/chat.model';
 export * from './gallery/gallery.model';
 export * from './notification/notification.model';
+export * from './review/review.model';

@@ -1,0 +1,36 @@
+<ion-modal
+  [isOpen]="isOpen"
+  [initialBreakpoint]="0.55"
+  [breakpoints]="[0, 0.55, 0.85]"
+  (didDismiss)="close()"
+>
+  <ng-template>
+    <div class="filter-sheet">
+      <app-filter-sheet-header
+        [titleKey]="existingReview ? 'reviews.editReview' : 'reviews.writeReview'"
+        (closed)="close()"
+      ></app-filter-sheet-header>
+
+      <div class="review-form-rating">
+        <app-star-rating [value]="rating()" [readonly]="false" (valueChange)="rating.set($event)"></app-star-rating>
+      </div>
+
+      <ion-textarea
+        [autoGrow]="true"
+        [rows]="3"
+        [placeholder]="'reviews.commentPlaceholder' | translate"
+        [value]="comment()"
+        (ionInput)="comment.set($event.detail.value ?? '')"
+      ></ion-textarea>
+
+      <app-filter-actions-row>
+        <ion-button expand="block" fill="outline" color="primary" (click)="close()">
+          {{ 'common.cancel' | translate }}
+        </ion-button>
+        <ion-button expand="block" class="btn-fill" [disabled]="rating() < 1" (click)="submit()">
+          {{ 'reviews.submitReview' | translate }}
+        </ion-button>
+      </app-filter-actions-row>
+    </div>
+  </ng-template>
+</ion-modal>

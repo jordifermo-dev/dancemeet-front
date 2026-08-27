@@ -287,6 +287,20 @@
             <ion-icon [name]="likeFlash.active() ? 'checkmark-outline' : (isLiked() ? 'heart' : 'heart-outline')"></ion-icon>
             <span class="count-badge">{{ likesCount() }}</span>
           </button>
+          <button
+            type="button"
+            class="reviews-badge-btn"
+            [attr.aria-label]="'eventDetail.reviewsSection' | translate"
+            (click)="openReviewsTab()"
+          >
+            <span class="reviews-star">
+              <ion-icon class="reviews-star-empty" name="star-outline"></ion-icon>
+              <span class="reviews-star-fill-wrap" [style.width.%]="reviewsFillPercent()">
+                <ion-icon class="reviews-star-filled" name="star"></ion-icon>
+              </span>
+            </span>
+            <span class="count-badge">{{ reviews().length }}</span>
+          </button>
         </div>
       </div>
 

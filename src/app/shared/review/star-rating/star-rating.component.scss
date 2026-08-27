@@ -1,0 +1,36 @@
+:host {
+  display: inline-block;
+}
+
+.star-rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.star {
+  appearance: none;
+  border: none;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  color: var(--ion-color-warning);
+  cursor: default;
+
+  ion-icon {
+    font-size: 1.3rem;
+  }
+}
+
+.interactive .star {
+  cursor: pointer;
+}
+
+// Smaller footprint for inline uses (a review card's own rating, the
+// organizer badge next to follower counts) vs. the interactive picker in the
+// review form, which stays at the default (larger, easier to tap) size.
+.star-rating.small .star ion-icon {
+  font-size: 1rem;
+}

@@ -37,6 +37,11 @@ export const routes: Routes = [
     data: { mode: 'attendees' },
   },
   {
+    path: 'event-reviews',
+    loadComponent: () => import('./pages/screens/event/event-reviews/event-reviews.page').then((m) => m.EventReviewsPage),
+    canActivate: [authGuard],
+  },
+  {
     path: 'users/:id',
     loadComponent: () => import('./pages/screens/user/user-detail/user-detail.page').then((m) => m.UserDetailPage),
     canActivate: [authGuard],

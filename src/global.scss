@@ -91,10 +91,16 @@ ion-datetime {
    "Gratuito" on the event form, notification switches in Settings) as the
    rest of the app's solid/selected fills - --ion-color-primary-fill,
    matching what the user asked for ("same color as the buttons'
-   background"), not the darker --ion-color-primary used for borders/text. */
+   background"), not the darker --ion-color-primary used for borders/text.
+   Deliberately NOT setting --handle-background (the unchecked handle) -
+   that's a different token than --handle-background-checked despite the
+   near-identical name, and forcing it to the same teal made every toggle's
+   knob look colored even while off, hiding the on/off distinction (found via
+   a "Sin límite" date-filter toggle that looked switched on while showing an
+   actual date). Left unset, it falls back to Ionic's default white/light
+   knob, restoring the contrast between states. */
 ion-toggle {
   --background-checked: var(--ion-color-primary-fill) !important;
-  --handle-background: var(--ion-color-primary-fill) !important;
   --handle-background-checked: var(--ion-color-primary-fill) !important;
 }
 

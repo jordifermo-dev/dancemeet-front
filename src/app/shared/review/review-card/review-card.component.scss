@@ -1,0 +1,146 @@
+// Own copy of the xat's visual language (chat-avatar/chat-sender-name/
+// chat-reply-quote in event-detail.page.scss) rather than a cross-domain
+// import - same low-coupling convention the backend already follows between
+// sibling DTOs (see review.dto.ts's own comment).
+.review-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 0;
+
+  &:not(:last-child) {
+    border-bottom: 1px solid var(--ion-color-light-shade);
+  }
+}
+
+.review-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.review-author-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  min-width: 0;
+}
+
+.review-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--ion-color-light-shade);
+  flex: 0 0 auto;
+}
+
+.review-avatar-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--ion-color-primary-fill);
+  color: var(--ion-color-primary-contrast);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.review-author-name {
+  font-weight: 700;
+  color: var(--app-text-strong);
+  font-size: 0.88rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.review-date {
+  flex: 0 0 auto;
+  font-size: 0.72rem;
+  color: var(--ion-color-medium);
+}
+
+.review-comment {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--app-text-strong);
+  overflow-wrap: anywhere;
+  white-space: pre-line;
+}
+
+.review-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.review-reply-quote {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 2px;
+  margin-left: 16px;
+  padding: 6px 10px;
+  border-left: 3px solid var(--ion-color-primary);
+  background: rgba(var(--ion-color-primary-rgb), 0.08);
+  border-radius: 6px;
+}
+
+.review-reply-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--ion-color-primary);
+}
+
+.review-reply-text {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--app-text-strong);
+  overflow-wrap: anywhere;
+  white-space: pre-line;
+}
+
+.review-reply-links {
+  display: flex;
+  gap: 12px;
+  margin-top: 2px;
+}
+
+.review-reply-link {
+  appearance: none;
+  border: none;
+  background: transparent;
+  padding: 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--ion-color-primary);
+  cursor: pointer;
+}
+
+.review-reply-start {
+  appearance: none;
+  border: none;
+  background: transparent;
+  padding: 0;
+  margin-left: 16px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--ion-color-primary);
+  cursor: pointer;
+  width: fit-content;
+}
+
+.review-reply-composer {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-left: 16px;
+}
+
+.review-reply-composer-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}

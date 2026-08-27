@@ -63,6 +63,7 @@ import {
   sendOutline,
   happyOutline,
   ellipsisHorizontalOutline,
+  starOutline,
 } from 'ionicons/icons';
 import { AuthService } from '../../../../services/core/auth.service';
 import { EventService } from '../../../../services/event/event.service';
@@ -76,6 +77,7 @@ import { CitySuggestion, GeocodingService } from '../../../../services/location/
 import { GalleryService } from '../../../../services/gallery/gallery.service';
 import { EventChatService } from '../../../../services/chat/event-chat.service';
 import { EventChatSocketService } from '../../../../services/chat/event-chat-socket.service';
+import { ReviewService } from '../../../../services/review/review.service';
 import {
   CreateEventPayload,
   CreateEventSeriesPayload,
@@ -92,6 +94,7 @@ import {
   UpdateEventPayload,
   EventMessage,
   MessageReactionSummary,
+  Review,
 } from '../../../../models';
 import {
   disciplineIconUrl,
@@ -261,6 +264,7 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
   private readonly toastController = inject(ToastController);
   private readonly eventChatService = inject(EventChatService);
   private readonly eventChatSocketService = inject(EventChatSocketService);
+  private readonly reviewService = inject(ReviewService);
   private readonly translate = inject(TranslateService);
   readonly minSelectionWarning = inject(MinSelectionWarningService);
 
@@ -389,6 +393,32 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
    * backend's EventService.assertCanAccessPrivateArea: the organizer/
    * managers (via canManage) or a real attendee. */
   readonly canAccessPrivateArea = computed(() => this.canManage() || this.isAttending());
+
+  // --- Reviews header badge (full list lives on its own routed page, see
+  // openReviewsTab/EventReviewsPage) -------------------------------------
+
+  readonly reviews = signal<Review[]>([]);
+
+  readonly averageRating = computed(() => {
+    const reviews = this.reviews();
+    if (!reviews.length) {
+      return 0;
+    }
+    return reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length;
+  });
+
+  /** How much of the header's single review-star icon should render gold -
+   * the conventional star-rating look (Google Play, Amazon, ...) where a
+   * lone star's fill fraction stands in for the whole 0-5 average, instead
+   * of a discrete color tier. Applied via an overflow:hidden width wrapper
+   * in the template (see .reviews-star-fill-wrap) - both a CSS custom
+   * property with Angular's [style.--x.%] unit-suffix binding, and
+   * [style.clip-path] directly on the ion-icon host, failed to visibly clip
+   * anything on real runs (Chrome and on-device); a plain percentage width
+   * on an overflow:hidden wrapper is the same technique most star-rating
+   * widgets use and doesn't depend on either. 0 with no reviews yet leaves
+   * the wrapper at 0 width, showing only the empty/outline star underneath. */
+  readonly reviewsFillPercent = computed(() => (this.averageRating() / 5) * 100);
 
   /** Set only when a photo mention thumbnail from the xat couldn't be found
    * in either gallery anymore (deleted since being mentioned) - a minimal
@@ -701,6 +731,18 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
 
   goToInfoTab(): void {
     this.detailViewMode.set('info');
+  }
+
+  /** Full-screen routed page (see app.routes.ts's 'event-reviews'), same
+   * "own page, not an in-place panel" pattern as goToAttendees - not a
+   * detailViewMode value, since the review list/write/reply flow is now
+   * entirely owned by EventReviewsPage instead of living here. */
+  openReviewsTab(): void {
+    const event = this.event();
+    if (!event) {
+      return;
+    }
+    this.router.navigate(['/event-reviews'], { queryParams: { eventId: event.id } });
   }
 
   // --- Xat privado del evento (tiempo real, ver xat-privado-evento.md) -----
@@ -1445,6 +1487,7 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
       sendOutline,
       happyOutline,
       ellipsisHorizontalOutline,
+      starOutline,
     });
 
     effect(() => {
@@ -1701,11 +1744,22 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
         this.refreshParticipants(id);
         this.refreshGallery(id);
         this.refreshPrivateGallery(id);
+        this.refreshReviews(id);
       },
       error: () => {
         this.notFound.set(true);
         this.loading.set(false);
       },
+    });
+  }
+
+  /** Just the list, for the header badge's count/average - writing/editing/
+   * replying all live on EventReviewsPage now (see openReviewsTab), which
+   * re-fetches its own copy independently. */
+  private refreshReviews(eventId: string): void {
+    this.reviewService.getEventReviews(eventId).subscribe({
+      next: (reviews) => this.reviews.set(reviews),
+      error: () => this.reviews.set([]),
     });
   }
 

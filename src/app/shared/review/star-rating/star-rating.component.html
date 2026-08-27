@@ -1,0 +1,22 @@
+@if (readonly) {
+  <div class="star-rating" [class.small]="size === 'small'">
+    @for (position of positions; track position) {
+      <span class="star" aria-hidden="true">
+        <ion-icon [name]="iconFor(position)"></ion-icon>
+      </span>
+    }
+  </div>
+} @else {
+  <div class="star-rating interactive" [class.small]="size === 'small'">
+    @for (position of positions; track position) {
+      <button
+        type="button"
+        class="star"
+        [attr.aria-label]="'reviews.starAriaLabel' | translate: { n: position }"
+        (click)="select(position)"
+      >
+        <ion-icon [name]="iconFor(position)"></ion-icon>
+      </button>
+    }
+  </div>
+}

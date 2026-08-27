@@ -26,7 +26,15 @@
             <ion-icon name="person-outline"></ion-icon>
           </div>
         }
-        <h1 class="user-name">{{ user()!.name }}</h1>
+        <div class="user-name-block">
+          <h1 class="user-name">{{ user()!.name }}</h1>
+          @if (organizerRating(); as rating) {
+            <div class="organizer-rating-badge">
+              <app-star-rating [value]="rating.averageRating" [readonly]="true" size="small"></app-star-rating>
+              <span class="organizer-rating-count">({{ rating.count }})</span>
+            </div>
+          }
+        </div>
       </div>
 
       <div class="stats-row">

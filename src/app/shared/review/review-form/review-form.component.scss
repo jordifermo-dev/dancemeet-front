@@ -1,0 +1,11 @@
+@use '../../filters/styles/filter-sheet' as fs;
+
+.filter-sheet {
+  @include fs.filter-sheet-base;
+}
+
+.review-form-rating {
+  display: flex;
+  justify-content: center;
+  margin: 8px 0 16px;
+}

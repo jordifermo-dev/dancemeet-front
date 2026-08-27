@@ -14,6 +14,8 @@ export const ALL_NOTIFICATION_TYPES: NotificationType[] = [
   'gallery_photo_attending',
   'gallery_photo_profile',
   'event_chat_message',
+  'event_review_created',
+  'event_review_replied',
 ];
 
 export const NOTIFICATION_TYPE_ICONS: Record<NotificationType, string> = {
@@ -30,6 +32,8 @@ export const NOTIFICATION_TYPE_ICONS: Record<NotificationType, string> = {
   gallery_photo_attending: 'images-outline',
   gallery_photo_profile: 'images-outline',
   event_chat_message: 'chatbubbles-outline',
+  event_review_created: 'star-outline',
+  event_review_replied: 'chatbubble-ellipses-outline',
 };
 
 export interface NotificationCategory {
@@ -46,7 +50,15 @@ export const NOTIFICATION_CATEGORIES: NotificationCategory[] = [
   {
     id: 'events',
     labelKey: 'notifications.categoryEvents',
-    types: ['event_updated', 'event_reminder_today', 'following_new_event', 'preference_new_event', 'recurring_series_created'],
+    types: [
+      'event_updated',
+      'event_reminder_today',
+      'following_new_event',
+      'preference_new_event',
+      'recurring_series_created',
+      'event_review_created',
+      'event_review_replied',
+    ],
   },
   {
     id: 'attendance',
@@ -79,4 +91,6 @@ export const NOTIFICATION_TYPE_LABEL_KEYS: Record<NotificationType, string> = {
   gallery_photo_attending: 'notifications.typeGalleryPhotoAttending',
   gallery_photo_profile: 'notifications.typeGalleryPhotoProfile',
   event_chat_message: 'notifications.typeEventChatMessage',
+  event_review_created: 'notifications.typeEventReviewCreated',
+  event_review_replied: 'notifications.typeEventReviewReplied',
 };

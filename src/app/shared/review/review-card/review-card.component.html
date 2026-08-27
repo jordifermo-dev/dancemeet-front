@@ -1,0 +1,68 @@
+<div class="review-card">
+  <div class="review-header">
+    <a class="review-author-link" [routerLink]="['/users', review.authorUserId]">
+      @if (review.authorPhotoUrl) {
+        <img class="review-avatar" [src]="review.authorPhotoUrl" [alt]="review.authorName" />
+      } @else {
+        <div class="review-avatar review-avatar-placeholder">{{ review.authorName.charAt(0) }}</div>
+      }
+      <span class="review-author-name">{{ review.authorName }}</span>
+    </a>
+    <span class="review-date">{{ dateLabel(review.createdAt) }}</span>
+  </div>
+
+  <app-star-rating [value]="review.rating" [readonly]="true" size="small"></app-star-rating>
+
+  @if (review.comment) {
+    <p class="review-comment">{{ review.comment }}</p>
+  }
+
+  @if (isMine) {
+    <div class="review-actions">
+      <ion-button fill="outline" size="small" (click)="editReview.emit()">
+        <ion-icon slot="start" name="create-outline"></ion-icon>
+        {{ 'reviews.editReview' | translate }}
+      </ion-button>
+      <ion-button fill="outline" size="small" color="danger" (click)="deleteReview.emit()">
+        <ion-icon slot="start" name="trash-outline"></ion-icon>
+        {{ 'reviews.deleteReview' | translate }}
+      </ion-button>
+    </div>
+  }
+
+  @if (review.organizerReply; as organizerReply) {
+    <div class="review-reply-quote">
+      <span class="review-reply-label">{{ 'reviews.organizerReplyLabel' | translate }} · {{ organizerReply.repliedByName }}</span>
+      <p class="review-reply-text">{{ organizerReply.text }}</p>
+      @if (canReply && !replying()) {
+        <div class="review-reply-links">
+          <button type="button" class="review-reply-link" (click)="startReply()">{{ 'reviews.editReply' | translate }}</button>
+          <button type="button" class="review-reply-link" (click)="deleteReply.emit()">{{ 'reviews.deleteReply' | translate }}</button>
+        </div>
+      }
+    </div>
+  } @else if (canReply && !replying()) {
+    <button type="button" class="review-reply-start" (click)="startReply()">{{ 'reviews.writeReply' | translate }}</button>
+  }
+
+  @if (replying()) {
+    <div class="review-reply-composer">
+      <ion-textarea
+        [autoGrow]="true"
+        [rows]="1"
+        [placeholder]="'reviews.replyPlaceholder' | translate"
+        [value]="replyDraft()"
+        (ionInput)="replyDraft.set($event.detail.value ?? '')"
+      ></ion-textarea>
+      <div class="review-reply-composer-actions">
+        <ion-button fill="outline" size="small" (click)="cancelReply()">
+          {{ 'common.cancel' | translate }}
+        </ion-button>
+        <ion-button class="btn-fill" size="small" [disabled]="!replyDraft().trim()" (click)="submitReply()">
+          <ion-icon slot="start" name="send-outline"></ion-icon>
+          {{ 'reviews.sendReply' | translate }}
+        </ion-button>
+      </div>
+    </div>
+  }
+</div>

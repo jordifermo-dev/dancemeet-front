@@ -33,7 +33,8 @@ import { FavoriteService } from '../../../../services/favorites/favorite.service
 import { DisciplineService } from '../../../../services/event/discipline.service';
 import { EventTypeService } from '../../../../services/event/event-type.service';
 import { GalleryService } from '../../../../services/gallery/gallery.service';
-import { Discipline, EventType, EVENT_STATUSES, GalleryPhotoWithEvent, SocialLinks, User } from '../../../../models';
+import { ReviewService } from '../../../../services/review/review.service';
+import { Discipline, EventType, EVENT_STATUSES, GalleryPhotoWithEvent, OrganizerRating, SocialLinks, User } from '../../../../models';
 import { SocialIconKey, socialIconUrl, STATUS_LABEL_KEYS } from '../../../../shared/event/icon-catalog';
 import { ALL_SOCIAL_NETWORKS, SOCIAL_NETWORK_LABEL_KEYS, SocialNetworkKey } from '../../../../shared/user/social-networks';
 import { MapType } from '../../../../shared/location/maps';
@@ -46,6 +47,7 @@ import { ChipGridComponent } from '../../../../shared/filters/chip-grid/chip-gri
 import { disciplineChipItems, eventTypeChipItems, statusChipItems } from '../../../../shared/filters/chip-grid/chip-grid-presets';
 import { PhotoGridComponent } from '../../../../shared/gallery/photo-grid/photo-grid.component';
 import { LightboxPhoto, PhotoLightboxComponent } from '../../../../shared/gallery/photo-lightbox/photo-lightbox.component';
+import { StarRatingComponent } from '../../../../shared/review/star-rating/star-rating.component';
 
 const MIN_ZOOM = 3;
 const MAX_ZOOM = 20;
@@ -80,6 +82,7 @@ interface SocialLinkRow {
     LocationPickerComponent,
     PhotoGridComponent,
     PhotoLightboxComponent,
+    StarRatingComponent,
   ],
 })
 export class UserDetailPage implements ViewWillEnter {
@@ -93,6 +96,7 @@ export class UserDetailPage implements ViewWillEnter {
   private readonly disciplineService = inject(DisciplineService);
   private readonly eventTypeService = inject(EventTypeService);
   private readonly galleryService = inject(GalleryService);
+  private readonly reviewService = inject(ReviewService);
   private readonly translate = inject(TranslateService);
 
   private readonly disciplinesById = signal<Map<string, Discipline>>(new Map());
@@ -102,6 +106,10 @@ export class UserDetailPage implements ViewWillEnter {
   readonly notFound = signal(false);
   readonly user = signal<User | null>(null);
   readonly attendedEventsCount = signal(0);
+  /** Only set (and only shown - see the template's own count>0 guard) once
+   * this user has organized at least one event; a plain attendee never
+   * accumulates any reviews under their own organizerId. */
+  readonly organizerRating = signal<OrganizerRating | null>(null);
 
   // --- Instagram-style info/gallery toggle -----------------------------
 
@@ -290,6 +298,10 @@ export class UserDetailPage implements ViewWillEnter {
           });
           this.galleryService.getUserGallery(user.id).subscribe({
             next: (photos) => this.userGallery.set(photos),
+          });
+          this.reviewService.getOrganizerRating(user.id).subscribe({
+            next: (rating) => this.organizerRating.set(rating.count > 0 ? rating : null),
+            error: () => this.organizerRating.set(null),
           });
         }
       },

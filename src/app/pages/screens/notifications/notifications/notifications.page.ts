@@ -41,6 +41,8 @@ import {
   peopleOutline,
   imagesOutline,
   chatbubblesOutline,
+  starOutline,
+  chatbubbleEllipsesOutline,
 } from 'ionicons/icons';
 import { AuthService } from '../../../../services/core/auth.service';
 import { NotificationService } from '../../../../services/notifications/notification.service';
@@ -322,6 +324,8 @@ export class NotificationsPage implements ViewWillEnter, AfterViewInit, OnDestro
       peopleOutline,
       imagesOutline,
       chatbubblesOutline,
+      starOutline,
+      chatbubbleEllipsesOutline,
     });
     this.disciplineService.getAll().subscribe({
       next: (disciplines) => (this.disciplinesById = new Map(disciplines.map((d) => [d.id, d]))),

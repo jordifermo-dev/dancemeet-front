@@ -242,6 +242,51 @@
   text-align: center;
 }
 
+// Same shape as .attendees-badge-btn (own .count-badge, position:relative
+// for it) - the star itself is a two-layer icon (see .reviews-star below)
+// instead of the fixed --app-text-strong every other icon-toggle here uses.
+.reviews-badge-btn {
+  position: relative;
+  appearance: none;
+  border: none;
+  background: transparent;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+// Conventional star-rating look (Google Play/Amazon/...) - a gray outline
+// star as the backdrop, with a gold filled star on top inside a width-
+// constrained, overflow:hidden wrapper (width set from reviewsFillPercent()
+// via [style.width.%]) so only the left fraction of the gold star shows -
+// a 4.8 average reads as "almost entirely gold with a sliver left empty"
+// rather than a discrete color tier. Tried clip-path directly on the
+// ion-icon first (and a CSS custom property + Angular's [style.--x.%]
+// unit-suffix binding before that) - neither visibly clipped anything on
+// real runs, this overflow:hidden technique is what most star-rating
+// widgets use and doesn't depend on either.
+.reviews-star {
+  position: relative;
+  display: inline-flex;
+  font-size: 1.6rem;
+}
+
+.reviews-star-empty {
+  color: var(--ion-color-medium);
+}
+
+.reviews-star-fill-wrap {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.reviews-star-filled {
+  color: var(--ion-color-warning);
+}
+
 .event-creator {
   font-size: 0.85rem;
   font-weight: 700;
