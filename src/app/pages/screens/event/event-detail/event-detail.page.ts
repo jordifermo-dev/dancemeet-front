@@ -135,6 +135,7 @@ import { EventManager } from '../../../../models';
 import { canManageEvent, findMyParticipantRow } from '../../../../shared/event/event-manager-permissions';
 import { PhotoGridComponent } from '../../../../shared/gallery/photo-grid/photo-grid.component';
 import { LightboxAction, LightboxPhoto, PhotoLightboxComponent } from '../../../../shared/gallery/photo-lightbox/photo-lightbox.component';
+import { StarRatingComponent } from '../../../../shared/review/star-rating/star-rating.component';
 
 const MIN_ZOOM = 3;
 const MAX_ZOOM = 20;
@@ -242,6 +243,7 @@ function withTimePart(base: number, timeValue: string): number {
     SeriesAttendConfirmComponent,
     PhotoGridComponent,
     PhotoLightboxComponent,
+    StarRatingComponent,
   ],
 })
 export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnter, ViewWillLeave {
@@ -394,7 +396,7 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
    * managers (via canManage) or a real attendee. */
   readonly canAccessPrivateArea = computed(() => this.canManage() || this.isAttending());
 
-  // --- Reviews header badge (full list lives on its own routed page, see
+  // --- Reviews summary row (full list lives on its own routed page, see
   // openReviewsTab/EventReviewsPage) -------------------------------------
 
   readonly reviews = signal<Review[]>([]);
@@ -406,19 +408,6 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
     }
     return reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length;
   });
-
-  /** How much of the header's single review-star icon should render gold -
-   * the conventional star-rating look (Google Play, Amazon, ...) where a
-   * lone star's fill fraction stands in for the whole 0-5 average, instead
-   * of a discrete color tier. Applied via an overflow:hidden width wrapper
-   * in the template (see .reviews-star-fill-wrap) - both a CSS custom
-   * property with Angular's [style.--x.%] unit-suffix binding, and
-   * [style.clip-path] directly on the ion-icon host, failed to visibly clip
-   * anything on real runs (Chrome and on-device); a plain percentage width
-   * on an overflow:hidden wrapper is the same technique most star-rating
-   * widgets use and doesn't depend on either. 0 with no reviews yet leaves
-   * the wrapper at 0 width, showing only the empty/outline star underneath. */
-  readonly reviewsFillPercent = computed(() => (this.averageRating() / 5) * 100);
 
   /** Set only when a photo mention thumbnail from the xat couldn't be found
    * in either gallery anymore (deleted since being mentioned) - a minimal

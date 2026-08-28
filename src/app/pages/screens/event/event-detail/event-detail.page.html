@@ -287,22 +287,15 @@
             <ion-icon [name]="likeFlash.active() ? 'checkmark-outline' : (isLiked() ? 'heart' : 'heart-outline')"></ion-icon>
             <span class="count-badge">{{ likesCount() }}</span>
           </button>
-          <button
-            type="button"
-            class="reviews-badge-btn"
-            [attr.aria-label]="'eventDetail.reviewsSection' | translate"
-            (click)="openReviewsTab()"
-          >
-            <span class="reviews-star">
-              <ion-icon class="reviews-star-empty" name="star-outline"></ion-icon>
-              <span class="reviews-star-fill-wrap" [style.width.%]="reviewsFillPercent()">
-                <ion-icon class="reviews-star-filled" name="star"></ion-icon>
-              </span>
-            </span>
-            <span class="count-badge">{{ reviews().length }}</span>
-          </button>
         </div>
       </div>
+
+      @if (reviews().length) {
+        <button type="button" class="reviews-summary-row" (click)="openReviewsTab()">
+          <app-star-rating [value]="averageRating()" [readonly]="true" size="small"></app-star-rating>
+          <span class="reviews-summary-count">{{ averageRating().toFixed(1) }} · {{ reviews().length }}</span>
+        </button>
+      }
 
       <!-- Par de iconos estilo Instagram (Información/Galería) - mismo
            patrón/estilo que user-detail.page.html. -->
@@ -370,7 +363,7 @@
             <ion-button
               expand="block"
               class="btn-fill"
-              [disabled]="inviteResponseBusy()"
+              [disabled]="inviteResponseBusy() || isEventOver()"
               (click)="respondToManagerInvite(true)"
             >
               <ion-icon slot="start" name="checkmark-outline"></ion-icon>

@@ -96,11 +96,22 @@ export class UserCardComponent {
   readonly followBusy = signal(false);
   readonly followFlash = createSuccessFlash();
 
-  readonly disciplines = computed(() =>
-    (this.user.disciplineIds ?? [])
+  // Plain method, not computed() - `user`/`disciplinesById` are regular
+  // @Inputs, not signals, so a computed() here only ever evaluates once (on
+  // first read) and never again: neither is a tracked dependency, so it just
+  // freezes at whatever disciplinesById held at that first read. On the
+  // Asistentes list that's the still-empty default Map from before the
+  // parent's own disciplines fetch resolves, showing "no ha triat cap ball"
+  // for every row permanently - re-entering the page "fixed" it only because
+  // a fresh set of row instances happened to first-read after the (by then
+  // browser-cached) fetch had already resolved. A plain method re-reads both
+  // inputs fresh on every template check, same fix as photo-lightbox's own
+  // currentPhoto() this session.
+  disciplines(): Discipline[] {
+    return (this.user.disciplineIds ?? [])
       .map((id) => this.disciplinesById.get(id))
-      .filter((d): d is Discipline => !!d),
-  );
+      .filter((d): d is Discipline => !!d);
+  }
 
   readonly isMe = computed(() => this.authService.currentUser()?.id === this.user.id);
 

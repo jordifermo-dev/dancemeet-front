@@ -27,10 +27,10 @@
         </div>
       }
 
-      @if (canWriteReview()) {
+      @if (canWriteReview() && !myReview()) {
         <ion-button expand="block" fill="outline" (click)="openReviewForm()">
           <ion-icon slot="start" name="star-outline"></ion-icon>
-          {{ (myReview() ? 'reviews.editReview' : 'reviews.writeReview') | translate }}
+          {{ 'reviews.writeReview' | translate }}
         </ion-button>
       }
 

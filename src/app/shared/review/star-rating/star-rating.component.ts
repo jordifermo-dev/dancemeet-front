@@ -29,11 +29,17 @@ export class StarRatingComponent {
     addIcons({ star, starHalf, starOutline });
   }
 
+  /** Rounds to the nearest half star rather than only ever showing a half
+   * star exactly at position-0.5 - a 4.3 average used to render identically
+   * to a plain 4.0 (0.3 never cleared the old >= position - 0.5 threshold),
+   * losing the fraction entirely. position - 0.25/0.75 are the two
+   * rounding boundaries: below the first bumps down to half, below the
+   * second bumps down to empty. */
   iconFor(position: number): string {
-    if (this.value >= position) {
+    if (this.value >= position - 0.25) {
       return 'star';
     }
-    if (this.value >= position - 0.5) {
+    if (this.value >= position - 0.75) {
       return 'star-half';
     }
     return 'star-outline';
