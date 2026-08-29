@@ -13,16 +13,23 @@
         [routerLink]="view.creatorProfileLink"
         (click)="$event.stopPropagation()"
       >{{ view.creatorName }}</a>
-      <button
-        type="button"
-        class="like-heart-btn"
-        [class.active]="view.isLiked"
-        [disabled]="view.isOwnEvent || view.status === 'finished' || view.status === 'cancelled'"
-        [attr.aria-label]="(view.isLiked ? 'eventDetail.unlikeButton' : 'eventDetail.likeButton') | translate"
-        (click)="onLikeToggle($event)"
-      >
-        <ion-icon [name]="view.isLiked ? 'heart' : 'heart-outline'"></ion-icon>
-      </button>
+      <div class="event-card-stats">
+        <span class="stat-badge" [class.active]="view.isAttending">
+          <ion-icon name="people-outline"></ion-icon>
+          {{ view.attendeesCount }}
+        </span>
+        <button
+          type="button"
+          class="like-heart-btn"
+          [class.active]="view.isLiked"
+          [disabled]="view.isOwnEvent || view.status === 'finished' || view.status === 'cancelled'"
+          [attr.aria-label]="(view.isLiked ? 'eventDetail.unlikeButton' : 'eventDetail.likeButton') | translate"
+          (click)="onLikeToggle($event)"
+        >
+          <ion-icon [name]="view.isLiked ? 'heart' : 'heart-outline'"></ion-icon>
+          <span class="stat-count">{{ view.likesCount }}</span>
+        </button>
+      </div>
     </div>
 
     <div class="event-card-tags">
@@ -66,5 +73,35 @@
       <ion-icon name="location-outline"></ion-icon>
       <span>{{ view.address }}, {{ view.city }}</span>
     </p>
+    <p class="event-card-line">
+      <app-star-rating [value]="view.averageRating" [readonly]="true" size="small"></app-star-rating>
+      @if (view.reviewsCount > 0) {
+        <span>{{ view.averageRating.toFixed(1) }} · {{ view.reviewsCount }}</span>
+      } @else {
+        <span>{{ 'eventDetail.reviewsNoneYet' | translate }}</span>
+      }
+    </p>
+    @if ((view.unreadChatCount ?? 0) > 0 || (view.unreadGalleryCount ?? 0) > 0 || (view.unreadPrivateGalleryCount ?? 0) > 0) {
+      <div class="event-card-unread-row">
+        @if ((view.unreadGalleryCount ?? 0) > 0) {
+          <span class="unread-badge">
+            <ion-icon name="grid-outline"></ion-icon>
+            {{ view.unreadGalleryCount! > 9 ? '9+' : view.unreadGalleryCount }}
+          </span>
+        }
+        @if ((view.unreadPrivateGalleryCount ?? 0) > 0) {
+          <span class="unread-badge">
+            <ion-icon name="people-circle-outline"></ion-icon>
+            {{ view.unreadPrivateGalleryCount! > 9 ? '9+' : view.unreadPrivateGalleryCount }}
+          </span>
+        }
+        @if ((view.unreadChatCount ?? 0) > 0) {
+          <span class="unread-badge">
+            <ion-icon name="chatbubbles-outline"></ion-icon>
+            {{ view.unreadChatCount! > 9 ? '9+' : view.unreadChatCount }}
+          </span>
+        }
+      </div>
+    }
   </div>
 </div>

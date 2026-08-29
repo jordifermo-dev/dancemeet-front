@@ -13,7 +13,9 @@ export type NotificationType =
   | 'gallery_photo_profile'
   | 'event_chat_message'
   | 'event_review_created'
-  | 'event_review_replied';
+  | 'event_review_replied'
+  | 'event_join_request'
+  | 'event_join_approved';
 
 export interface AppNotification {
   id: string;

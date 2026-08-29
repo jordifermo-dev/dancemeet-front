@@ -33,6 +33,18 @@ export class GalleryService {
     return this.http.post<GalleryPhoto>(`${this.eventsUrl}/${eventId}/private-gallery`, { photoUrl });
   }
 
+  /** New-photo badge for a gallery tab - mirrors EventChatService's own
+   * getUnreadCount/markChatRead REST pair. */
+  getUnreadCount(eventId: string, scope: 'public' | 'private'): Observable<{ count: number }> {
+    const base = scope === 'public' ? `${this.eventsUrl}/${eventId}/gallery` : `${this.eventsUrl}/${eventId}/private-gallery`;
+    return this.http.get<{ count: number }>(`${base}/unread-count`);
+  }
+
+  markGalleryRead(eventId: string, scope: 'public' | 'private'): Observable<{ success: boolean }> {
+    const base = scope === 'public' ? `${this.eventsUrl}/${eventId}/gallery` : `${this.eventsUrl}/${eventId}/private-gallery`;
+    return this.http.post<{ success: boolean }>(`${base}/read`, {});
+  }
+
   /** Makes a private photo also show in the public gallery - additive, the
    * photo stays in the private gallery too (see moveToPrivateGallery for the
    * reverse, a full move rather than a copy). */

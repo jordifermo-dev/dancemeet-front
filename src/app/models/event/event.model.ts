@@ -21,6 +21,13 @@ export interface Event {
   /** Whether attendees (not just the organizer/managers) can post photos to
    * this event's gallery - individual per event instance, defaults true. */
   allowAttendeePhotos: boolean;
+  /** 'open': tapping "Asistir" attends immediately (today's only behavior
+   * before this field existed). 'approval': tapping "Asistir" sends a join
+   * request instead, which an organizer must approve (see
+   * event-detail.page.ts's attend-button branching) - the organizer can
+   * still invite directly either way. Editable anytime via edit, not fixed
+   * at creation. */
+  joinMode: EventJoinMode;
   creatorId: string;
   address: string;
   city: string;
@@ -37,14 +44,36 @@ export interface Event {
 
 export type EventRelation = 'creator' | 'favorite';
 
+export type EventJoinMode = 'open' | 'approval';
+
 export type PriceOption = 'free' | 'paid';
 
 export type RelationOption = 'organizer' | 'attendee';
 
 /** An event hydrated with just its creator's name - the common shape shared
- * by every list that renders <app-event-card> without a lookup per event. */
+ * by every list that renders <app-event-card> without a lookup per event.
+ * attendeesCount/likesCount/reviewsCount/averageRating are batch-computed
+ * backend-side per list load (see SearchedEventDto/FavoritedEventDto) -
+ * optional because a single-event fetch (getEventDetail) doesn't populate
+ * them, event-detail already has its own richer data for these. */
 export interface EventWithCreatorName extends Event {
   creatorName: string;
+  attendeesCount?: number;
+  likesCount?: number;
+  reviewsCount?: number;
+  averageRating?: number;
+  /** Unread-message/new-photo card badges - only ever populated on
+   * FavoritedEvent (Favoritos/Mis-eventos), undefined for an event this user
+   * doesn't genuinely attend, or on a plain search result. */
+  unreadChatCount?: number;
+  unreadGalleryCount?: number;
+  unreadPrivateGalleryCount?: number;
+  /** Whether the *viewer* genuinely attends this event - only ever populated
+   * on FavoritedEvent (Favoritos/Mis-eventos); a plain search result derives
+   * it from a separately-fetched attended-ids Set instead (see
+   * build-event-card-view.ts's own attendedEventIds param, same pattern as
+   * likedEventIds). */
+  isAttending?: boolean;
 }
 
 /** An event returned by the Favorites list - additionally tagged with how

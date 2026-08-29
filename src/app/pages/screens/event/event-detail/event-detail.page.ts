@@ -87,6 +87,7 @@ import {
   EVENT_TYPE_NAMES,
   EventStatus,
   EVENT_STATUSES,
+  EventJoinMode,
   EventWithCreatorName,
   GalleryPhotoWithPoster,
   RecurrenceRule,
@@ -116,7 +117,8 @@ import { ChipGridComponent } from '../../../../shared/filters/chip-grid/chip-gri
 import { TimeRangePickerComponent } from '../../../../shared/calendar/time-range-picker/time-range-picker.component';
 import { RecurrenceQuickPickerComponent } from '../../../../shared/calendar/recurrence-quick-picker/recurrence-quick-picker.component';
 import { SeriesAttendConfirmComponent } from '../../../../shared/event/series-attend-confirm/series-attend-confirm.component';
-import { disciplineChipItems, eventTypeChipItems, statusChipItems } from '../../../../shared/filters/chip-grid/chip-grid-presets';
+import { disciplineChipItems, eventTypeChipItems, optionChipItems, statusChipItems } from '../../../../shared/filters/chip-grid/chip-grid-presets';
+import { ChipGridItem } from '../../../../shared/filters/chip-grid/chip-grid.component';
 import { normalizeSocialUrl, SOCIAL_URL_PATTERNS, SOCIAL_URL_PREFIXES } from '../../../../shared/user/social-link-patterns';
 import {
   ALL_SOCIAL_NETWORKS,
@@ -132,7 +134,7 @@ import { dismissSharePreviewHint, isSharePreviewHintDismissed } from '../../../.
 import { EventShareService, escapeHtml } from '../../../../services/sharing/event-share.service';
 import { EventManagerService } from '../../../../services/event-managers/event-manager.service';
 import { EventManager } from '../../../../models';
-import { canManageEvent, findMyParticipantRow } from '../../../../shared/event/event-manager-permissions';
+import { canManageEvent, findMyParticipantRow, isEventCreator } from '../../../../shared/event/event-manager-permissions';
 import { PhotoGridComponent } from '../../../../shared/gallery/photo-grid/photo-grid.component';
 import { LightboxAction, LightboxPhoto, PhotoLightboxComponent } from '../../../../shared/gallery/photo-lightbox/photo-lightbox.component';
 import { StarRatingComponent } from '../../../../shared/review/star-rating/star-rating.component';
@@ -355,16 +357,15 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
    * own baseline/buildSnapshot. Only meaningful while isEditMode() is true. */
   private editBaseline: string | null = null;
 
-  readonly isOwnEvent = computed(() => {
-    const event = this.event();
-    const me = this.authService.currentUser();
-    return !!event && !!me && event.creatorId === me.id;
-  });
+  /** Only the original creator, not a co-organizer - see isEventCreator's own
+   * doc comment. Gates delete specifically (confirmDeleteEvent/menuActions'
+   * delete entry); everything else canManage-gated (edit/reuse/etc) stays
+   * open to accepted managers too. */
+  readonly isOwnEvent = computed(() => isEventCreator(this.event(), this.authService.currentUser()?.id));
 
   readonly participants = signal<EventManager[]>([]);
-  /** Creator or accepted manager - gates edit/delete/reuse the same way
-   * isOwnEvent used to on its own (see canManageEvent's own doc comment for
-   * why this rule lives in one shared place). */
+  /** Creator or accepted manager - gates edit/reuse (delete uses the
+   * stricter isOwnEvent above instead). */
   readonly canManage = computed(() =>
     canManageEvent(this.event(), this.participants(), this.authService.currentUser()?.id),
   );
@@ -440,10 +441,14 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
     const statusGroup: MenuAction[] = [];
     if (!this.canManage()) {
       statusGroup.push({
-        labelKey: this.isAttending() ? 'eventDetail.unattendButton' : 'eventDetail.attendButton',
+        labelKey: this.isAttending()
+          ? 'eventDetail.unattendButton'
+          : event.joinMode === 'approval'
+            ? 'eventDetail.requestToJoinButton'
+            : 'eventDetail.attendButton',
         icon: this.isAttending() ? 'person-remove-outline' : 'person-add-outline',
         onClick: () => this.toggleAttend(),
-        disabled: this.attendLoading() || this.isEventOver(),
+        disabled: this.attendLoading() || this.isEventOver() || !!this.myPendingInvite(),
       });
     }
     statusGroup.push({ labelKey: 'eventDetail.attendeesLabel', icon: 'people-outline', onClick: () => this.goToAttendees() });
@@ -482,20 +487,27 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
     }
 
     // Las dos .actions-row de la pantalla (calendario/compartir y
-    // eliminar/editar) van en un único grupo contiguo, en el mismo orden
-    // en que aparecen esas filas en pantalla - ninguna otra opción del menú
-    // se intercala entre ellas, aunque en pantalla sean dos filas separadas.
+    // eliminar/editar/reutilizar) van en un único grupo contiguo, en el
+    // mismo orden en que aparecen esas filas en pantalla - ninguna otra
+    // opción del menú se intercala entre ellas, aunque en pantalla sean
+    // filas separadas.
     const actionsRowGroup: MenuAction[] = [
       { labelKey: 'eventDetail.calendarButton', icon: 'download-outline', onClick: () => this.addToCalendar() },
       { labelKey: 'eventDetail.shareButton', icon: 'share-social-outline', onClick: () => this.openSharePreview() },
     ];
+    if (this.isOwnEvent()) {
+      actionsRowGroup.push({
+        labelKey: 'eventDetail.deleteButton',
+        icon: 'trash-outline',
+        onClick: () => this.confirmDeleteEvent(),
+        color: 'danger',
+      });
+    }
     if (this.canManage()) {
-      actionsRowGroup.push(
-        { labelKey: 'eventDetail.deleteButton', icon: 'trash-outline', onClick: () => this.confirmDeleteEvent(), color: 'danger' },
-        event.status === 'finished'
-          ? { labelKey: 'eventDetail.reuseButton', icon: 'refresh-outline', onClick: () => this.reuseEvent() }
-          : { labelKey: 'eventDetail.editButton', icon: 'create-outline', onClick: () => this.enterEditMode() },
-      );
+      actionsRowGroup.push({ labelKey: 'eventDetail.reuseButton', icon: 'refresh-outline', onClick: () => this.reuseEvent() });
+      if (event.status !== 'finished') {
+        actionsRowGroup.push({ labelKey: 'eventDetail.editButton', icon: 'create-outline', onClick: () => this.enterEditMode() });
+      }
     }
     groups.push(actionsRowGroup);
 
@@ -817,6 +829,10 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
     const event = this.event();
     if (event) {
       this.refreshGallery(event.id);
+      this.galleryService.markGalleryRead(event.id, 'public').subscribe();
+      this.unreadGalleryCount.set(0);
+      // See openChatTab's own comment - same ionViewWillEnter unreliability.
+      this.refreshNotifier.notifyChanged();
     }
   }
 
@@ -825,6 +841,9 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
     const event = this.event();
     if (event) {
       this.refreshPrivateGallery(event.id);
+      this.galleryService.markGalleryRead(event.id, 'private').subscribe();
+      this.unreadPrivateGalleryCount.set(0);
+      this.refreshNotifier.notifyChanged();
     }
   }
 
@@ -859,6 +878,15 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
   readonly unreadChatCount = signal(0);
   private readonly ionContentRef = viewChild(IonContent);
 
+  // --- Badges de fotos nuevas en las pestañas Galería/Galería privada ------
+
+  /** Same "new photo" badges as the xat's own unreadChatCount, one per
+   * gallery scope - see the fetch effect in the constructor and
+   * openGalleryTab/openPrivateGalleryTab (mark-read + reset). */
+  readonly unreadGalleryCount = signal(0);
+  readonly unreadPrivateGalleryCount = signal(0);
+  private galleryUnreadFetchedForEventId: string | null = null;
+
   /** Switching tabs no longer connects/joins/fetches anything itself - the
    * connect effect in the constructor already did all of that as soon as
    * this event's private-area access was confirmed, however long before the
@@ -870,6 +898,11 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
     }
     this.eventChatSocketService.markChatRead();
     this.unreadChatCount.set(0);
+    // Favorites/user-events/Events' own unread-message card badge won't
+    // otherwise reliably notice this - ionViewWillEnter doesn't always
+    // re-fire on a plain back-navigation into an already-instantiated tab
+    // (see EventListRefreshService's own doc comment).
+    this.refreshNotifier.notifyChanged();
   }
 
   /** The chat socket now stays connected for the whole time this event is
@@ -1285,6 +1318,7 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
       isFree: raw.isFree,
       price: raw.price,
       allowAttendeePhotos: raw.allowAttendeePhotos,
+      joinMode: raw.joinMode,
       socialLinks: {
         instagram: raw.instagram,
         facebook: raw.facebook,
@@ -1413,6 +1447,7 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
     isFree: [true],
     price: [0],
     allowAttendeePhotos: [true],
+    joinMode: ['open' as EventJoinMode],
     instagram: ['', Validators.pattern(SOCIAL_URL_PATTERNS.instagram)],
     facebook: ['', Validators.pattern(SOCIAL_URL_PATTERNS.facebook)],
     tiktok: ['', Validators.pattern(SOCIAL_URL_PATTERNS.tiktok)],
@@ -1429,6 +1464,24 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
   readonly editTypeChips = computed(() => eventTypeChipItems(this.eventTypes(), this.editTypeIds()));
   readonly editDisciplineChips = computed(() => disciplineChipItems(this.disciplines(), this.editDisciplineIds()));
   readonly editStatusChips = computed(() => statusChipItems(this.editableStatusOptions, [this.editStatus()]));
+  private readonly joinModeOptions: { id: EventJoinMode; labelKey: string }[] = [
+    { id: 'open', labelKey: 'eventDetail.joinModeOpen' },
+    { id: 'approval', labelKey: 'eventDetail.joinModeApproval' },
+  ];
+  /** A plain method, not computed() - editForm.controls.joinMode.value is a
+   * reactive-form control, not a signal, so a computed() reading it would
+   * never re-evaluate after the first render (same staleness bug class
+   * fixed twice already this session - see user-card.component.ts's
+   * disciplines/photo-lightbox.component.ts's currentPhoto). A plain method
+   * re-runs on every template check instead, same as reading
+   * editForm.controls.isFree.value directly in the template already does. */
+  joinModeChips(): ChipGridItem[] {
+    return optionChipItems(this.joinModeOptions, [this.editForm.controls.joinMode.value]);
+  }
+
+  selectJoinMode(id: string): void {
+    this.editForm.controls.joinMode.setValue(id as EventJoinMode);
+  }
   readonly editDateFrom = signal(Date.now());
   readonly editDateTo = signal(Date.now() + DEFAULT_EVENT_DURATION_MS);
   /** Only ever set in create mode (see the "Repetir" field, shown only while
@@ -1646,6 +1699,26 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
       });
     });
 
+    // Same idea as the chat unread-count effect above, for both gallery
+    // tabs - no live socket push for photos (unlike chat), so this is a
+    // one-shot fetch per event load rather than something a later effect
+    // increments in real time.
+    effect(() => {
+      const event = this.event();
+      if (!event || !this.canAccessPrivateArea() || this.galleryUnreadFetchedForEventId === event.id) {
+        return;
+      }
+      this.galleryUnreadFetchedForEventId = event.id;
+      this.galleryService.getUnreadCount(event.id, 'public').subscribe({
+        next: ({ count }) => this.unreadGalleryCount.set(count),
+        error: () => this.unreadGalleryCount.set(0),
+      });
+      this.galleryService.getUnreadCount(event.id, 'private').subscribe({
+        next: ({ count }) => this.unreadPrivateGalleryCount.set(count),
+        error: () => this.unreadPrivateGalleryCount.set(0),
+      });
+    });
+
     // Bumps the badge for a live message from someone else while the xat
     // tab isn't the active view - lastReceivedMessage is only ever set by
     // the 'new-message' socket event (never by a history load), so this
@@ -1818,6 +1891,7 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
       imageUrl: source.imageUrl,
       isFree: source.isFree,
       price: source.price,
+      joinMode: source.joinMode,
     });
     this.editTypeIds.set([...source.typeIds]);
     this.editDisciplineIds.set([...source.disciplineIds]);
@@ -2248,11 +2322,18 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
   /** The real RSVP (AttendanceService) - creates/removes the Attendance
    * record behind the attendee list, the count, gallery-posting permission
    * and the organizer's notification, unlike the heart above. A series
-   * instance asks "this day or the whole series?" first instead of assuming. */
+   * instance asks "this day or the whole series?" first instead of assuming.
+   * On a joinMode 'approval' event, joining (not leaving - isAttending()
+   * stays the deciding factor) goes through requestToJoinEvent instead,
+   * which needs the organizer's approval before any of that happens. */
   toggleAttend(): void {
     const event = this.event();
     const me = this.authService.currentUser();
-    if (!event || !me || this.canManage() || this.attendLoading() || this.isEventOver()) {
+    if (!event || !me || this.canManage() || this.attendLoading() || this.isEventOver() || this.myPendingInvite()) {
+      return;
+    }
+    if (event.joinMode === 'approval' && !this.isAttending()) {
+      this.requestToJoinEvent();
       return;
     }
     if (event.seriesId) {
@@ -2261,6 +2342,36 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
     }
     this.toggleSingleAttend();
   }
+
+  /** Self-serve join request (see EventManagerService.requestToJoin,
+   * backend) - creates a pending row exactly like an invite, so it surfaces
+   * through the exact same myPendingInvite()/manager-invite-banner as one
+   * (see isSelfRequestedPending, which tells the two apart for that banner's
+   * text). Grants no attendance/access until an organizer approves it. */
+  private requestToJoinEvent(): void {
+    const event = this.event();
+    if (!event) {
+      return;
+    }
+    this.attendLoading.set(true);
+    this.eventManagerService.requestToJoin(event.id).subscribe({
+      next: () => {
+        this.attendLoading.set(false);
+        this.refreshParticipants(event.id);
+      },
+      error: () => this.attendLoading.set(false),
+    });
+  }
+
+  /** Distinguishes "I asked to join" (invitedByUserId === my own id) from
+   * "an organizer invited me" for the manager-invite-banner - a self-request
+   * just shows a pending message, no accept/decline (there's nothing left
+   * for the requester themselves to accept). */
+  readonly isSelfRequestedPending = computed(() => {
+    const pending = this.myPendingInvite();
+    const me = this.authService.currentUser();
+    return !!pending && !!me && pending.invitedByUserId === me.id;
+  });
 
   confirmSeriesDayOnly(): void {
     this.pendingSeriesToggle.set(null);
@@ -2517,6 +2628,7 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
       isFree: event.isFree,
       price: event.price,
       allowAttendeePhotos: event.allowAttendeePhotos,
+      joinMode: event.joinMode,
       instagram: event.socialLinks?.instagram ?? '',
       facebook: event.socialLinks?.facebook ?? '',
       tiktok: event.socialLinks?.tiktok ?? '',
@@ -2616,6 +2728,7 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
       status: this.editStatus(),
       isFree: formValue.isFree,
       price: formValue.price,
+      joinMode: formValue.joinMode,
       address: this.editAddress(),
       city: this.editCity(),
       latitude: this.editLatitude(),

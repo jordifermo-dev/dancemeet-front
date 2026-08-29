@@ -74,6 +74,9 @@ function demoEventCard(
     // Favorite record for the creator on createEvent()), so the heart shows
     // filled for both demo cards, not just the liked one.
     isLiked: relationLabelKey === 'favorites.relationCreatorBadge' || relationLabelKey === 'favorites.relationFavoriteBadge',
+    // Same reasoning as isLiked above - organizing (or, for this demo,
+    // simply having any relation at all) reads as attending too.
+    isAttending: relationLabelKey === 'favorites.relationCreatorBadge' || relationLabelKey === 'favorites.relationFavoriteBadge',
     id,
     imageUrl: `https://picsum.photos/1200/800?${photoId}`,
     title,
@@ -103,6 +106,11 @@ function demoEventCard(
         : relationLabelKey === 'favorites.relationFavoriteBadge'
           ? 'favorite'
           : undefined,
+    // Invented but plausible, purely to illustrate the card's info badges.
+    attendeesCount: 12,
+    likesCount: 8,
+    reviewsCount: 5,
+    averageRating: 4.5,
   };
 }
 

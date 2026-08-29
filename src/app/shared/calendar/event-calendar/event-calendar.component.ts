@@ -79,6 +79,7 @@ export class EventCalendarComponent implements AfterViewInit, OnDestroy {
   readonly eventTypesById = input.required<Map<string, EventType>>();
   readonly disciplinesById = input.required<Map<string, Discipline>>();
   readonly likedEventIds = input<ReadonlySet<string>>(new Set());
+  readonly attendedEventIds = input<ReadonlySet<string>>(new Set());
   /** = the host page's current "Ordenar" choice, so the day agenda orders
    * events the same way the list view does instead of always defaulting to
    * soonest-first regardless of what the user actually picked. */
@@ -147,9 +148,10 @@ export class EventCalendarComponent implements AfterViewInit, OnDestroy {
     const lang = this.languageService.currentLang();
     const currentUserId = this.authService.currentUser()?.id;
     const likedEventIds = this.likedEventIds();
+    const attendedEventIds = this.attendedEventIds();
     const dayEvents = this.events().filter((event) => event.eventDateFrom <= dayEnd && event.eventDateTo >= dayStart);
     return sortEvents(dayEvents, this.sortMode()).map((event) =>
-      buildEventCardView(event, disciplinesById, eventTypesById, lang, currentUserId, likedEventIds),
+      buildEventCardView(event, disciplinesById, eventTypesById, lang, currentUserId, likedEventIds, attendedEventIds),
     );
   });
 

@@ -226,12 +226,21 @@ export class FollowListPage implements ViewWillEnter {
         return sorted.sort((a, b) => a.createdAt - b.createdAt);
     }
   });
+  /** pendingParticipants split in two - an organizer-sent invite
+   * (invitedByUserId is the inviting manager's id) needs a "cancel invite"
+   * action, while a self-requested join (invitedByUserId === the row's own
+   * userId, see EventManagerService.requestToJoin, backend) needs "Aprobar"/
+   * "Rechazar" instead - very different actions for what would otherwise
+   * look like the same "pending" row. */
+  readonly pendingInvitedParticipants = computed(() => this.pendingParticipants().filter((p) => p.invitedByUserId !== p.userId));
+  readonly pendingRequestedParticipants = computed(() => this.pendingParticipants().filter((p) => p.invitedByUserId === p.userId));
   private readonly acceptedManagerIds = computed(
     () => new Set(this.participants().filter((p) => p.role === 'manager' && p.status === 'accepted').map((p) => p.userId)),
   );
   readonly inviteBusyUserId = signal<string | null>(null);
   readonly actionErrorMessage = signal<string | null>(null);
   readonly removeBusyUserId = signal<string | null>(null);
+  readonly joinRequestBusyUserId = signal<string | null>(null);
 
   constructor() {
     addIcons({
@@ -554,6 +563,50 @@ export class FollowListPage implements ViewWillEnter {
     return this.trashAction(participant.userId, 'followList.cancelInvite', () =>
       this.cancelPendingInvite(participant.userId),
     );
+  }
+
+  /** Aprobar/Rechazar for a self-requested join (see
+   * pendingRequestedParticipants) - replaces the follow button via
+   * extraActions, same mechanism inviteActionsFor already uses for the "new"
+   * search group's own invite buttons. */
+  joinRequestActionsFor(participant: EventManager): UserCardAction[] {
+    const busy = this.joinRequestBusyUserId() === participant.userId;
+    return [
+      {
+        labelKey: 'followList.declineRequest',
+        icon: 'close-outline',
+        busy,
+        onClick: () => this.respondToJoinRequest(participant.userId, false),
+      },
+      {
+        labelKey: 'followList.approveRequest',
+        icon: 'checkmark-outline',
+        busy,
+        onClick: () => this.respondToJoinRequest(participant.userId, true),
+      },
+    ];
+  }
+
+  private respondToJoinRequest(requesterId: string, accept: boolean): void {
+    const eventId = this.event()?.id;
+    if (!eventId || this.joinRequestBusyUserId()) {
+      return;
+    }
+    this.actionErrorMessage.set(null);
+    this.joinRequestBusyUserId.set(requesterId);
+    this.eventManagerService.respondToJoinRequest(eventId, requesterId, accept).subscribe({
+      next: () => {
+        this.joinRequestBusyUserId.set(null);
+        this.loadParticipants(eventId);
+        if (accept) {
+          this.loadItems();
+        }
+      },
+      error: () => {
+        this.joinRequestBusyUserId.set(null);
+        this.actionErrorMessage.set('followList.joinRequestError');
+      },
+    });
   }
 
   /** The creator gets the same badge as an accepted manager - both have full

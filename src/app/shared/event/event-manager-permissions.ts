@@ -21,6 +21,15 @@ export function canManageEvent(
   );
 }
 
+/** Stricter than canManageEvent - only the original creator, not a co-
+ * organizer. Used exclusively to gate deleting an event (see
+ * event-detail.page.ts's isEventCreator/confirmDeleteEvent); editing,
+ * reusing, and every other canManageEvent-gated action stay open to
+ * accepted managers too. */
+export function isEventCreator(event: { creatorId: string } | null | undefined, userId: string | null | undefined): boolean {
+  return !!event && !!userId && event.creatorId === userId;
+}
+
 /** The current user's own row in the list, if any - drives the "you've been
  * invited" accept/decline banner on event-detail. */
 export function findMyParticipantRow(participants: EventManager[], userId: string | null | undefined): EventManager | null {

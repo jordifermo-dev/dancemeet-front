@@ -28,6 +28,14 @@ export function buildEventCardView(
    * always the logged-in user's own list, so `event.relation` already is
    * their own. */
   likedEventIds?: ReadonlySet<string>,
+  /** Same idea as likedEventIds, for the attendee-count icon's active/grey
+   * state - a plain search result (Events tab) has no per-viewer attendance
+   * info on the event itself, so this must be passed explicitly there (see
+   * events.page.ts's loadAttendedEventIds). Omit on Favorites/user-events,
+   * which already carry `event.isAttending` from the backend (see
+   * FavoritedEventDto's own doc comment) - a "favorite" relation, unlike a
+   * "creator" one, does NOT by itself imply attendance. */
+  attendedEventIds?: ReadonlySet<string>,
 ): EventCardView {
   const eventTypeTags = event.typeIds
     .map((id) => eventTypesById.get(id))
@@ -71,5 +79,13 @@ export function buildEventCardView(
     // appearing in the list AT ALL - either relation value - already implies
     // a real Favorite row exists, so any truthy `relation` means liked.
     isLiked: isOwnEvent || (likedEventIds ? likedEventIds.has(event.id) : !!event.relation),
+    isAttending: isOwnEvent || (attendedEventIds ? attendedEventIds.has(event.id) : !!event.isAttending),
+    attendeesCount: event.attendeesCount ?? 0,
+    likesCount: event.likesCount ?? 0,
+    reviewsCount: event.reviewsCount ?? 0,
+    averageRating: event.averageRating ?? 0,
+    unreadChatCount: event.unreadChatCount,
+    unreadGalleryCount: event.unreadGalleryCount,
+    unreadPrivateGalleryCount: event.unreadPrivateGalleryCount,
   };
 }

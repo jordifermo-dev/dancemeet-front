@@ -211,6 +211,14 @@
         }
       </section>
 
+      <section class="section">
+        <h2>{{ 'eventDetail.joinModeSection' | translate }}</h2>
+        <app-chip-grid [items]="joinModeChips()" (chipClick)="selectJoinMode($event)"></app-chip-grid>
+        <p class="empty-message">
+          {{ (editForm.controls.joinMode.value === 'approval' ? 'eventDetail.joinModeApprovalHint' : 'eventDetail.joinModeOpenHint') | translate }}
+        </p>
+      </section>
+
       @if (!isCreateMode()) {
         <section class="section">
           <h2>{{ 'gallery.tabGallery' | translate }}</h2>
@@ -266,8 +274,15 @@
             type="button"
             class="attend-toggle-btn"
             [class.active]="isAttending()"
-            [disabled]="canManage() || attendLoading() || isEventOver()"
-            [attr.aria-label]="(isAttending() ? 'eventDetail.unattendButton' : 'eventDetail.attendButton') | translate"
+            [disabled]="canManage() || attendLoading() || isEventOver() || !!myPendingInvite()"
+            [attr.aria-label]="
+              (isAttending()
+                ? 'eventDetail.unattendButton'
+                : event()!.joinMode === 'approval'
+                  ? 'eventDetail.requestToJoinButton'
+                  : 'eventDetail.attendButton'
+              ) | translate
+            "
             (click)="toggleAttend()"
           >
             <ion-icon
@@ -324,6 +339,9 @@
           (click)="openGalleryTab()"
         >
           <ion-icon name="grid-outline"></ion-icon>
+          @if (unreadGalleryCount() > 0) {
+            <span class="chat-unread-badge">{{ unreadGalleryCount() > 9 ? '9+' : unreadGalleryCount() }}</span>
+          }
         </button>
         @if (canAccessPrivateArea()) {
           <button
@@ -334,6 +352,9 @@
             (click)="openPrivateGalleryTab()"
           >
             <ion-icon name="people-circle-outline"></ion-icon>
+            @if (unreadPrivateGalleryCount() > 0) {
+              <span class="chat-unread-badge">{{ unreadPrivateGalleryCount() > 9 ? '9+' : unreadPrivateGalleryCount() }}</span>
+            }
           </button>
           <button
             type="button"
@@ -352,33 +373,37 @@
 
       @if (myPendingInvite()) {
         <div class="manager-invite-banner">
-          <p>
-            {{
-              (myPendingInvite()!.role === 'manager' ? 'eventDetail.pendingManagerInviteMessage' : 'eventDetail.pendingAttendeeInviteMessage')
-                | translate
-            }}
-          </p>
-          <div class="manager-invite-actions">
-            <ion-button
-              expand="block"
-              fill="outline"
-              class="decline-invite-btn"
-              [disabled]="inviteResponseBusy()"
-              (click)="respondToManagerInvite(false)"
-            >
-              <ion-icon slot="start" name="close-outline"></ion-icon>
-              {{ 'eventDetail.declineInvite' | translate }}
-            </ion-button>
-            <ion-button
-              expand="block"
-              class="btn-fill"
-              [disabled]="inviteResponseBusy() || isEventOver()"
-              (click)="respondToManagerInvite(true)"
-            >
-              <ion-icon slot="start" name="checkmark-outline"></ion-icon>
-              {{ 'eventDetail.acceptInvite' | translate }}
-            </ion-button>
-          </div>
+          @if (isSelfRequestedPending()) {
+            <p>{{ 'eventDetail.pendingJoinRequestMessage' | translate }}</p>
+          } @else {
+            <p>
+              {{
+                (myPendingInvite()!.role === 'manager' ? 'eventDetail.pendingManagerInviteMessage' : 'eventDetail.pendingAttendeeInviteMessage')
+                  | translate
+              }}
+            </p>
+            <div class="manager-invite-actions">
+              <ion-button
+                expand="block"
+                fill="outline"
+                class="decline-invite-btn"
+                [disabled]="inviteResponseBusy()"
+                (click)="respondToManagerInvite(false)"
+              >
+                <ion-icon slot="start" name="close-outline"></ion-icon>
+                {{ 'eventDetail.declineInvite' | translate }}
+              </ion-button>
+              <ion-button
+                expand="block"
+                class="btn-fill"
+                [disabled]="inviteResponseBusy() || isEventOver()"
+                (click)="respondToManagerInvite(true)"
+              >
+                <ion-icon slot="start" name="checkmark-outline"></ion-icon>
+                {{ 'eventDetail.acceptInvite' | translate }}
+              </ion-button>
+            </div>
+          }
         </div>
       }
 
@@ -550,22 +575,40 @@
 
       @if (canManage()) {
         <div class="actions-row">
-          <ion-button expand="block" fill="outline" (click)="confirmDeleteEvent()">
-            <ion-icon slot="start" name="trash-outline"></ion-icon>
-            {{ 'eventDetail.deleteButton' | translate }}
-          </ion-button>
-          @if (event()!.status === 'finished') {
-            <ion-button expand="block" class="btn-fill" (click)="reuseEvent()">
-              <ion-icon slot="start" name="refresh-outline"></ion-icon>
-              {{ 'eventDetail.reuseButton' | translate }}
+          @if (isOwnEvent()) {
+            <ion-button expand="block" fill="outline" (click)="confirmDeleteEvent()">
+              <ion-icon slot="start" name="trash-outline"></ion-icon>
+              {{ 'eventDetail.deleteButton' | translate }}
             </ion-button>
-          } @else {
+          }
+          <ion-button
+            expand="block"
+            [class.btn-fill]="event()!.status === 'finished'"
+            [fill]="event()!.status === 'finished' ? undefined : 'outline'"
+            (click)="reuseEvent()"
+          >
+            <ion-icon slot="start" name="refresh-outline"></ion-icon>
+            {{ 'eventDetail.reuseButton' | translate }}
+          </ion-button>
+          <!-- Con Eliminar+Editar a la vez (creador, evento no finalizado)
+               Editar baja a su propia fila (ver más abajo) en vez de
+               apretarse en la misma con las otras dos - sin creador, sigue
+               aquí junto a Reutilizar (solo 2 píldoras, cabe bien). -->
+          @if (event()!.status !== 'finished' && !isOwnEvent()) {
             <ion-button expand="block" class="btn-fill" (click)="enterEditMode()">
               <ion-icon slot="start" name="create-outline"></ion-icon>
               {{ 'eventDetail.editButton' | translate }}
             </ion-button>
           }
         </div>
+        @if (event()!.status !== 'finished' && isOwnEvent()) {
+          <div class="actions-row">
+            <ion-button expand="block" class="btn-fill" (click)="enterEditMode()">
+              <ion-icon slot="start" name="create-outline"></ion-icon>
+              {{ 'eventDetail.editButton' | translate }}
+            </ion-button>
+          </div>
+        }
       }
       <section class="section">
         <h2>{{ 'eventDetail.descriptionSection' | translate }}</h2>

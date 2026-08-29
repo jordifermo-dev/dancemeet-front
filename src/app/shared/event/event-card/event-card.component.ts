@@ -3,8 +3,18 @@ import { RouterLink } from '@angular/router';
 import { IonIcon } from '@ionic/angular/standalone';
 import { TranslatePipe } from '@ngx-translate/core';
 import { addIcons } from 'ionicons';
-import { calendarOutline, locationOutline, heart, heartOutline } from 'ionicons/icons';
+import {
+  calendarOutline,
+  locationOutline,
+  heart,
+  heartOutline,
+  peopleOutline,
+  chatbubblesOutline,
+  gridOutline,
+  peopleCircleOutline,
+} from 'ionicons/icons';
 import { EventCardView } from './event-card.model';
+import { StarRatingComponent } from '../../review/star-rating/star-rating.component';
 
 /** Summary card for an event: image on the left, details on the right
  * (creator, title, type/discipline/status tags, date range, address) -
@@ -14,7 +24,7 @@ import { EventCardView } from './event-card.model';
   standalone: true,
   templateUrl: './event-card.component.html',
   styleUrl: './event-card.component.scss',
-  imports: [IonIcon, TranslatePipe, RouterLink],
+  imports: [IonIcon, TranslatePipe, RouterLink, StarRatingComponent],
 })
 export class EventCardComponent {
   @Input({ required: true }) view!: EventCardView;
@@ -37,7 +47,7 @@ export class EventCardComponent {
   @Output() readonly likeToggle = new EventEmitter<string>();
 
   constructor() {
-    addIcons({ calendarOutline, locationOutline, heart, heartOutline });
+    addIcons({ calendarOutline, locationOutline, heart, heartOutline, peopleOutline, chatbubblesOutline, gridOutline, peopleCircleOutline });
   }
 
   get queryParams(): Record<string, string> {

@@ -43,6 +43,7 @@ import { EventTypeService } from '../../../services/event/event-type.service';
 import { EventService } from '../../../services/event/event.service';
 import { EventListRefreshService } from '../../../services/event/event-list-refresh.service';
 import { FavoriteService } from '../../../services/favorites/favorite.service';
+import { AttendanceService } from '../../../services/attendance/attendance.service';
 import { GalleryService } from '../../../services/gallery/gallery.service';
 import { LanguageService } from '../../../services/core/language.service';
 import {
@@ -133,6 +134,7 @@ export class EventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWillEnt
   private readonly eventService = inject(EventService);
   private readonly refreshNotifier = inject(EventListRefreshService);
   private readonly favoriteService = inject(FavoriteService);
+  private readonly attendanceService = inject(AttendanceService);
   private readonly galleryService = inject(GalleryService);
   private readonly authService = inject(AuthService);
   private readonly languageService = inject(LanguageService);
@@ -173,6 +175,7 @@ export class EventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWillEnt
    * no per-event relation of its own (see buildEventCardView), so the heart
    * on each card is driven by this separately-fetched set instead. */
   readonly likedEventIds = signal<Set<string>>(new Set());
+  readonly attendedEventIds = signal<Set<string>>(new Set());
   /** Guards like/unlike requests in flight per event id - a doubled tap
    * otherwise fires the handler twice before the first request's response
    * updates likedEventIds, sending a duplicate add/remove call the backend
@@ -212,8 +215,9 @@ export class EventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWillEnt
     const lang = this.languageService.currentLang();
     const currentUserId = this.authService.currentUser()?.id;
     const likedEventIds = this.likedEventIds();
+    const attendedEventIds = this.attendedEventIds();
     return sortEvents(this.events(), this.sortMode()).map((event) =>
-      buildEventCardView(event, disciplinesById, eventTypesById, lang, currentUserId, likedEventIds),
+      buildEventCardView(event, disciplinesById, eventTypesById, lang, currentUserId, likedEventIds, attendedEventIds),
     );
   });
 
@@ -314,6 +318,7 @@ export class EventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWillEnt
   ionViewWillEnter(): void {
     this.loadEvents(this.searchTerm());
     this.loadLikedEventIds();
+    this.loadAttendedEventIds();
   }
 
   private loadLikedEventIds(): void {
@@ -325,6 +330,21 @@ export class EventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWillEnt
     this.favoriteService.getFavoritedEvents(userId).subscribe({
       next: (events) => this.likedEventIds.set(new Set(events.map((event) => event.id))),
       error: () => this.likedEventIds.set(new Set()),
+    });
+  }
+
+  /** Same idea as loadLikedEventIds above, for the attendee-count icon's
+   * active/grey state - the search results themselves carry no per-viewer
+   * attendance info (see build-event-card-view.ts's attendedEventIds param). */
+  private loadAttendedEventIds(): void {
+    const userId = this.authService.currentUser()?.id;
+    if (!userId) {
+      this.attendedEventIds.set(new Set());
+      return;
+    }
+    this.attendanceService.getAttendedEvents(userId).subscribe({
+      next: (events) => this.attendedEventIds.set(new Set(events.map((event) => event.id))),
+      error: () => this.attendedEventIds.set(new Set()),
     });
   }
 

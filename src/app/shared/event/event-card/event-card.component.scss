@@ -53,6 +53,33 @@
   }
 }
 
+.event-card-stats {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+
+.stat-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--ion-color-medium);
+
+  ion-icon {
+    font-size: 1rem;
+  }
+
+  // Same idea as .like-heart-btn.active below, but teal (this app's primary
+  // color) rather than red - "you attend this" reads as a positive/neutral
+  // fact, not the "liked" heart's urgency.
+  &.active {
+    color: var(--ion-color-primary);
+  }
+}
+
 .like-heart-btn {
   appearance: none;
   border: none;
@@ -60,9 +87,12 @@
   padding: 2px;
   display: flex;
   align-items: center;
+  gap: 2px;
   cursor: pointer;
   flex: 0 0 auto;
   color: var(--ion-color-medium);
+  font-size: 0.72rem;
+  font-weight: 600;
 
   ion-icon {
     font-size: 1.2rem;
@@ -128,6 +158,29 @@
   border-radius: 50%;
   object-fit: cover;
   background: var(--app-surface-card);
+}
+
+// "Urgent activity" red badges (unread messages/new photos), same convention
+// as event-detail.page.scss's .chat-unread-badge - distinct from
+// .stat-badge's passive teal since these mean "something to look at", not
+// just a passive count.
+.event-card-unread-row {
+  display: flex;
+  gap: 8px;
+  margin: 2px 0 0;
+}
+
+.unread-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--ion-color-danger);
+
+  ion-icon {
+    font-size: 0.95rem;
+  }
 }
 
 .event-card-line {

@@ -46,4 +46,23 @@ export interface EventCardView {
    * "like" with no further implications (see AttendanceService for real
    * RSVP/attendance, which the card doesn't expose). */
   isLiked: boolean;
+  /** Whether the logged-in user genuinely attends this event - drives the
+   * attendee-count icon's active (teal) vs grey state, same idea as
+   * isLiked/the heart. */
+  isAttending: boolean;
+  /** Info badges - batch-computed backend-side per list load (see
+   * SearchedEventDto/FavoritedEventDto), not per card. All always render
+   * (0/empty included) - reviewsCount === 0 shows empty stars + "Sin
+   * reseñas", same convention as event-detail's own summary row. */
+  attendeesCount: number;
+  likesCount: number;
+  reviewsCount: number;
+  averageRating: number;
+  /** Unread-message/new-photo badges - undefined (no badge rendered) unless
+   * the backend determined this viewer genuinely attends the event (see
+   * EventWithCreatorName's own doc comment) - only Favoritos/Mis-eventos
+   * ever populate these, not a plain Events-tab search result. */
+  unreadChatCount?: number;
+  unreadGalleryCount?: number;
+  unreadPrivateGalleryCount?: number;
 }

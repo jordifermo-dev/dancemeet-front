@@ -61,17 +61,34 @@
         }
 
         @if (mode === 'attendees' && canManageAttendees()) {
-          @for (participant of pendingParticipants(); track participant.id) {
-            <app-user-card
-              [user]="pendingParticipantUser(participant)"
-              [disciplinesById]="disciplinesById()"
-              [confirmUnfollow]="confirmUnfollowUser"
-              [showEmptyDisciplines]="true"
-              [badgeLabel]="pendingBadgeFor(participant)"
-              badgeIcon="time-outline"
-              [removeAction]="pendingRemoveActionFor(participant)"
-              variant="row"
-            ></app-user-card>
+          @if (pendingRequestedParticipants().length) {
+            <p class="pending-group-label">{{ 'followList.pendingRequestsGroupLabel' | translate }}</p>
+            @for (participant of pendingRequestedParticipants(); track participant.id) {
+              <app-user-card
+                [user]="pendingParticipantUser(participant)"
+                [disciplinesById]="disciplinesById()"
+                [showEmptyDisciplines]="true"
+                [badgeLabel]="pendingBadgeFor(participant)"
+                badgeIcon="time-outline"
+                [extraActions]="joinRequestActionsFor(participant)"
+                variant="row"
+              ></app-user-card>
+            }
+          }
+          @if (pendingInvitedParticipants().length) {
+            <p class="pending-group-label">{{ 'followList.pendingInvitesGroupLabel' | translate }}</p>
+            @for (participant of pendingInvitedParticipants(); track participant.id) {
+              <app-user-card
+                [user]="pendingParticipantUser(participant)"
+                [disciplinesById]="disciplinesById()"
+                [confirmUnfollow]="confirmUnfollowUser"
+                [showEmptyDisciplines]="true"
+                [badgeLabel]="pendingBadgeFor(participant)"
+                badgeIcon="time-outline"
+                [removeAction]="pendingRemoveActionFor(participant)"
+                variant="row"
+              ></app-user-card>
+            }
           }
         }
 

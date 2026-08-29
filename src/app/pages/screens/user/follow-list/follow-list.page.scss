@@ -10,6 +10,16 @@
   padding: 12px 20px 32px;
 }
 
+// Small heading distinguishing "Solicitudes de asistencia" (self-requested,
+// need Aprobar/Rechazar) from "Invitaciones enviadas" (organizer-sent,
+// cancel-only) - same look as user-detail.page.scss's own .group-label.
+.pending-group-label {
+  margin: 16px 0 4px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--ion-color-medium);
+}
+
 .search-row {
   display: flex;
   align-items: center;

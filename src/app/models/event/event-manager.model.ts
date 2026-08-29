@@ -25,5 +25,10 @@ export interface EventManager {
   userDisciplineIds: string[];
   role: EventManagerRole;
   status: EventManagerStatus;
+  /** Who created this row - the organizer who invited (any other id) or the
+   * user themselves (invitedByUserId === userId, a self-requested join, see
+   * EventManagerService.requestToJoin) - follow-list.page.ts uses this to
+   * split "Invitaciones enviadas" from "Solicitudes de asistencia". */
+  invitedByUserId: string;
   createdAt: number;
 }

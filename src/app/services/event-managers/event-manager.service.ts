@@ -29,4 +29,16 @@ export class EventManagerService {
   removeParticipant(eventId: string, userId: string): Observable<{ success: boolean }> {
     return this.http.delete<{ success: boolean }>(`${this.baseUrl}/${eventId}/managers/${userId}`);
   }
+
+  /** Self-serve join request for an event.joinMode === 'approval' event -
+   * distinct from AttendanceService.addAttendance, which only applies to
+   * 'open' events. */
+  requestToJoin(eventId: string): Observable<{ success: boolean }> {
+    return this.http.post<{ success: boolean }>(`${this.baseUrl}/${eventId}/managers/join-request`, {});
+  }
+
+  /** Organizer-side approve/decline of someone else's join request. */
+  respondToJoinRequest(eventId: string, requesterId: string, accept: boolean): Observable<{ success: boolean }> {
+    return this.http.patch<{ success: boolean }>(`${this.baseUrl}/${eventId}/managers/${requesterId}/join-request`, { accept });
+  }
 }
