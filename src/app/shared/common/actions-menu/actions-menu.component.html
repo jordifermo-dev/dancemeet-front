@@ -1,0 +1,29 @@
+<ion-button class="actions-menu-button" (click)="openMenu($event)">
+  <ion-icon slot="icon-only" name="ellipsis-vertical-outline"></ion-icon>
+</ion-button>
+
+<ion-popover [isOpen]="isOpen()" [event]="popoverEvent()" side="bottom" alignment="end" (didDismiss)="onDidDismiss()">
+  <ng-template>
+    <div class="actions-menu-list">
+      @for (group of groups; track $index) {
+        @if ($index > 0) {
+          <div class="actions-menu-divider"></div>
+        }
+        @for (action of group; track action.labelKey) {
+          <button
+            type="button"
+            class="actions-menu-option"
+            [class.danger]="action.color === 'danger'"
+            [disabled]="action.disabled"
+            (click)="select(action)"
+          >
+            <span class="actions-menu-icon-wrap" [class.has-badge]="action.iconBadge">
+              <ion-icon [name]="action.icon"></ion-icon>
+            </span>
+            <span>{{ action.labelKey | translate }}</span>
+          </button>
+        }
+      }
+    </div>
+  </ng-template>
+</ion-popover>

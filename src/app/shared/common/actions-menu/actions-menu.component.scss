@@ -1,0 +1,90 @@
+// Same look/mechanics as view-mode-menu.component.scss - kept as its own
+// copy (not shared) since the two components serve genuinely different
+// purposes (view-mode switching vs a generic action catalog), matching this
+// codebase's existing low-coupling convention between similar-looking pieces.
+.actions-menu-button {
+  --color: var(--ion-color-primary);
+}
+
+ion-popover {
+  --background: var(--app-surface-card);
+  --box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+  --width: 240px;
+}
+
+.actions-menu-list {
+  display: flex;
+  flex-direction: column;
+  padding: 6px;
+}
+
+.actions-menu-option {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: transparent;
+  color: var(--app-text-strong);
+  font-size: 0.92rem;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+
+  ion-icon {
+    font-size: 1.2rem;
+    flex: 0 0 auto;
+  }
+
+  .actions-menu-icon-wrap {
+    position: relative;
+    display: inline-flex;
+    flex: 0 0 auto;
+  }
+
+  &:active {
+    background: var(--ion-color-light-shade);
+  }
+
+  &.danger {
+    color: var(--ion-color-danger);
+  }
+
+  &:disabled {
+    color: var(--ion-color-medium);
+    cursor: default;
+
+    &:active {
+      background: transparent;
+    }
+  }
+}
+
+.actions-menu-divider {
+  height: 1px;
+  margin: 6px 4px;
+  background: var(--ion-color-light-shade);
+}
+
+// Same corner-badge convention as .add-photo-toolbar-button
+// (event-detail.page.scss) - kept as its own copy rather than a shared
+// class, matching this component's existing low-coupling convention.
+.has-badge::after {
+  content: '+';
+  position: absolute;
+  top: -3px;
+  right: -5px;
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  background: var(--ion-color-primary);
+  color: var(--ion-color-primary-contrast);
+  font-size: 0.55rem;
+  font-weight: 700;
+  line-height: 12px;
+  text-align: center;
+  pointer-events: none;
+}

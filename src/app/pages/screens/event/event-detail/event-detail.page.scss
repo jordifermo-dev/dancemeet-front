@@ -335,6 +335,30 @@
 // for sitting in a toolbar).
 .add-photo-toolbar-button {
   --color: var(--ion-color-primary);
+  position: relative;
+
+  // Small "+" corner badge so the bare camera icon reads as "add a photo"
+  // rather than "open the gallery" - same corner-badge convention as
+  // .count-badge/.chat-unread-badge, drawn via ::after (not a light-DOM
+  // span) since ion-button projects its content through a shadow slot and
+  // ::after on the host itself sidesteps any doubt about what that content
+  // ends up positioned against.
+  &::after {
+    content: '+';
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 13px;
+    height: 13px;
+    border-radius: 999px;
+    background: var(--ion-color-primary);
+    color: var(--ion-color-primary-contrast);
+    font-size: 0.6rem;
+    font-weight: 700;
+    line-height: 13px;
+    text-align: center;
+    pointer-events: none;
+  }
 }
 
 // app-photo-editor's own trigger button is replaced by .add-photo-toolbar-

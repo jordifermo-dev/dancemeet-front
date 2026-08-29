@@ -48,6 +48,7 @@ import { disciplineChipItems, eventTypeChipItems, statusChipItems } from '../../
 import { PhotoGridComponent } from '../../../../shared/gallery/photo-grid/photo-grid.component';
 import { LightboxPhoto, PhotoLightboxComponent } from '../../../../shared/gallery/photo-lightbox/photo-lightbox.component';
 import { StarRatingComponent } from '../../../../shared/review/star-rating/star-rating.component';
+import { ActionsMenuComponent, MenuAction } from '../../../../shared/common/actions-menu/actions-menu.component';
 
 const MIN_ZOOM = 3;
 const MAX_ZOOM = 20;
@@ -83,6 +84,7 @@ interface SocialLinkRow {
     PhotoGridComponent,
     PhotoLightboxComponent,
     StarRatingComponent,
+    ActionsMenuComponent,
   ],
 })
 export class UserDetailPage implements ViewWillEnter {
@@ -239,6 +241,45 @@ export class UserDetailPage implements ViewWillEnter {
   readonly showLocation = computed(() => {
     const user = this.user();
     return !!user && (user.showCity || user.showLocation);
+  });
+
+  /** Toolbar "⋮" catalog - reuses the exact same handlers .actions-section's
+   * own buttons already call, just reachable from the Galería tab too (those
+   * buttons only render in Información) - see
+   * 10_menu-acciones-tres-puntos.md. Same followActionBusy() guard those
+   * buttons already use. Empty (menu hidden) for your own profile, same as
+   * .actions-section itself. A single group - .actions-section itself has no
+   * internal divider between its own buttons, so the menu doesn't add one
+   * either. */
+  readonly menuActions = computed<MenuAction[][]>(() => {
+    if (!this.user() || this.isMe()) {
+      return [];
+    }
+    const busy = this.followActionBusy();
+    const group: MenuAction[] = [];
+    if (this.amFollowing()) {
+      group.push({
+        labelKey: 'userDetail.unfollowButton',
+        icon: 'person-remove-outline',
+        onClick: () => this.confirmUnfollow(),
+        disabled: busy,
+      });
+    }
+    if (this.isMyFollower()) {
+      group.push({
+        labelKey: 'userDetail.removeFollowerButton',
+        icon: 'person-remove-outline',
+        onClick: () => this.confirmRemoveFollower(),
+        disabled: busy,
+      });
+    }
+    if (!this.amFollowing() && !this.isMyFollower()) {
+      group.push({ labelKey: 'userDetail.followButton', icon: 'person-add-outline', onClick: () => this.follow(), disabled: busy });
+    }
+    if (this.canSaveContact()) {
+      group.push({ labelKey: 'userDetail.saveContactButton', icon: 'download-outline', onClick: () => this.saveContact() });
+    }
+    return group.length ? [group] : [];
   });
 
   readonly zoomLevel = signal(15);

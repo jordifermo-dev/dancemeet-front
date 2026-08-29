@@ -4,6 +4,11 @@
       <ion-back-button defaultHref="/tabs/profile" text=""></ion-back-button>
     </ion-buttons>
     <ion-title>{{ user()?.name }}</ion-title>
+    @if (menuActions().length) {
+      <ion-buttons slot="end">
+        <app-actions-menu [groups]="menuActions()"></app-actions-menu>
+      </ion-buttons>
+    }
   </ion-toolbar>
 </ion-header>
 

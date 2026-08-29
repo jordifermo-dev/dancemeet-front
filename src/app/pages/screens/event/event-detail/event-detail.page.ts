@@ -136,6 +136,7 @@ import { canManageEvent, findMyParticipantRow } from '../../../../shared/event/e
 import { PhotoGridComponent } from '../../../../shared/gallery/photo-grid/photo-grid.component';
 import { LightboxAction, LightboxPhoto, PhotoLightboxComponent } from '../../../../shared/gallery/photo-lightbox/photo-lightbox.component';
 import { StarRatingComponent } from '../../../../shared/review/star-rating/star-rating.component';
+import { ActionsMenuComponent, MenuAction } from '../../../../shared/common/actions-menu/actions-menu.component';
 
 const MIN_ZOOM = 3;
 const MAX_ZOOM = 20;
@@ -244,6 +245,7 @@ function withTimePart(base: number, timeValue: string): number {
     PhotoGridComponent,
     PhotoLightboxComponent,
     StarRatingComponent,
+    ActionsMenuComponent,
   ],
 })
 export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnter, ViewWillLeave {
@@ -408,6 +410,114 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
     }
     return reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length;
   });
+
+  // --- "⋮" action catalog (toolbar) ---------------------------------------
+
+  /** Not tied to whichever gallery tab happens to be active - kept mounted
+   * (invisible, see .hidden-photo-editor) any time there's posting
+   * permission at all, so addPhotoTo() below can open it from any tab. */
+  private readonly galleryPhotoEditorRef = viewChild<PhotoEditorComponent>('galleryPhotoEditorRef');
+
+  /** Reuses every handler the page's own buttons/pills already call - this
+   * menu doesn't replace them (see 10_menu-acciones-tres-puntos.md), it's
+   * just reachable from any tab instead of only the one each action's own
+   * button happens to live in. Same disabled guards as each equivalent
+   * button too (isEventOver/attendLoading/likeLoading - canManage() itself
+   * is handled by simply omitting attend/like, same as those buttons being
+   * hidden rather than disabled for an organizer). Grouped (with a divider
+   * between groups) to mirror how these are already presented on screen:
+   * icon-style actions (attend/attendees/like, reviews, add photo) each get
+   * their own group, while the two .actions-row pill buttons (calendar/
+   * share, delete/edit) are kept as one contiguous group in their exact
+   * on-screen order, with nothing else interleaved between them. */
+  readonly menuActions = computed<MenuAction[][]>(() => {
+    const event = this.event();
+    if (!event) {
+      return [];
+    }
+    const groups: MenuAction[][] = [];
+
+    const statusGroup: MenuAction[] = [];
+    if (!this.canManage()) {
+      statusGroup.push({
+        labelKey: this.isAttending() ? 'eventDetail.unattendButton' : 'eventDetail.attendButton',
+        icon: this.isAttending() ? 'person-remove-outline' : 'person-add-outline',
+        onClick: () => this.toggleAttend(),
+        disabled: this.attendLoading() || this.isEventOver(),
+      });
+    }
+    statusGroup.push({ labelKey: 'eventDetail.attendeesLabel', icon: 'people-outline', onClick: () => this.goToAttendees() });
+    if (!this.canManage()) {
+      statusGroup.push({
+        labelKey: this.isLiked() ? 'eventDetail.unlikeButton' : 'eventDetail.likeButton',
+        icon: this.isLiked() ? 'heart' : 'heart-outline',
+        onClick: () => this.toggleLike(),
+        disabled: this.likeLoading(),
+      });
+    }
+    // La fila de reseñas vive justo debajo, en la misma "zona" de iconos de
+    // acción que asistir/asistentes/corazón - mismo grupo, no uno propio.
+    statusGroup.push({ labelKey: 'eventDetail.reviewsSection', icon: 'star-outline', onClick: () => this.openReviewsTab() });
+    groups.push(statusGroup);
+
+    const photoGroup: MenuAction[] = [];
+    if (this.canPostPhoto()) {
+      photoGroup.push({
+        labelKey: 'eventDetail.addPhotoPublic',
+        icon: 'camera-outline',
+        iconBadge: true,
+        onClick: () => this.addPhotoTo('gallery'),
+      });
+    }
+    if (this.canAccessPrivateArea()) {
+      photoGroup.push({
+        labelKey: 'eventDetail.addPhotoPrivate',
+        icon: 'camera-outline',
+        iconBadge: true,
+        onClick: () => this.addPhotoTo('privateGallery'),
+      });
+    }
+    if (photoGroup.length) {
+      groups.push(photoGroup);
+    }
+
+    // Las dos .actions-row de la pantalla (calendario/compartir y
+    // eliminar/editar) van en un único grupo contiguo, en el mismo orden
+    // en que aparecen esas filas en pantalla - ninguna otra opción del menú
+    // se intercala entre ellas, aunque en pantalla sean dos filas separadas.
+    const actionsRowGroup: MenuAction[] = [
+      { labelKey: 'eventDetail.calendarButton', icon: 'download-outline', onClick: () => this.addToCalendar() },
+      { labelKey: 'eventDetail.shareButton', icon: 'share-social-outline', onClick: () => this.openSharePreview() },
+    ];
+    if (this.canManage()) {
+      actionsRowGroup.push(
+        { labelKey: 'eventDetail.deleteButton', icon: 'trash-outline', onClick: () => this.confirmDeleteEvent(), color: 'danger' },
+        event.status === 'finished'
+          ? { labelKey: 'eventDetail.reuseButton', icon: 'refresh-outline', onClick: () => this.reuseEvent() }
+          : { labelKey: 'eventDetail.editButton', icon: 'create-outline', onClick: () => this.enterEditMode() },
+      );
+    }
+    groups.push(actionsRowGroup);
+
+    return groups;
+  });
+
+  /** Switches to the target gallery tab first (mirrors what tapping that
+   * tab's own camera button already does) so onGalleryPhotoUploaded's
+   * detailViewMode()-based routing still sends the upload to the right
+   * endpoint - the photo-editor itself is already mounted regardless of tab
+   * (see galleryPhotoEditorRef's own comment), so no extra delay is needed
+   * for it to exist by the time this runs. */
+  addPhotoTo(target: 'gallery' | 'privateGallery'): void {
+    this.detailViewMode.set(target);
+    this.galleryPhotoEditorRef()?.openChooser();
+  }
+
+  /** The toolbar's own camera button (visible only while already on the
+   * matching gallery tab) - no tab switch needed, unlike addPhotoTo above. */
+  openPhotoChooser(): void {
+    this.galleryPhotoEditorRef()?.openChooser();
+  }
 
   /** Set only when a photo mention thumbnail from the xat couldn't be found
    * in either gallery anymore (deleted since being mentioned) - a minimal

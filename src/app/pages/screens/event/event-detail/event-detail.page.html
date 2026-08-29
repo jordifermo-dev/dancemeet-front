@@ -4,31 +4,38 @@
       <ion-back-button defaultHref="/tabs/explorer" text=""></ion-back-button>
     </ion-buttons>
     <ion-title>{{ isCreateMode() ? ('eventDetail.createTitle' | translate) : event()?.title }}</ion-title>
-    @if (
-      !isCreateMode() &&
-      !isEditMode() &&
-      ((detailViewMode() === 'gallery' && canPostPhoto()) ||
-        (detailViewMode() === 'privateGallery' && canAccessPrivateArea()))
-    ) {
+    @if (!isCreateMode() && !isEditMode()) {
       <ion-buttons slot="end">
-        <ion-button
-          class="add-photo-toolbar-button"
-          [attr.aria-label]="'gallery.addPhoto' | translate"
-          (click)="galleryPhotoEditorRef.openChooser()"
-        >
-          <ion-icon slot="icon-only" name="camera-outline"></ion-icon>
-        </ion-button>
-        <app-photo-editor
-          #galleryPhotoEditorRef
-          class="hidden-photo-editor"
-          kind="gallery"
-          aspect="gallery"
-          nameForFile="galeria"
-          (uploaded)="onGalleryPhotoUploaded($event)"
-        ></app-photo-editor>
+        @if (
+          (detailViewMode() === 'gallery' && canPostPhoto()) || (detailViewMode() === 'privateGallery' && canAccessPrivateArea())
+        ) {
+          <ion-button
+            class="add-photo-toolbar-button"
+            [attr.aria-label]="'gallery.addPhoto' | translate"
+            (click)="openPhotoChooser()"
+          >
+            <ion-icon slot="icon-only" name="camera-outline"></ion-icon>
+          </ion-button>
+        }
+        <app-actions-menu [groups]="menuActions()"></app-actions-menu>
       </ion-buttons>
     }
   </ion-toolbar>
+  <!-- Siempre montado (aunque invisible) mientras haya algún permiso de
+       publicar - no solo en la pestaña de galería que toque, para que tanto
+       el botón de cámara de arriba como las entradas "Añadir foto a..." del
+       menú ⋮ (alcanzables desde cualquier pestaña) puedan abrirlo sin
+       depender de en qué pestaña se está. -->
+  @if (!isCreateMode() && !isEditMode() && (canPostPhoto() || canAccessPrivateArea())) {
+    <app-photo-editor
+      #galleryPhotoEditorRef
+      class="hidden-photo-editor"
+      kind="gallery"
+      aspect="gallery"
+      nameForFile="galeria"
+      (uploaded)="onGalleryPhotoUploaded($event)"
+    ></app-photo-editor>
+  }
 </ion-header>
 
 <ion-content [fullscreen]="true" class="event-detail-content">
@@ -290,12 +297,14 @@
         </div>
       </div>
 
-      @if (reviews().length) {
-        <button type="button" class="reviews-summary-row" (click)="openReviewsTab()">
-          <app-star-rating [value]="averageRating()" [readonly]="true" size="small"></app-star-rating>
+      <button type="button" class="reviews-summary-row" (click)="openReviewsTab()">
+        <app-star-rating [value]="averageRating()" [readonly]="true" size="small"></app-star-rating>
+        @if (reviews().length) {
           <span class="reviews-summary-count">{{ averageRating().toFixed(1) }} · {{ reviews().length }}</span>
-        </button>
-      }
+        } @else {
+          <span class="reviews-summary-count">{{ 'eventDetail.reviewsNoneYet' | translate }}</span>
+        }
+      </button>
 
       <!-- Par de iconos estilo Instagram (Información/Galería) - mismo
            patrón/estilo que user-detail.page.html. -->
