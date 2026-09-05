@@ -13,6 +13,8 @@ import {
   IonIcon,
   IonButton,
   IonModal,
+  IonToggle,
+  IonItem,
   ViewWillEnter,
 } from '@ionic/angular/standalone';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
@@ -72,6 +74,8 @@ const SORT_OPTIONS: { id: SortMode; labelKey: string }[] = [
     IonIcon,
     IonButton,
     IonModal,
+    IonToggle,
+    IonItem,
     TranslatePipe,
     UserCardComponent,
     FilterSheetHeaderComponent,
@@ -126,6 +130,13 @@ export class FollowListPage implements ViewWillEnter {
       selected: this.draftDisciplineFilterIds().includes(discipline.id),
     })),
   );
+  /** 'attendees' mode only - when on, hides the confirmed/new groups
+   * entirely so the organizer can jump straight to whoever's still pending
+   * (join requests + sent invites), which already render at the top of the
+   * list regardless of this filter. Same draft/apply/clear flow as the
+   * discipline chips above, in the same filter sheet. */
+  readonly draftPendingOnlyFilter = signal(false);
+  readonly appliedPendingOnlyFilter = signal(false);
 
   readonly showConfirmModal = signal(false);
   readonly confirmTitleKey = signal('');
@@ -412,6 +423,7 @@ export class FollowListPage implements ViewWillEnter {
 
   openFilterModal(): void {
     this.draftDisciplineFilterIds.set([...this.appliedDisciplineFilterIds()]);
+    this.draftPendingOnlyFilter.set(this.appliedPendingOnlyFilter());
     this.isFilterModalOpen.set(true);
   }
 
@@ -421,17 +433,24 @@ export class FollowListPage implements ViewWillEnter {
     );
   }
 
-  readonly disciplineApplyFlash = createApplyFlash(() => this.isFilterModalOpen.set(false));
-
-  applyDisciplineFilter(): void {
-    this.appliedDisciplineFilterIds.set(this.draftDisciplineFilterIds());
-    this.disciplineApplyFlash.trigger();
+  toggleDraftPendingOnly(): void {
+    this.draftPendingOnlyFilter.update((value) => !value);
   }
 
-  clearDisciplineFilter(): void {
+  readonly filterApplyFlash = createApplyFlash(() => this.isFilterModalOpen.set(false));
+
+  applyFilters(): void {
+    this.appliedDisciplineFilterIds.set(this.draftDisciplineFilterIds());
+    this.appliedPendingOnlyFilter.set(this.draftPendingOnlyFilter());
+    this.filterApplyFlash.trigger();
+  }
+
+  clearFilters(): void {
     const allIds = this.disciplines().map((d) => d.id);
     this.draftDisciplineFilterIds.set(allIds);
     this.appliedDisciplineFilterIds.set(allIds);
+    this.draftPendingOnlyFilter.set(false);
+    this.appliedPendingOnlyFilter.set(false);
     this.isFilterModalOpen.set(false);
   }
 

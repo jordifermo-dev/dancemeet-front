@@ -163,8 +163,11 @@ export class FavoritesPage implements OnInit, AfterViewInit, OnDestroy, ViewWill
     const wantsAttendee = relations.includes('attendee');
 
     return this.allEvents()
-      .filter((event) => event.disciplineIds.some((id) => disciplineIds.includes(id)))
-      .filter((event) => event.typeIds.some((id) => typeIds.includes(id)))
+      // A draft that hasn't set a discipline/type/date/location yet always
+      // passes those filter dimensions - there's nothing to filter on, and
+      // it shouldn't disappear from Favoritos just for being incomplete.
+      .filter((event) => !event.disciplineIds?.length || event.disciplineIds.some((id) => disciplineIds.includes(id)))
+      .filter((event) => !event.typeIds?.length || event.typeIds.some((id) => typeIds.includes(id)))
       .filter((event) => statuses.includes(event.status))
       .filter((event) => {
         const isOrganizer = event.relation === 'creator';
@@ -172,11 +175,11 @@ export class FavoritesPage implements OnInit, AfterViewInit, OnDestroy, ViewWill
         return (wantsOrganizer && isOrganizer) || (wantsAttendee && isAttendee);
       })
       .filter((event) => priceOptions.includes(event.isFree ? 'free' : 'paid'))
-      .filter((event) => dateFrom === undefined || event.eventDateFrom >= dateFrom)
-      .filter((event) => dateTo === undefined || event.eventDateFrom <= dateTo)
+      .filter((event) => dateFrom === undefined || event.eventDateFrom === undefined || event.eventDateFrom >= dateFrom)
+      .filter((event) => dateTo === undefined || event.eventDateFrom === undefined || event.eventDateFrom <= dateTo)
       .filter((event) => !term || event.title.toLowerCase().includes(term) || event.creatorName.toLowerCase().includes(term))
       .filter((event) => {
-        if (lat === null || lng === null) {
+        if (lat === null || lng === null || event.latitude === undefined || event.longitude === undefined) {
           return true;
         }
         return haversineDistanceMeters(lat, lng, event.latitude, event.longitude) <= radiusMeters;

@@ -22,6 +22,7 @@ import {
 } from 'firebase/auth';
 import { firebaseAuth } from './firebase';
 import { UserService } from '../user/user.service';
+import { NotificationService } from '../notifications/notification.service';
 import { LanguageService, SUPPORTED_LANGUAGES } from './language.service';
 import { User } from '../../models';
 
@@ -60,6 +61,7 @@ function isMobileWebBrowser(): boolean {
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly userService = inject(UserService);
+  private readonly notificationService = inject(NotificationService);
   private readonly languageService = inject(LanguageService);
   private readonly translate = inject(TranslateService);
 
@@ -270,6 +272,14 @@ export class AuthService {
   }
 
   async logout(): Promise<void> {
+    // Before signOut, not after - this device's push token must stop being
+    // this account's the moment it signs out, not linger until someone else
+    // happens to log in on it later (see NotificationService.unregisterToken's
+    // own doc comment on the shared/test-device scenario this guards against).
+    const userId = this.currentUser()?.id;
+    if (userId) {
+      await this.notificationService.unregisterToken(userId);
+    }
     await signOut(firebaseAuth);
     this.currentUser.set(null);
   }

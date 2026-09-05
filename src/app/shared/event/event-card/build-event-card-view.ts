@@ -37,11 +37,11 @@ export function buildEventCardView(
    * "creator" one, does NOT by itself imply attendance. */
   attendedEventIds?: ReadonlySet<string>,
 ): EventCardView {
-  const eventTypeTags = event.typeIds
+  const eventTypeTags = (event.typeIds ?? [])
     .map((id) => eventTypesById.get(id))
     .filter((eventType): eventType is EventType => !!eventType)
     .map((eventType) => ({ name: eventType.name, iconUrl: eventTypeIconUrl(eventType.name) }));
-  const disciplineTags = event.disciplineIds
+  const disciplineTags = (event.disciplineIds ?? [])
     .map((id) => disciplinesById.get(id))
     .filter((discipline): discipline is Discipline => !!discipline)
     .map((discipline) => ({ name: discipline.name, iconUrl: disciplineIconUrl(discipline) }));
@@ -62,12 +62,17 @@ export function buildEventCardView(
     status: event.status,
     statusLabelKey: STATUS_LABEL_KEYS[event.status],
     statusIconUrl: statusIconUrl(event.status),
-    dateLabel: formatEventDateRange(event.eventDateFrom, event.eventDateTo, lang),
+    // A draft may not have its dates set yet - the card hides the date line
+    // instead of formatting an undefined range.
+    dateLabel:
+      event.eventDateFrom !== undefined && event.eventDateTo !== undefined
+        ? formatEventDateRange(event.eventDateFrom, event.eventDateTo, lang)
+        : undefined,
     address: event.address,
     city: event.city,
     isFree: event.isFree,
     price: event.price,
-    isFaded: event.status === 'finished' || event.status === 'cancelled',
+    isFaded: event.status === 'finished' || event.status === 'cancelled' || event.status === 'draft',
     relationLabelKey: event.relation ? RELATION_BADGE_KEYS[event.relation] : undefined,
     relation: event.relation,
     isOwnEvent,

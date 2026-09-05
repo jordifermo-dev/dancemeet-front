@@ -476,7 +476,20 @@ export class NotificationsPage implements ViewWillEnter, AfterViewInit, OnDestro
     if (item.type === 'gallery_photo_attending' || item.type === 'gallery_photo_followed') {
       return { openGallery: item.data?.['gallery'] === 'private' ? 'private' : 'public' };
     }
+    if (item.type === 'event_join_request') {
+      // /attendees takes the event as a query param, not a path segment
+      // (see eventCardLinkFor below).
+      const eventId = item.data?.['eventId'];
+      return typeof eventId === 'string' ? { eventId } : undefined;
+    }
     return undefined;
+  }
+
+  /** A join request is about the Attendees list, not the event itself -
+   * tapping it should land the organizer straight where they can
+   * approve/decline the request, not on the event's read-only detail page. */
+  eventCardLinkFor(item: AppNotification): string[] | undefined {
+    return item.type === 'event_join_request' ? ['/attendees'] : undefined;
   }
 
   followUserFor(item: AppNotification): FollowUser | undefined {

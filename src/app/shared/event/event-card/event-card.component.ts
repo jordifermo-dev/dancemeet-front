@@ -12,6 +12,7 @@ import {
   chatbubblesOutline,
   gridOutline,
   peopleCircleOutline,
+  imageOutline,
 } from 'ionicons/icons';
 import { EventCardView } from './event-card.model';
 import { StarRatingComponent } from '../../review/star-rating/star-rating.component';
@@ -40,6 +41,10 @@ export class EventCardComponent {
    * pendingOpenGalleryFromNotification), same as tapping the equivalent OS
    * push notification already does via NotificationService. */
   @Input() extraQueryParams?: Record<string, string>;
+  /** Overrides the card's default target (`/events/:id`) - e.g. the
+   * notifications inbox points a join-request notification's card straight
+   * at the Attendees list instead of the event's own detail page. */
+  @Input() linkTo?: string[];
   /** The card itself stays a pure, presentational component with no service
    * dependencies of its own (see event-card.model.ts) - the page decides what
    * liking/unliking actually does (call FavoriteService, update its
@@ -47,7 +52,7 @@ export class EventCardComponent {
   @Output() readonly likeToggle = new EventEmitter<string>();
 
   constructor() {
-    addIcons({ calendarOutline, locationOutline, heart, heartOutline, peopleOutline, chatbubblesOutline, gridOutline, peopleCircleOutline });
+    addIcons({ calendarOutline, locationOutline, heart, heartOutline, peopleOutline, chatbubblesOutline, gridOutline, peopleCircleOutline, imageOutline });
   }
 
   get queryParams(): Record<string, string> {

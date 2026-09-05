@@ -5,7 +5,9 @@ import { EventRelation, EventStatus } from '../../../models';
  * presentational component with no service dependencies of its own. */
 export interface EventCardView {
   id: string;
-  imageUrl: string;
+  /** Undefined for a draft that hasn't set a cover photo yet - the card
+   * renders a placeholder instead of an empty/broken <img>. */
+  imageUrl?: string;
   title: string;
   creatorId: string;
   creatorName: string;
@@ -20,15 +22,20 @@ export interface EventCardView {
   status: EventStatus;
   statusLabelKey: string;
   statusIconUrl: string;
-  dateLabel: string;
-  address: string;
-  city: string;
+  /** Undefined for a draft that hasn't set its dates yet - the date line is
+   * hidden rather than rendered blank. */
+  dateLabel?: string;
+  /** Undefined for a draft that hasn't set a location yet - the location
+   * line is hidden rather than rendered as ", ". */
+  address?: string;
+  city?: string;
   isFree: boolean;
   /** Only meaningful when !isFree - the card shows this value with a € suffix
    * instead of the "Gratis" badge. */
   price: number;
-  /** True for finished/cancelled events, which render faded rather than
-   * hidden - they're still part of "my events", just no longer actionable. */
+  /** True for finished/cancelled/draft events, which render faded rather
+   * than hidden - they're still part of "my events", just no longer (or not
+   * yet, for a draft) actionable the way a published event is. */
   isFaded: boolean;
   /** Translation key for the "you organize it / you're attending it" badge -
    * omit to hide the badge entirely (e.g. a future Events tab listing that

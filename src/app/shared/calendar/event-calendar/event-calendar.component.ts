@@ -149,7 +149,10 @@ export class EventCalendarComponent implements AfterViewInit, OnDestroy {
     const currentUserId = this.authService.currentUser()?.id;
     const likedEventIds = this.likedEventIds();
     const attendedEventIds = this.attendedEventIds();
-    const dayEvents = this.events().filter((event) => event.eventDateFrom <= dayEnd && event.eventDateTo >= dayStart);
+    // A draft with no dates set yet simply can't be placed on any day.
+    const dayEvents = this.events().filter(
+      (event) => event.eventDateFrom !== undefined && event.eventDateTo !== undefined && event.eventDateFrom <= dayEnd && event.eventDateTo >= dayStart,
+    );
     return sortEvents(dayEvents, this.sortMode()).map((event) =>
       buildEventCardView(event, disciplinesById, eventTypesById, lang, currentUserId, likedEventIds, attendedEventIds),
     );

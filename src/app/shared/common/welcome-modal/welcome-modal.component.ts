@@ -154,7 +154,9 @@ const PROFILE_DISCIPLINES = DISCIPLINE_NAMES.map((name) => ({
   selected: SELECTED_DISCIPLINES.has(name),
 }));
 
-const PROFILE_STATUSES = EVENT_STATUSES.map((id) => ({
+// 'draft' is never a valid preference here - it's never visible to anyone
+// but its own creator, and never announced.
+const PROFILE_STATUSES = EVENT_STATUSES.filter((id) => id !== 'draft').map((id) => ({
   id,
   iconUrl: `/assets/icons/status/${STATUS_ICON_FILES[id]}`,
   labelKey: STATUS_LABEL_KEYS[id],

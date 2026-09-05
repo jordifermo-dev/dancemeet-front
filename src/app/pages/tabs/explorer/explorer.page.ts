@@ -55,7 +55,9 @@ import { createApplyFlash } from '../../../shared/common/success-flash';
 import { ThemeService } from '../../../services/core/theme.service';
 import { ExplorerFiltersService, DateQuickOption } from '../../../services/filters/explorer-filters.service';
 
-const STATUS_OPTIONS = EVENT_STATUSES.map((id) => ({ id, labelKey: STATUS_LABEL_KEYS[id] }));
+// 'draft' is never a valid filter choice in the public explorer - it's
+// never visible to anyone but its own creator.
+const STATUS_OPTIONS = EVENT_STATUSES.filter((id) => id !== 'draft').map((id) => ({ id, labelKey: STATUS_LABEL_KEYS[id] }));
 const PRICE_OPTIONS: { id: PriceOption; labelKey: string }[] = [
   { id: 'free', labelKey: 'explorer.priceFreeOption' },
   { id: 'paid', labelKey: 'explorer.pricePaidOption' },
@@ -203,18 +205,23 @@ export class ExplorerPage implements OnInit, ViewWillEnter {
 
   readonly markers = computed<MapMarkerData[]>(() => {
     const byId = this.disciplinesById();
-    return this.events().map((event) => {
-      const disciplines = event.disciplineIds.map((id) => byId.get(id)).filter((d): d is Discipline => !!d);
-      if (!disciplines.length) {
-        return { event, position: { lat: event.latitude, lng: event.longitude }, options: {} };
-      }
-      const icon = buildDisciplineMarkerIcon(disciplines);
-      return {
-        event,
-        position: { lat: event.latitude, lng: event.longitude },
-        options: { icon: { url: icon.url, scaledSize: icon.size } },
-      };
-    });
+    // The explorer never returns drafts (backend-enforced), but a marker
+    // needs real coordinates regardless - skip anything without them rather
+    // than trusting that invariant here too.
+    return this.events()
+      .filter((event) => event.latitude !== undefined && event.longitude !== undefined)
+      .map((event) => {
+        const disciplines = (event.disciplineIds ?? []).map((id) => byId.get(id)).filter((d): d is Discipline => !!d);
+        if (!disciplines.length) {
+          return { event, position: { lat: event.latitude!, lng: event.longitude! }, options: {} };
+        }
+        const icon = buildDisciplineMarkerIcon(disciplines);
+        return {
+          event,
+          position: { lat: event.latitude!, lng: event.longitude! },
+          options: { icon: { url: icon.url, scaledSize: icon.size } },
+        };
+      });
   });
 
   readonly isEventTypeModalOpen = signal(false);

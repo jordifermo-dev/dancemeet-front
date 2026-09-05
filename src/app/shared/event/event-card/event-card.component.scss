@@ -23,6 +23,18 @@
   background: var(--ion-color-light);
 }
 
+// A draft may not have a cover photo yet - shown in place of the <img>.
+.event-card-image-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  ion-icon {
+    font-size: 2rem;
+    color: var(--ion-color-medium);
+  }
+}
+
 .event-card-body {
   flex: 1;
   min-width: 0;

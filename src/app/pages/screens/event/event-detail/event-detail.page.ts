@@ -64,6 +64,7 @@ import {
   happyOutline,
   ellipsisHorizontalOutline,
   starOutline,
+  saveOutline,
 } from 'ionicons/icons';
 import { AuthService } from '../../../../services/core/auth.service';
 import { EventService } from '../../../../services/event/event.service';
@@ -151,7 +152,10 @@ const ADDITIONAL_INFO_MAX_LENGTH = 200;
 const STATUS_OPTIONS = EVENT_STATUSES.map((id) => ({ id, labelKey: STATUS_LABEL_KEYS[id] }));
 // "Finalizado" isn't a manual choice - it should reflect that the event's date
 // has already passed, not something the organizer picks when creating/editing.
-const EDITABLE_STATUS_OPTIONS = STATUS_OPTIONS.filter((option) => option.id !== 'finished');
+// "Borrador" isn't a chip choice either - the organizer enters/leaves it only
+// via the Guardar borrador/Publicar buttons (see saveEdit()), never by
+// toggling a status chip mid-edit.
+const EDITABLE_STATUS_OPTIONS = STATUS_OPTIONS.filter((option) => option.id !== 'finished' && option.id !== 'draft');
 const DEFAULT_EVENT_DURATION_MS = 2 * 60 * 60 * 1000;
 // Fixed quick-reaction set (v1 scope, see xat-privado-evento.md) - same
 // criterion as Slack/Facebook's own quick bar, not a free emoji picker.
@@ -288,6 +292,11 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
   readonly savedFlash = createSuccessFlash();
   readonly isEditMode = signal(false);
   readonly isCreateMode = signal(false);
+  /** Whether "Guardar borrador" makes sense in the current form: creating a
+   * brand-new event, or continuing to edit one that's still a draft. An
+   * already-published/cancelled/finished event has no "save as draft" path
+   * back - draft is entered only once, never re-entered. */
+  readonly canSaveAsDraft = computed(() => this.isCreateMode() || this.event()?.status === 'draft');
   readonly showValidationModal = signal(false);
   readonly showDateInvalidModal = signal(false);
   /** Plain "me gusta" - the heart. See isAttending below for the real RSVP. */
@@ -1205,7 +1214,7 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
       return [];
     }
     const byId = this.eventTypesById();
-    return event.typeIds
+    return (event.typeIds ?? [])
       .map((id) => byId.get(id))
       .filter((eventType): eventType is EventType => !!eventType)
       .map((eventType) => ({ name: eventType.name, iconUrl: eventTypeIconUrl(eventType.name) }));
@@ -1216,7 +1225,7 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
       return [];
     }
     const byId = this.disciplinesById();
-    return event.disciplineIds
+    return (event.disciplineIds ?? [])
       .map((id) => byId.get(id))
       .filter((discipline): discipline is Discipline => !!discipline)
       .map((discipline) => ({ name: discipline.name, iconUrl: disciplineIconUrl(discipline) }));
@@ -1230,7 +1239,7 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
 
   readonly dateLabel = computed(() => {
     const event = this.event();
-    if (!event) {
+    if (!event || event.eventDateFrom === undefined || event.eventDateTo === undefined) {
       return '';
     }
     return formatEventDateRange(event.eventDateFrom, event.eventDateTo, this.languageService.currentLang());
@@ -1412,13 +1421,25 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
    * incomplete form quietly lost whatever had been typed with no feedback. */
   onUnsavedChangesModalDismiss(): void {
     if (this.pendingLeaveApplied) {
-      if (!this.editValid()) {
+      // canSaveAsDraft(): "Aplicar" means "Guardar borrador" here (see the
+      // modal's own titleKey/message in the template) - only a title is
+      // required, not the full publish validation.
+      if (this.canSaveAsDraft()) {
+        if (!this.editForm.controls.title.value?.trim()) {
+          this.editForm.controls.title.markAsTouched();
+          this.pendingLeaveResolve?.(false);
+          this.pendingLeaveResolve = null;
+          return;
+        }
+        this.saveEdit('draft');
+      } else if (!this.editValid()) {
         this.showValidationModal.set(true);
         this.pendingLeaveResolve?.(false);
         this.pendingLeaveResolve = null;
         return;
+      } else {
+        this.saveEdit();
       }
-      this.saveEdit();
     } else if (this.event()) {
       // Existing event: revert the form to the last-saved state. Nothing to
       // revert to in create mode - the page is being navigated away from anyway.
@@ -1640,6 +1661,7 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
       happyOutline,
       ellipsisHorizontalOutline,
       starOutline,
+      saveOutline,
     });
 
     effect(() => {
@@ -1893,14 +1915,14 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
       price: source.price,
       joinMode: source.joinMode,
     });
-    this.editTypeIds.set([...source.typeIds]);
-    this.editDisciplineIds.set([...source.disciplineIds]);
-    this.editDateFrom.set(source.eventDateFrom);
-    this.editDateTo.set(source.eventDateTo);
-    this.editAddress.set(source.address);
-    this.editCity.set(source.city);
-    this.editLatitude.set(source.latitude);
-    this.editLongitude.set(source.longitude);
+    this.editTypeIds.set([...(source.typeIds ?? [])]);
+    this.editDisciplineIds.set([...(source.disciplineIds ?? [])]);
+    this.editDateFrom.set(source.eventDateFrom ?? Date.now());
+    this.editDateTo.set(source.eventDateTo ?? Date.now() + DEFAULT_EVENT_DURATION_MS);
+    this.editAddress.set(source.address ?? '');
+    this.editCity.set(source.city ?? '');
+    this.editLatitude.set(source.latitude ?? 0);
+    this.editLongitude.set(source.longitude ?? 0);
     this.editCitySuggestions.set([]);
   }
 
@@ -1910,6 +1932,14 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
         this.event.set(event);
         this.notFound.set(!event);
         this.loading.set(false);
+        // A draft has no meaningful read-only view (no real attendees, most
+        // fields possibly still empty) - the backend already only ever
+        // returns someone's own draft to them (see EventService.getEventById),
+        // so landing here at all means this is the creator continuing it.
+        if (event?.status === 'draft') {
+          this.enterEditMode();
+          return;
+        }
         this.refreshLikedState(event);
         this.refreshAttendanceState(event);
         this.refreshAttendeesCount(id);
@@ -2079,10 +2109,21 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
       return;
     }
     this.calendarFlash.trigger();
+    // Only reachable from the published (non-draft) detail view - every
+    // field below is always set by then, these fallbacks just satisfy the type.
+    const calendarEvent = {
+      id: event.id,
+      title: event.title,
+      description: event.description ?? '',
+      address: event.address ?? '',
+      city: event.city ?? '',
+      eventDateFrom: event.eventDateFrom ?? Date.now(),
+      eventDateTo: event.eventDateTo ?? Date.now(),
+    };
     if (this.isIOS()) {
-      downloadIcs(buildIcs(event));
+      downloadIcs(buildIcs(calendarEvent));
     } else {
-      window.open(buildGoogleCalendarUrl(event), '_blank');
+      window.open(buildGoogleCalendarUrl(calendarEvent), '_blank');
     }
   }
 
@@ -2260,7 +2301,7 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
     // service (see EventShareService.shareEventImage) - only re-flash here
     // if it ended up on the "copied" fallback, correcting the optimistic
     // "shared" guess above with the more accurate wording.
-    const outcome = await this.shareService.shareEventImage(event.imageUrl, event.id!, this.shareText());
+    const outcome = await this.shareService.shareEventImage(event.imageUrl ?? '', event.id!, this.shareText());
     if (outcome === 'copied') {
       this.shareFeedback.set('copied');
       this.shareFlash.trigger();
@@ -2638,15 +2679,18 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
       pinterest: event.socialLinks?.pinterest ?? '',
     });
     this.activeSocialNetworks.set(ALL_SOCIAL_NETWORKS.filter((key) => !!event.socialLinks?.[key]));
-    this.editTypeIds.set([...event.typeIds]);
-    this.editDisciplineIds.set([...event.disciplineIds]);
-    this.editStatus.set(event.status === 'finished' ? 'published' : event.status);
-    this.editDateFrom.set(event.eventDateFrom);
-    this.editDateTo.set(event.eventDateTo);
-    this.editAddress.set(event.address);
-    this.editCity.set(event.city);
-    this.editLatitude.set(event.latitude);
-    this.editLongitude.set(event.longitude);
+    this.editTypeIds.set([...(event.typeIds ?? [])]);
+    this.editDisciplineIds.set([...(event.disciplineIds ?? [])]);
+    // 'finished' isn't a manual chip choice (see EDITABLE_STATUS_OPTIONS);
+    // 'draft' only leaves via saveEdit('published')'s Publicar button, never
+    // this chip picker either - both fall back to 'published' here.
+    this.editStatus.set(event.status === 'finished' || event.status === 'draft' ? 'published' : event.status);
+    this.editDateFrom.set(event.eventDateFrom ?? Date.now());
+    this.editDateTo.set(event.eventDateTo ?? Date.now() + DEFAULT_EVENT_DURATION_MS);
+    this.editAddress.set(event.address ?? '');
+    this.editCity.set(event.city ?? '');
+    this.editLatitude.set(event.latitude ?? 0);
+    this.editLongitude.set(event.longitude ?? 0);
     this.editCitySuggestions.set([]);
     this.isEditMode.set(true);
     this.captureEditBaseline();
@@ -2698,14 +2742,37 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
     this.showDateInvalidModal.set(false);
   }
 
-  saveEdit(): void {
+  /** "Guardar borrador" - only reachable while canSaveAsDraft() (creating, or
+   * continuing to edit an existing draft). Bypasses the full publish
+   * validation entirely (editValid(), the date-in-the-past check) since a
+   * draft can be saved with just a title - the organizer completes the rest
+   * later. */
+  saveDraft(): void {
+    if (this.saving() || !this.canSaveAsDraft()) {
+      return;
+    }
+    if (!this.editForm.controls.title.value?.trim()) {
+      // No dedicated "just the title" validation modal - required-marker on
+      // the label plus Ionic's own invalid/touched styling is enough for
+      // what's realistically a rare tap-before-typing-anything case.
+      this.editForm.controls.title.markAsTouched();
+      return;
+    }
+    this.saveEdit('draft');
+  }
+
+  saveEdit(targetStatus: EventStatus = this.editStatus()): void {
     // Guards re-entrancy at the method itself, not just via the Guardar
     // button's [disabled]="saving()" - saveEdit() has a second call site
     // (onUnsavedChangesModalDismiss's "Aplicar" path), which bypasses that
     // binding entirely. Two real duplicate events got created this way: tap
     // Guardar, then - while that request is still in flight - navigate away
     // and confirm "Aplicar" on the resulting unsaved-changes prompt.
-    if (this.saving() || !this.editValid()) {
+    const isDraftSave = targetStatus === 'draft';
+    if (this.saving() || (!isDraftSave && !this.editValid())) {
+      return;
+    }
+    if (isDraftSave && !this.editForm.controls.title.value?.trim()) {
       return;
     }
     const formValue = this.editForm.getRawValue();
@@ -2725,14 +2792,20 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
       imageUrl: formValue.imageUrl,
       typeIds: this.editTypeIds(),
       disciplineIds: this.editDisciplineIds(),
-      status: this.editStatus(),
+      status: targetStatus,
       isFree: formValue.isFree,
       price: formValue.price,
       joinMode: formValue.joinMode,
-      address: this.editAddress(),
-      city: this.editCity(),
-      latitude: this.editLatitude(),
-      longitude: this.editLongitude(),
+      address: this.editAddress() || undefined,
+      city: this.editCity() || undefined,
+      // editMapLat/editMapLng (not the raw signals) - null, not a fake 0/0
+      // "null island" default, whenever no real location has been picked
+      // yet. Publishing already requires address+city (editValid() above),
+      // which this form only ever sets together with a real lat/lng pick -
+      // so this never actually differs from the raw signals on that path,
+      // it only matters for an incomplete draft.
+      latitude: this.editMapLat() ?? undefined,
+      longitude: this.editMapLng() ?? undefined,
       eventDateFrom: this.editDateFrom(),
       eventDateTo: this.editDateTo(),
       socialLinks,
@@ -2746,7 +2819,9 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
         this.saving.set(false);
         return;
       }
-      const rule = this.recurrenceRule();
+      // A draft is always a single, plain event - recurrence only applies
+      // once it's actually published (out of scope, see the plan doc).
+      const rule = isDraftSave ? null : this.recurrenceRule();
       if (rule) {
         // status isn't part of CreateEventSeriesPayload - every instance is
         // created 'published' (see EventService.createEventSeries, backend).
@@ -2818,7 +2893,10 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
     // Event.allowAttendeePhotos's doc comment), so it's only added here, on
     // the update-an-existing-event branch.
     const payload: UpdateEventPayload = { ...commonFields, allowAttendeePhotos: formValue.allowAttendeePhotos };
-    const rule = this.recurrenceRule();
+    // Same reasoning as the create-mode branch above - a draft-in-progress
+    // never attaches a recurrence (the backend rejects it anyway, see
+    // EventService.attachRecurrenceToEvent's own draft guard).
+    const rule = isDraftSave ? null : this.recurrenceRule();
     this.eventService.updateEvent(event.id, payload).subscribe({
       next: () => {
         this.event.set({ ...event, ...payload });

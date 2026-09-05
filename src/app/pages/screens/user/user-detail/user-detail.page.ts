@@ -53,7 +53,9 @@ import { ActionsMenuComponent, MenuAction } from '../../../../shared/common/acti
 const MIN_ZOOM = 3;
 const MAX_ZOOM = 20;
 
-const STATUS_OPTIONS = EVENT_STATUSES.map((id) => ({ id, labelKey: STATUS_LABEL_KEYS[id] }));
+// 'draft' is never a valid preference/filter choice here - it's never
+// visible to anyone but its own creator, and never announced.
+const STATUS_OPTIONS = EVENT_STATUSES.filter((id) => id !== 'draft').map((id) => ({ id, labelKey: STATUS_LABEL_KEYS[id] }));
 
 interface SocialLinkRow {
   key: keyof SocialLinks;

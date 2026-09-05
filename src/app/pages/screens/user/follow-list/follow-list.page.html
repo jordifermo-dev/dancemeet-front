@@ -19,7 +19,7 @@
       <button
         type="button"
         class="filter-button"
-        [class.active]="appliedDisciplineFilterIds().length > 0 && appliedDisciplineFilterIds().length < disciplines().length"
+        [class.active]="(appliedDisciplineFilterIds().length > 0 && appliedDisciplineFilterIds().length < disciplines().length) || appliedPendingOnlyFilter()"
         (click)="openFilterModal()"
       >
         <ion-icon name="options-outline"></ion-icon>
@@ -46,20 +46,12 @@
       <div class="state-row">
         <p>{{ 'followList.noResults' | translate }}</p>
       </div>
+    } @else if (mode === 'attendees' && appliedPendingOnlyFilter() && !pendingParticipants().length) {
+      <div class="state-row">
+        <p>{{ 'followList.noPendingResults' | translate }}</p>
+      </div>
     } @else {
       <div class="user-list">
-        @for (item of confirmedItems(); track item.id) {
-          <app-user-card
-            [user]="item"
-            [disciplinesById]="disciplinesById()"
-            [confirmUnfollow]="confirmUnfollowUser"
-            [showEmptyDisciplines]="true"
-            [badgeLabel]="organizerBadgeFor(item)"
-            [removeAction]="removeActionFor(item)"
-            variant="row"
-          ></app-user-card>
-        }
-
         @if (mode === 'attendees' && canManageAttendees()) {
           @if (pendingRequestedParticipants().length) {
             <p class="pending-group-label">{{ 'followList.pendingRequestsGroupLabel' | translate }}</p>
@@ -92,19 +84,33 @@
           }
         }
 
-        @if (searching()) {
-          <div class="state-row compact">
-            <ion-spinner name="crescent"></ion-spinner>
-          </div>
-        }
-        @for (item of newItems(); track item.id) {
-          <app-user-card
-            [user]="item"
-            [disciplinesById]="disciplinesById()"
-            [highlighted]="true"
-            [extraActions]="inviteActionsFor(item)"
-            variant="row"
-          ></app-user-card>
+        @if (!(mode === 'attendees' && appliedPendingOnlyFilter())) {
+          @for (item of confirmedItems(); track item.id) {
+            <app-user-card
+              [user]="item"
+              [disciplinesById]="disciplinesById()"
+              [confirmUnfollow]="confirmUnfollowUser"
+              [showEmptyDisciplines]="true"
+              [badgeLabel]="organizerBadgeFor(item)"
+              [removeAction]="removeActionFor(item)"
+              variant="row"
+            ></app-user-card>
+          }
+
+          @if (searching()) {
+            <div class="state-row compact">
+              <ion-spinner name="crescent"></ion-spinner>
+            </div>
+          }
+          @for (item of newItems(); track item.id) {
+            <app-user-card
+              [user]="item"
+              [disciplinesById]="disciplinesById()"
+              [highlighted]="true"
+              [extraActions]="inviteActionsFor(item)"
+              variant="row"
+            ></app-user-card>
+          }
         }
       </div>
     }
@@ -123,14 +129,22 @@
 
       <app-chip-grid [items]="disciplineChipItems()" (chipClick)="toggleDraftDiscipline($event)"></app-chip-grid>
 
+      @if (mode === 'attendees' && canManageAttendees()) {
+        <ion-item lines="none" class="pending-only-toggle-row">
+          <ion-toggle [checked]="draftPendingOnlyFilter()" (ionChange)="toggleDraftPendingOnly()">
+            {{ 'followList.pendingOnlyFilterLabel' | translate }}
+          </ion-toggle>
+        </ion-item>
+      }
+
       <app-filter-actions-row>
-        <ion-button expand="block" fill="outline" color="primary" (click)="clearDisciplineFilter()">
+        <ion-button expand="block" fill="outline" color="primary" (click)="clearFilters()">
           <ion-icon slot="start" name="refresh-outline"></ion-icon>
           {{ 'explorer.clearFilter' | translate }}
         </ion-button>
-        <ion-button expand="block" class="btn-fill" (click)="applyDisciplineFilter()">
+        <ion-button expand="block" class="btn-fill" (click)="applyFilters()">
           <ion-icon slot="start" name="checkmark-outline"></ion-icon>
-          {{ (disciplineApplyFlash.active() ? 'profile.applied' : 'profile.apply') | translate }}
+          {{ (filterApplyFlash.active() ? 'profile.applied' : 'profile.apply') | translate }}
         </ion-button>
       </app-filter-actions-row>
     </div>

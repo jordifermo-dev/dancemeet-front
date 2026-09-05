@@ -97,7 +97,9 @@ const FALLBACK_EVENT_TYPES: EventType[] = EVENT_TYPE_NAMES.map((name) => ({
   createdAt: 0,
 }));
 
-const STATUS_OPTIONS = EVENT_STATUSES.map((id) => ({ id, labelKey: STATUS_LABEL_KEYS[id] }));
+// 'draft' is never a valid preference/filter choice here - it's never
+// visible to anyone but its own creator, and never announced.
+const STATUS_OPTIONS = EVENT_STATUSES.filter((id) => id !== 'draft').map((id) => ({ id, labelKey: STATUS_LABEL_KEYS[id] }));
 
 const PRICE_OPTIONS: { id: PriceOption; labelKey: string }[] = [
   { id: 'free', labelKey: 'explorer.priceFreeOption' },

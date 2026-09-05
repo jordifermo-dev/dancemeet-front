@@ -24,12 +24,14 @@ export const EVENT_TYPE_ICON_FILES: Record<EventTypeName, string> = {
 };
 
 export const STATUS_ICON_FILES: Record<EventStatus, string> = {
+  draft: 'draft.svg',
   published: 'published.svg',
   finished:  'finished.svg',
   cancelled: 'cancelled.svg',
 };
 
 export const STATUS_LABEL_KEYS: Record<EventStatus, string> = {
+  draft: 'register.statusDraft',
   published: 'register.statusPublished',
   cancelled: 'register.statusCancelled',
   finished: 'register.statusFinished',

@@ -19,7 +19,9 @@ import {
   statusChipItems,
 } from '../../../../shared/filters/chip-grid/chip-grid-presets';
 
-const STATUS_OPTIONS = EVENT_STATUSES.map((id) => ({ id, labelKey: STATUS_LABEL_KEYS[id] }));
+// 'draft' is never a valid filter choice in the public explorer - it's
+// never visible to anyone but its own creator.
+const STATUS_OPTIONS = EVENT_STATUSES.filter((id) => id !== 'draft').map((id) => ({ id, labelKey: STATUS_LABEL_KEYS[id] }));
 const PRICE_OPTIONS: { id: PriceOption; labelKey: string }[] = [
   { id: 'free', labelKey: 'explorer.priceFreeOption' },
   { id: 'paid', labelKey: 'explorer.pricePaidOption' },

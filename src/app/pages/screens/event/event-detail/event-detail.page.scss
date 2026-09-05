@@ -587,6 +587,12 @@ a.info-row {
   margin: 0;
 }
 
+// Extra breathing room below the Público/Con aprobación chips specifically -
+// .empty-message itself stays margin:0 for every other (tighter) usage.
+.join-mode-hint {
+  margin-top: 10px;
+}
+
 .toggle-row {
   --padding-start: 0;
   --inner-padding-end: 0;

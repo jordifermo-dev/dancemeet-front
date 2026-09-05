@@ -50,6 +50,12 @@ export class NotificationService {
    * of each bell only finding out on its own next 30s poll. */
   readonly unreadCount = signal(0);
 
+  /** Set once registerNativePush/registerWebPush actually obtains a token -
+   * remembered so unregisterToken() (called on logout, see AuthService) can
+   * remove exactly this device's token without re-triggering registration
+   * just to look it up again. */
+  private currentToken: string | null = null;
+
   list(userId: string): Observable<AppNotification[]> {
     return this.http.get<AppNotification[]>(`${this.baseUrl}/user/${userId}`);
   }
@@ -137,6 +143,7 @@ export class NotificationService {
       // 'registration' event (which carries the token we need to send to
       // the backend) can fire before anything is listening for it.
       PushNotifications.addListener('registration', (token: Token) => {
+        this.currentToken = token.value;
         this.http.post(`${this.usersBaseUrl}/${userId}/fcm-token`, { token: token.value }).subscribe();
       });
       PushNotifications.addListener('registrationError', (err) => {
@@ -203,6 +210,13 @@ export class NotificationService {
       // See event-detail.page.ts's own reading of these query params
       // (openChatTab()/the pendingOpenGalleryFromNotification effect).
       const type = data?.['type'];
+      // A join request is about the Attendees list, not the event itself -
+      // same intent as notifications.page.ts's eventCardLinkFor, for the
+      // in-app inbox's equivalent tap.
+      if (type === 'event_join_request') {
+        this.router.navigate(['/attendees'], { queryParams: { eventId } });
+        return;
+      }
       let queryParams: Record<string, string> | undefined;
       if (type === 'event_chat_message') {
         queryParams = { openChat: '1' };
@@ -237,6 +251,7 @@ export class NotificationService {
         serviceWorkerRegistration: registration,
       });
       if (token) {
+        this.currentToken = token;
         await this.http.post(`${this.usersBaseUrl}/${userId}/fcm-token`, { token }).toPromise();
       }
       onMessage(messaging, (payload) => {
@@ -249,6 +264,27 @@ export class NotificationService {
       // Most commonly: Firebase Web push isn't configured yet (placeholder
       // appId/VAPID key). The in-app inbox works regardless.
       console.error('[NotificationService] requestPermissionAndRegister failed:', err);
+    }
+  }
+
+  /** Called from AuthService.logout() before signing out - without this, a
+   * shared/test device's push token stayed registered to the account that
+   * just logged out until a *different* account later logged in on the same
+   * device (see UserRepository.addFcmToken's own de-duplication), so that
+   * account's real notifications kept arriving there in the meantime. A
+   * no-op if this device never actually obtained a token (push unsupported/
+   * denied) - nothing to remove. Best-effort: a failed request here must
+   * never block the sign-out itself. */
+  async unregisterToken(userId: string): Promise<void> {
+    if (!this.currentToken) {
+      return;
+    }
+    const token = this.currentToken;
+    this.currentToken = null;
+    try {
+      await firstValueFrom(this.http.delete(`${this.usersBaseUrl}/${userId}/fcm-token`, { body: { token } }));
+    } catch (err) {
+      console.error('[NotificationService] unregisterToken failed:', err);
     }
   }
 

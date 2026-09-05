@@ -38,12 +38,15 @@ export function buildCalendarCells(
     const dayStart = startOfDay(date);
     const dayEnd = dayStart + DAY_MS - 1;
 
-    const dayEvents = events.filter((event) => event.eventDateFrom <= dayEnd && event.eventDateTo >= dayStart);
+    // A draft with no dates set yet simply can't be placed on any day.
+    const dayEvents = events.filter(
+      (event) => event.eventDateFrom !== undefined && event.eventDateTo !== undefined && event.eventDateFrom <= dayEnd && event.eventDateTo >= dayStart,
+    );
 
     const seenTypeIds = new Set<string>();
     const typeIcons: CalendarDayIcon[] = [];
     for (const event of dayEvents) {
-      for (const typeId of event.typeIds) {
+      for (const typeId of event.typeIds ?? []) {
         if (seenTypeIds.has(typeId)) {
           continue;
         }

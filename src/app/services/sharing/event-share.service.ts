@@ -8,6 +8,10 @@ import { environment } from '../../../environments/environment';
 import { EventStatus, EventWithCreatorName } from '../../models';
 
 const SHARE_INTRO_KEYS: Record<EventStatus, string> = {
+  // A draft is never shareable (no read-only detail view, no share button) -
+  // this entry only exists to satisfy Record<EventStatus, ...> and is never
+  // actually looked up.
+  draft: 'eventDetail.shareIntroPublished',
   published: 'eventDetail.shareIntroPublished',
   cancelled: 'eventDetail.shareIntroCancelled',
   finished: 'eventDetail.shareIntroFinished',
@@ -138,7 +142,7 @@ export class EventShareService {
     // unfurl whichever URL appears *first* in the message, and the event's
     // own card (photo, title...) is what should win that slot, not Maps'.
     lines.push(`🔗 ${escapeHtml(shortEventUrl)}`);
-    lines.push(`📍 ${escapeHtml(event.address)}, ${escapeHtml(event.city)}`);
+    lines.push(`📍 ${escapeHtml(event.address ?? '')}, ${escapeHtml(event.city ?? '')}`);
     lines.push(`🔗 ${escapeHtml(shortMapsUrl)}`);
     const html = lines.join('<br>');
     return { text: this.htmlToShareText(html), html };
