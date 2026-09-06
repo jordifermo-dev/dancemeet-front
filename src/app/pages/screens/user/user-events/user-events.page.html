@@ -7,7 +7,10 @@
     <ion-buttons slot="end">
       <app-view-mode-menu
         [viewMode]="filters.viewMode()"
+        [showMap]="true"
+        [showResetFilters]="true"
         (viewModeChange)="filters.setViewMode($event)"
+        (resetFilters)="filters.clearGenericFilter()"
       ></app-view-mode-menu>
     </ion-buttons>
   </ion-toolbar>
@@ -69,7 +72,17 @@
     }
   </div>
 
-  @if (filters.viewMode() === 'list') {
+  @if (filters.viewMode() === 'map') {
+    <app-map-view
+      [events]="filteredEvents()"
+      [disciplinesById]="filters.disciplinesById()"
+      [loading]="filters.loading()"
+      [center]="mapCenter()"
+      [radiusMeters]="mapRadiusMeters()"
+      (eventTap)="openGalleryEvent($event)"
+      (locationPicked)="filters.onMapLocationPicked($event)"
+    ></app-map-view>
+  } @else if (filters.viewMode() === 'list') {
     <div class="user-events-list" [style.paddingTop.px]="filters.listTopPadding()">
       @if (filters.loading()) {
         <div class="filters.loading-row">

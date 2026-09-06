@@ -1,4 +1,17 @@
-import { Component, OnInit, computed, effect, inject, signal, untracked } from '@angular/core';
+import {
+  AfterViewInit,
+  Component,
+  ElementRef,
+  NgZone,
+  OnDestroy,
+  OnInit,
+  ViewChild,
+  computed,
+  effect,
+  inject,
+  signal,
+  untracked,
+} from '@angular/core';
 import { Router } from '@angular/router';
 import {
   IonHeader,
@@ -13,35 +26,42 @@ import {
   IonSpinner,
   ViewWillEnter,
 } from '@ionic/angular/standalone';
-import { GoogleMap, MapMarker, MapCircle } from '@angular/google-maps';
 import { TranslatePipe } from '@ngx-translate/core';
 import { addIcons } from 'ionicons';
 import {
   optionsOutline,
-  navigateOutline,
-  addOutline,
-  removeOutline,
   calendarOutline,
-  addCircleOutline,
+  chevronDownOutline,
   bookmarkOutline,
   refreshOutline,
   checkmarkOutline,
   closeOutline,
-  layersOutline,
 } from 'ionicons/icons';
+import { AuthService } from '../../../services/core/auth.service';
 import { DisciplineService } from '../../../services/event/discipline.service';
 import { EventTypeService } from '../../../services/event/event-type.service';
 import { EventService } from '../../../services/event/event.service';
 import { EventListRefreshService } from '../../../services/event/event-list-refresh.service';
-import { GeocodingService } from '../../../services/location/geocoding.service';
-import { GoogleMapsLoaderService } from '../../../services/location/google-maps-loader.service';
-import { Discipline, DISCIPLINE_NAMES, EventType, EVENT_TYPE_NAMES, EventStatus, EVENT_STATUSES, PriceOption, Event as DanceEvent } from '../../../models';
-import { disciplineIconUrl, sortByNameOrder, STATUS_LABEL_KEYS } from '../../../shared/event/icon-catalog';
+import { FavoriteService } from '../../../services/favorites/favorite.service';
+import { AttendanceService } from '../../../services/attendance/attendance.service';
+import { GalleryService } from '../../../services/gallery/gallery.service';
+import { LanguageService } from '../../../services/core/language.service';
+import {
+  Discipline,
+  DISCIPLINE_NAMES,
+  EventType,
+  EVENT_TYPE_NAMES,
+  EventStatus,
+  EVENT_STATUSES,
+  GalleryCover,
+  PriceOption,
+  EventWithCreatorName,
+} from '../../../models';
+import { sortByNameOrder, STATUS_LABEL_KEYS } from '../../../shared/event/icon-catalog';
 import { LocationFilterButtonComponent } from '../../../shared/filters/location-filter-button/location-filter-button.component';
-import { NotificationBellComponent } from '../../../shared/notifications/notification-bell/notification-bell.component';
-import { FilterSheetHeaderComponent } from '../../../shared/filters/filter-sheet-header/filter-sheet-header.component';
-import { FilterActionsRowComponent } from '../../../shared/filters/filter-actions-row/filter-actions-row.component';
 import { ChipGridComponent } from '../../../shared/filters/chip-grid/chip-grid.component';
+import { SortRowComponent } from '../../../shared/filters/sort-row/sort-row.component';
+import { SortOptionsModalComponent } from '../../../shared/filters/sort-options-modal/sort-options-modal.component';
 import { DatePickerFieldComponent } from '../../../shared/calendar/date-picker-field/date-picker-field.component';
 import {
   disciplineChipItems,
@@ -50,10 +70,25 @@ import {
   quickDateChipItems,
   statusChipItems,
 } from '../../../shared/filters/chip-grid/chip-grid-presets';
-import { MapType, NIGHT_MAP_STYLES } from '../../../shared/location/maps';
-import { createApplyFlash } from '../../../shared/common/success-flash';
-import { ThemeService } from '../../../services/core/theme.service';
+import { NotificationBellComponent } from '../../../shared/notifications/notification-bell/notification-bell.component';
+import { FilterSheetHeaderComponent } from '../../../shared/filters/filter-sheet-header/filter-sheet-header.component';
+import { FilterActionsRowComponent } from '../../../shared/filters/filter-actions-row/filter-actions-row.component';
+import { EventCardComponent } from '../../../shared/event/event-card/event-card.component';
+import { EventCardView } from '../../../shared/event/event-card/event-card.model';
+import { buildEventCardView } from '../../../shared/event/event-card/build-event-card-view';
+import { EventCalendarComponent } from '../../../shared/calendar/event-calendar/event-calendar.component';
+import { CalendarGranularityToggleComponent } from '../../../shared/calendar/event-calendar/calendar-granularity-toggle.component';
+import { CalendarGranularity } from '../../../shared/calendar/event-calendar/event-calendar.model';
+import { recoverAttendState } from '../../../shared/event/attend-toggle';
+import { EVENT_SORT_OPTIONS, EventSortMode, sortEvents } from '../../../shared/event/event-sort';
+import { SortPreferenceService } from '../../../services/filters/sort-preference.service';
+import { ViewModePreferenceService } from '../../../services/filters/view-mode-preference.service';
 import { ExplorerFiltersService, DateQuickOption } from '../../../services/filters/explorer-filters.service';
+import { createApplyFlash } from '../../../shared/common/success-flash';
+import { PhotoGridComponent } from '../../../shared/gallery/photo-grid/photo-grid.component';
+import { EventListViewMode, ViewModeMenuComponent } from '../../../shared/event/view-mode-menu/view-mode-menu.component';
+import { MapViewComponent, MapLocationPicked } from '../../../shared/event/map-view/map-view.component';
+import { DEFAULT_MAP_CENTER } from '../../../shared/location/maps';
 
 // 'draft' is never a valid filter choice in the public explorer - it's
 // never visible to anyone but its own creator.
@@ -62,42 +97,14 @@ const PRICE_OPTIONS: { id: PriceOption; labelKey: string }[] = [
   { id: 'free', labelKey: 'explorer.priceFreeOption' },
   { id: 'paid', labelKey: 'explorer.pricePaidOption' },
 ];
-const DEFAULT_LATITUDE = 41.3874;
-const DEFAULT_LONGITUDE = 2.1686;
-const MARKER_ICON_SIZE = 34;
 
-interface MapMarkerData {
-  event: DanceEvent;
-  position: google.maps.LatLngLiteral;
-  options: google.maps.MarkerOptions;
-}
-
-/** google.maps.Marker only takes a single icon image, but an event can now
- * have more than one discipline - this composites all of them side by side
- * into one small SVG (each icon shrinks a bit as more are added) instead of
- * only ever showing the first one. A single discipline keeps using its plain
- * static icon URL directly (the pre-existing, known-good path) - only 2+
- * disciplines go through the generated data: URI, so a bug in the
- * compositing code can't take down every marker, just multi-discipline ones. */
-function buildDisciplineMarkerIcon(disciplines: Discipline[]): { url: string; size: google.maps.Size } {
-  if (disciplines.length === 1) {
-    return { url: disciplineIconUrl(disciplines[0]), size: new google.maps.Size(MARKER_ICON_SIZE, MARKER_ICON_SIZE) };
-  }
-  const iconSize = Math.max(18, MARKER_ICON_SIZE * 0.7);
-  const gap = 2;
-  const width = disciplines.length * iconSize + (disciplines.length - 1) * gap;
-  const images = disciplines
-    .map((discipline, index) => {
-      const x = index * (iconSize + gap);
-      return `<image href="${disciplineIconUrl(discipline)}" x="${x}" y="0" width="${iconSize}" height="${iconSize}" />`;
-    })
-    .join('');
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${iconSize}">${images}</svg>`;
-  // Standard percent-encoded data URI (no ";utf8" parameter, which is
-  // non-standard and not reliably accepted by Google Maps' own icon loader).
-  return { url: `data:image/svg+xml,${encodeURIComponent(svg)}`, size: new google.maps.Size(width, iconSize) };
-}
-
+/** The Explorer tab: mapa/lista/calendario/fotos over one shared filtered
+ * result set (ExplorerFiltersService, same search()) - four views switched
+ * via ViewModeMenuComponent's "⋮", not four separate tabs/pages. Absorbed
+ * what used to be the standalone Events tab (list/calendar/gallery lived
+ * there, map lived in a separate ExplorerPage) - see
+ * 14_chat-directo-1a1-y-fusion-tabs.md for the reasoning; the Events tab
+ * itself is freed up for a future Chats feature. */
 @Component({
   selector: 'app-explorer',
   standalone: true,
@@ -114,114 +121,155 @@ function buildDisciplineMarkerIcon(disciplines: Discipline[]): { url: string; si
     IonButton,
     IonModal,
     IonSpinner,
-    GoogleMap,
-    MapMarker,
-    MapCircle,
     TranslatePipe,
     LocationFilterButtonComponent,
+    EventCardComponent,
     NotificationBellComponent,
     FilterSheetHeaderComponent,
     FilterActionsRowComponent,
     ChipGridComponent,
+    SortRowComponent,
+    SortOptionsModalComponent,
     DatePickerFieldComponent,
+    EventCalendarComponent,
+    CalendarGranularityToggleComponent,
+    PhotoGridComponent,
+    ViewModeMenuComponent,
+    MapViewComponent,
   ],
 })
-export class ExplorerPage implements OnInit, ViewWillEnter {
+export class ExplorerPage implements OnInit, AfterViewInit, OnDestroy, ViewWillEnter {
   private readonly disciplineService = inject(DisciplineService);
   private readonly eventTypeService = inject(EventTypeService);
   private readonly eventService = inject(EventService);
   private readonly refreshNotifier = inject(EventListRefreshService);
-  private readonly mapsLoader = inject(GoogleMapsLoaderService);
-  private readonly themeService = inject(ThemeService);
-  private readonly geocodingService = inject(GeocodingService);
+  private readonly favoriteService = inject(FavoriteService);
+  private readonly attendanceService = inject(AttendanceService);
+  private readonly galleryService = inject(GalleryService);
+  private readonly authService = inject(AuthService);
+  private readonly languageService = inject(LanguageService);
   private readonly router = inject(Router);
+  private readonly ngZone = inject(NgZone);
+  private readonly sortPreference = inject(SortPreferenceService);
+  private readonly viewModePreference = inject(ViewModePreferenceService);
   readonly filters = inject(ExplorerFiltersService);
+  /** Fallback seed for <app-date-picker-field>'s [value] when draftDateFrom/
+   * draftDateTo are both unset ("Sin límite" both ends). */
+  readonly nowTimestamp = Date.now();
+
+  @ViewChild('topOverlay') private topOverlayRef?: ElementRef<HTMLDivElement>;
+  private overlayResizeObserver?: ResizeObserver;
+  /** Real measured height of the fixed search/filter overlay, so the list's
+   * top padding always clears it exactly - a hardcoded guess drifts the
+   * moment a pill wraps to a second line or a translation runs longer. Only
+   * applied to the list/calendar/gallery modes - map fills the full content
+   * area behind the overlay instead (see explorer.page.html). */
+  readonly listTopPadding = signal(110);
 
   private searchInputTimer: ReturnType<typeof setTimeout> | null = null;
 
   readonly loading = signal(true);
-  readonly mapReady = signal(false);
-  readonly mapError = signal(false);
-  readonly events = signal<DanceEvent[]>([]);
+  readonly events = signal<EventWithCreatorName[]>([]);
   readonly searchTerm = signal('');
+  /** Mapa vs list vs calendar vs gallery ("browse by photo", Wikiloc-style) -
+   * remembered for the session (see ViewModePreferenceService) rather than a
+   * local signal, so it survives Ionic recreating this tab's instance. */
+  readonly viewMode = this.viewModePreference.exploreViewMode;
+  /** Owns the Mes/Semana/Día choice so the toggle (rendered in this page's
+   * own fixed top-overlay) and <app-event-calendar>'s grid (rendered below,
+   * scrollable) stay in sync. */
+  readonly calendarGranularity = signal<CalendarGranularity>('month');
+  /** Cover photo (+count) per event, keyed by event id - only fetched on
+   * demand while viewMode is 'gallery' (see the effect below), so the
+   * normal search response stays unbloated. */
+  readonly galleryCoverUrls = signal<Record<string, GalleryCover>>({});
+  /** IDs of events the logged-in user has liked - a plain search result has
+   * no per-event relation of its own (see buildEventCardView), so the heart
+   * on each card is driven by this separately-fetched set instead. */
+  readonly likedEventIds = signal<Set<string>>(new Set());
+  readonly attendedEventIds = signal<Set<string>>(new Set());
+  /** Guards like/unlike requests in flight per event id - a doubled tap
+   * otherwise fires the handler twice before the first request's response
+   * updates likedEventIds, sending a duplicate add/remove call the backend
+   * rejects with an "already favorited"/"not found" error. */
+  private readonly likeBusyIds = signal<Set<string>>(new Set());
 
   readonly disciplines = signal<Discipline[]>([]);
   readonly disciplinesById = computed(() => new Map(this.disciplines().map((d) => [d.id, d])));
   readonly eventTypes = signal<EventType[]>([]);
+  readonly eventTypesById = computed(() => new Map(this.eventTypes().map((e) => [e.id, e])));
   readonly statusOptions = STATUS_OPTIONS;
   readonly priceOptions = PRICE_OPTIONS;
+  readonly sortOptions = EVENT_SORT_OPTIONS;
+  // Shared with Favorites so the chosen order survives switching tabs.
+  readonly sortMode = this.sortPreference.eventSortMode;
+  readonly isSortModalOpen = signal(false);
+  readonly currentSortLabelKey = computed(
+    () => this.sortOptions.find((option) => option.id === this.sortMode())?.labelKey ?? this.sortOptions[0].labelKey,
+  );
 
-  readonly locatingMe = signal(false);
-  readonly droppingPin = signal(false);
-  /** Fallback seed for <app-date-picker-field>'s [value] when draftDateFrom/
-   * draftDateTo are both unset ("Sin límite" both ends). */
-  readonly nowTimestamp = Date.now();
-  readonly mapType = signal<MapType>('roadmap');
+  readonly eventTypeChips = computed(() => eventTypeChipItems(this.eventTypes(), this.filters.draftEventTypeIds()));
+  readonly disciplineChips = computed(() => disciplineChipItems(this.disciplines(), this.filters.draftDisciplineIds()));
+  readonly statusChips = computed(() => statusChipItems(this.statusOptions, this.filters.draftStatuses()));
+  readonly priceChips = computed(() => priceChipItems(this.priceOptions, this.filters.draftPriceOptions()));
+  readonly quickDateChips = computed(() => quickDateChipItems(this.filters.draftActiveQuickDate()));
 
-  /** An empty discipline or event-type selection now filters down to zero
-   * events (see explorer-filters.service.ts) rather than being ignored, so an
-   * empty result needs a distinct, actionable message pointing at the
-   * filters instead of the generic "no events around here" one. */
+  /** An empty discipline or event-type selection filters down to zero events
+   * (see explorer-filters.service.ts), so an empty result needs a distinct,
+   * actionable message pointing at the filters instead of the generic one. */
   readonly noCategorySelected = computed(
     () => this.filters.appliedDisciplineIds().length === 0 || this.filters.appliedEventTypeIds().length === 0,
   );
 
+  // --- Map mode (<app-map-view>'s center/radius round-trip) -----------------
+
   readonly mapCenter = computed<google.maps.LatLngLiteral>(() => ({
-    lat: this.filters.appliedLatitude() ?? DEFAULT_LATITUDE,
-    lng: this.filters.appliedLongitude() ?? DEFAULT_LONGITUDE,
+    lat: this.filters.appliedLatitude() ?? DEFAULT_MAP_CENTER.lat,
+    lng: this.filters.appliedLongitude() ?? DEFAULT_MAP_CENTER.lng,
   }));
-  readonly mapZoom = signal(12);
-  // Computed (not a plain object) so toggling Light/Dark/System live-restyles
-  // an already-open map instead of only applying on the next visit - GoogleMap
-  // forwards options changes straight to the underlying Maps JS instance.
-  readonly mapOptions = computed<google.maps.MapOptions>(() => ({
-    disableDefaultUI: true,
-    zoomControl: true,
-    clickableIcons: false,
-    // disableDefaultUI doesn't cover this one - Maps shows its own compass/
-    // reset-rotation control as soon as the map is tilted or rotated (e.g. a
-    // two-finger touch gesture on a real device), floating right above our
-    // zoom buttons.
-    rotateControl: false,
-    // Plain 'satellite' is bare imagery with no place/street labels in the
-    // Maps JS API - 'hybrid' is what "Satélite" actually means in the
-    // consumer Google Maps app (satellite imagery *with* labels overlaid).
-    mapTypeId: this.mapType() === 'satellite' ? 'hybrid' : 'roadmap',
-    styles: this.themeService.isDark() ? NIGHT_MAP_STYLES : undefined,
-  }));
+  readonly mapRadiusMeters = computed(() => this.filters.appliedDistanceRange() * 1000);
 
-  // Visualizes the user's saved distance radius as a translucent circle
-  // around the search center, so the search area is visible, not just a number.
-  readonly radiusCircleOptions = computed<google.maps.CircleOptions>(() => ({
-    center: this.mapCenter(),
-    radius: this.filters.appliedDistanceRange() * 1000,
-    strokeColor: '#106568',
-    strokeOpacity: 0.6,
-    strokeWeight: 1.5,
-    fillColor: '#106568',
-    fillOpacity: 0.08,
-    clickable: false,
-  }));
+  /** <app-map-view>'s (locationPicked) - locate-me or (searchOnTap) a map tap
+   * picked a new search center; same immediate-apply behavior the map always
+   * had (no separate "Aplicar" step, unlike the full location filter modal). */
+  onMapLocationPicked(location: MapLocationPicked): void {
+    this.filters.appliedLatitude.set(location.lat);
+    this.filters.appliedLongitude.set(location.lng);
+    this.filters.draftLatitude.set(location.lat);
+    this.filters.draftLongitude.set(location.lng);
+    if (location.city) {
+      this.filters.appliedCity.set(location.city);
+      this.filters.draftCity.set(location.city);
+    }
+    if (location.address) {
+      this.filters.appliedAddress.set(location.address);
+      this.filters.draftAddress.set(location.address);
+    }
+  }
 
-  readonly markers = computed<MapMarkerData[]>(() => {
-    const byId = this.disciplinesById();
-    // The explorer never returns drafts (backend-enforced), but a marker
-    // needs real coordinates regardless - skip anything without them rather
-    // than trusting that invariant here too.
-    return this.events()
-      .filter((event) => event.latitude !== undefined && event.longitude !== undefined)
-      .map((event) => {
-        const disciplines = (event.disciplineIds ?? []).map((id) => byId.get(id)).filter((d): d is Discipline => !!d);
-        if (!disciplines.length) {
-          return { event, position: { lat: event.latitude!, lng: event.longitude! }, options: {} };
-        }
-        const icon = buildDisciplineMarkerIcon(disciplines);
-        return {
-          event,
-          position: { lat: event.latitude!, lng: event.longitude! },
-          options: { icon: { url: icon.url, scaledSize: icon.size } },
-        };
-      });
+  readonly cardViews = computed<EventCardView[]>(() => {
+    const disciplinesById = this.disciplinesById();
+    const eventTypesById = this.eventTypesById();
+    const lang = this.languageService.currentLang();
+    const currentUserId = this.authService.currentUser()?.id;
+    const likedEventIds = this.likedEventIds();
+    const attendedEventIds = this.attendedEventIds();
+    return sortEvents(this.events(), this.sortMode()).map((event) =>
+      buildEventCardView(event, disciplinesById, eventTypesById, lang, currentUserId, likedEventIds, attendedEventIds),
+    );
+  });
+
+  /** "Browse by photo" mode (see viewMode's own doc comment) - each event's
+   * gallery cover, falling back to its own imageUrl until it has a real
+   * shared photo, so this mode is never emptier than the list. photoCount
+   * (0 when falling back to imageUrl) drives the grid's own "several
+   * photos"/"no photos shared yet" badge. */
+  readonly galleryGridItems = computed(() => {
+    const covers = this.galleryCoverUrls();
+    return this.cardViews().map((view) => {
+      const cover = covers[view.id];
+      return { id: view.id, photoUrl: cover?.photoUrl ?? view.imageUrl, photoCount: cover?.count ?? 0 };
+    });
   });
 
   readonly isEventTypeModalOpen = signal(false);
@@ -230,25 +278,15 @@ export class ExplorerPage implements OnInit, ViewWillEnter {
   readonly isPriceModalOpen = signal(false);
   readonly isDateModalOpen = signal(false);
 
-  readonly eventTypeChips = computed(() => eventTypeChipItems(this.eventTypes(), this.filters.draftEventTypeIds()));
-  readonly disciplineChips = computed(() => disciplineChipItems(this.disciplines(), this.filters.draftDisciplineIds()));
-  readonly statusChips = computed(() => statusChipItems(this.statusOptions, this.filters.draftStatuses()));
-  readonly priceChips = computed(() => priceChipItems(this.priceOptions, this.filters.draftPriceOptions()));
-  readonly quickDateChips = computed(() => quickDateChipItems(this.filters.draftActiveQuickDate()));
-
   constructor() {
     addIcons({
       optionsOutline,
-      navigateOutline,
-      addOutline,
-      removeOutline,
       calendarOutline,
-      addCircleOutline,
+      chevronDownOutline,
       bookmarkOutline,
       refreshOutline,
       checkmarkOutline,
       closeOutline,
-      layersOutline,
     });
 
     // Re-run the search whenever any applied filter, the location, the radius
@@ -271,6 +309,28 @@ export class ExplorerPage implements OnInit, ViewWillEnter {
       const term = this.searchTerm();
       untracked(() => this.loadEvents(term));
     });
+
+    // Only fetched while "browse by photo" is actually active - re-runs
+    // whenever the underlying event list changes while that mode stays
+    // selected.
+    effect(() => {
+      if (this.viewMode() !== 'gallery') {
+        return;
+      }
+      const eventIds = this.cardViews().map((view) => view.id);
+      untracked(() => this.refreshGalleryCovers(eventIds));
+    });
+  }
+
+  private refreshGalleryCovers(eventIds: string[]): void {
+    if (!eventIds.length) {
+      this.galleryCoverUrls.set({});
+      return;
+    }
+    this.galleryService.getCoverPhotos(eventIds).subscribe({
+      next: (covers) => this.galleryCoverUrls.set(covers),
+      error: () => this.galleryCoverUrls.set({}),
+    });
   }
 
   ngOnInit(): void {
@@ -288,18 +348,129 @@ export class ExplorerPage implements OnInit, ViewWillEnter {
         }
       },
     });
-
-    this.mapsLoader
-      .load()
-      .then(() => this.mapReady.set(true))
-      .catch(() => this.mapError.set(true));
   }
 
   /** Ionic keeps this tab's instance alive, so re-fetch every time it's
    * re-entered - otherwise editing an event on its detail page and coming
-   * back here would still show the stale, pre-edit marker/card data. */
+   * back here would still show the stale, pre-edit card. */
   ionViewWillEnter(): void {
     this.loadEvents(this.searchTerm());
+    this.loadLikedEventIds();
+    this.loadAttendedEventIds();
+  }
+
+  private loadLikedEventIds(): void {
+    const userId = this.authService.currentUser()?.id;
+    if (!userId) {
+      this.likedEventIds.set(new Set());
+      return;
+    }
+    this.favoriteService.getFavoritedEvents(userId).subscribe({
+      next: (events) => this.likedEventIds.set(new Set(events.map((event) => event.id))),
+      error: () => this.likedEventIds.set(new Set()),
+    });
+  }
+
+  /** Same idea as loadLikedEventIds above, for the attendee-count icon's
+   * active/grey state - the search results themselves carry no per-viewer
+   * attendance info (see build-event-card-view.ts's attendedEventIds param). */
+  private loadAttendedEventIds(): void {
+    const userId = this.authService.currentUser()?.id;
+    if (!userId) {
+      this.attendedEventIds.set(new Set());
+      return;
+    }
+    this.attendanceService.getAttendedEvents(userId).subscribe({
+      next: (events) => this.attendedEventIds.set(new Set(events.map((event) => event.id))),
+      error: () => this.attendedEventIds.set(new Set()),
+    });
+  }
+
+  /** <app-event-card>'s (likeToggle) - it already refuses to emit for the
+   * organizer's own event or a finished/cancelled one, so this only ever
+   * needs to flip between liked and not. A simple, immediate toggle per
+   * instance - even for a recurring series, liking doesn't ask "this day or
+   * the whole series?" the way attending does (see event-detail.page.ts). */
+  onLikeToggle(eventId: string): void {
+    const userId = this.authService.currentUser()?.id;
+    if (!userId || this.likeBusyIds().has(eventId)) {
+      return;
+    }
+    this.likeBusyIds.update((ids) => new Set(ids).add(eventId));
+    const wasLiked = this.likedEventIds().has(eventId);
+    const request$ = wasLiked
+      ? this.favoriteService.removeFromFavorites(userId, eventId)
+      : this.favoriteService.addToFavorites(userId, eventId);
+    request$.subscribe({
+      next: () => {
+        this.likedEventIds.update((ids) => {
+          const next = new Set(ids);
+          if (wasLiked) {
+            next.delete(eventId);
+          } else {
+            next.add(eventId);
+          }
+          return next;
+        });
+        this.likeBusyIds.update((ids) => {
+          const next = new Set(ids);
+          next.delete(eventId);
+          return next;
+        });
+      },
+      error: (err) => {
+        const recovered = recoverAttendState(err, wasLiked);
+        if (recovered !== null) {
+          this.likedEventIds.update((ids) => {
+            const next = new Set(ids);
+            if (recovered) {
+              next.add(eventId);
+            } else {
+              next.delete(eventId);
+            }
+            return next;
+          });
+        }
+        this.likeBusyIds.update((ids) => {
+          const next = new Set(ids);
+          next.delete(eventId);
+          return next;
+        });
+      },
+    });
+  }
+
+  ngAfterViewInit(): void {
+    const el = this.topOverlayRef?.nativeElement;
+    if (!el) {
+      return;
+    }
+    // Measure synchronously right away too - ResizeObserver's first callback
+    // is async, so relying on it alone left the initial paint using the
+    // rough `110` default guess, which was short enough for the first card
+    // to peek out from under the overlay until that first callback landed.
+    this.listTopPadding.set(Math.ceil(el.offsetHeight) + 16);
+    if (typeof ResizeObserver === 'undefined') {
+      return;
+    }
+    this.overlayResizeObserver = new ResizeObserver(() => {
+      // Runs outside Angular's zone (native ResizeObserver isn't zone-patched
+      // here), so without an explicit ngZone.run the signal update could sit
+      // unrendered until some unrelated zone event happened to trigger CD -
+      // leaving the first card visibly peeking out from under the overlay
+      // until then.
+      this.ngZone.run(() => {
+        // offsetHeight (not entries[0].contentRect, which excludes the
+        // overlay's own padding) - the smaller content-box figure left the
+        // list's first card peeking out from under the overlay by that amount.
+        this.listTopPadding.set(Math.ceil(el.offsetHeight) + 16);
+      });
+    });
+    this.overlayResizeObserver.observe(el);
+  }
+
+  ngOnDestroy(): void {
+    this.overlayResizeObserver?.disconnect();
   }
 
   private loadEvents(search: string): void {
@@ -312,8 +483,8 @@ export class ExplorerPage implements OnInit, ViewWillEnter {
         priceOptions: this.filters.appliedPriceOptions(),
         dateFrom: this.filters.appliedDateFrom(),
         dateTo: this.filters.appliedDateTo(),
-        latitude: this.filters.appliedLatitude() ?? DEFAULT_LATITUDE,
-        longitude: this.filters.appliedLongitude() ?? DEFAULT_LONGITUDE,
+        latitude: this.filters.appliedLatitude() ?? undefined,
+        longitude: this.filters.appliedLongitude() ?? undefined,
         radius: this.filters.appliedDistanceRange() * 1000,
         search: search.trim() || undefined,
       })
@@ -334,72 +505,36 @@ export class ExplorerPage implements OnInit, ViewWillEnter {
     this.searchInputTimer = setTimeout(() => this.searchTerm.set(term), 300);
   }
 
-  goToEvent(eventId: string): void {
-    this.router.navigate(['/events', eventId], { queryParams: { origin: '/tabs/explorer' } });
+  selectSort(value: string): void {
+    this.sortMode.set(value as EventSortMode);
+    this.isSortModalOpen.set(false);
   }
 
   goToFullFilters(): void {
     this.router.navigateByUrl('/explorer-filters');
   }
 
+  setViewMode(mode: EventListViewMode): void {
+    this.viewMode.set(mode);
+  }
+
+  /** <app-view-mode-menu>'s (resetFilters) - same ExplorerFiltersService.
+   * resetAll() the "Filtrar todo" screen already uses (discipline/eventType/
+   * status/date back to the profile's saved defaults; price/location keep
+   * their own separate reset, same convention as that screen). */
+  onResetFilters(): void {
+    this.filters.resetAll();
+  }
+
   goToCreateEvent(): void {
     this.router.navigate(['/events/new'], { queryParams: { origin: '/tabs/explorer' } });
   }
 
-  /** The floating "locate me" button on the map - an instant recenter, not
-   * part of the location filter's draft/apply flow (see the modal's own
-   * useCurrentLocation() below, which only edits the draft). */
-  centerOnMyLocation(): void {
-    if (!navigator.geolocation) {
-      return;
-    }
-    this.locatingMe.set(true);
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        this.filters.appliedLatitude.set(position.coords.latitude);
-        this.filters.appliedLongitude.set(position.coords.longitude);
-        this.filters.draftLatitude.set(position.coords.latitude);
-        this.filters.draftLongitude.set(position.coords.longitude);
-        this.locatingMe.set(false);
-      },
-      () => this.locatingMe.set(false),
-    );
-  }
-
-  toggleMapType(): void {
-    this.mapType.update((type) => (type === 'roadmap' ? 'satellite' : 'roadmap'));
-  }
-
-  /** Tapping the map (outside an event marker, which has its own mapClick and
-   * never bubbles here) drops/moves the search-center pin, same as
-   * centerOnMyLocation() but from a tapped point instead of the GPS - also
-   * reverse-geocodes so city/address stay in sync, matching the location
-   * filter's own tap-to-pin behavior. */
-  onMapClick(event: google.maps.MapMouseEvent): void {
-    if (!event.latLng) {
-      return;
-    }
-    const lat = event.latLng.lat();
-    const lng = event.latLng.lng();
-    this.filters.appliedLatitude.set(lat);
-    this.filters.appliedLongitude.set(lng);
-    this.filters.draftLatitude.set(lat);
-    this.filters.draftLongitude.set(lng);
-    this.droppingPin.set(true);
-    this.geocodingService.reverse(lat, lng).subscribe({
-      next: (result) => {
-        if (result?.city) {
-          this.filters.appliedCity.set(result.city);
-          this.filters.draftCity.set(result.city);
-        }
-        if (result?.formattedAddress) {
-          this.filters.appliedAddress.set(result.formattedAddress);
-          this.filters.draftAddress.set(result.formattedAddress);
-        }
-        this.droppingPin.set(false);
-      },
-      error: () => this.droppingPin.set(false),
-    });
+  /** Tapping an event on the map or in "browse by photo" mode jumps straight
+   * to that event's detail page - unlike user-detail/event-detail's own
+   * galleries, there's no lightbox here, the point is browsing *events*. */
+  goToEvent(eventId: string): void {
+    this.router.navigate(['/events', eventId], { queryParams: { origin: '/tabs/explorer' } });
   }
 
   // --- Individual quick filter modals ----------------------------------
@@ -456,7 +591,7 @@ export class ExplorerPage implements OnInit, ViewWillEnter {
     if (!iso) {
       return;
     }
-    this.filters.draftDateFrom.set(this.filters.startOfDayFromIso(iso));
+    this.filters.setDraftDateFromIso(iso);
   }
 
   onDraftDateToChange(event: Event): void {
@@ -465,7 +600,7 @@ export class ExplorerPage implements OnInit, ViewWillEnter {
     if (!iso) {
       return;
     }
-    this.filters.draftDateTo.set(this.filters.endOfDayFromIso(iso));
+    this.filters.setDraftDateToIso(iso);
   }
 
   clearDraftDateTo(): void {
@@ -541,7 +676,6 @@ export class ExplorerPage implements OnInit, ViewWillEnter {
     this.filters.applyDate();
     this.dateApplyFlash.trigger();
   }
-
 
   resetDateFilter(): void {
     this.filters.resetDate();

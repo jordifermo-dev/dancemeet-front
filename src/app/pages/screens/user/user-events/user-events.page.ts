@@ -63,6 +63,7 @@ import { FilterAllComponent } from '../../../../shared/filters/filter-all/filter
 import { DatePickerFieldComponent } from '../../../../shared/calendar/date-picker-field/date-picker-field.component';
 import { PhotoGridComponent } from '../../../../shared/gallery/photo-grid/photo-grid.component';
 import { ViewModeMenuComponent } from '../../../../shared/event/view-mode-menu/view-mode-menu.component';
+import { MapViewComponent } from '../../../../shared/event/map-view/map-view.component';
 
 /** "X's events" list (organized + favorited) - your own (no ?userId) or
  * someone else's (from their follower/following profile). Same card,
@@ -97,6 +98,7 @@ import { ViewModeMenuComponent } from '../../../../shared/event/view-mode-menu/v
     CalendarGranularityToggleComponent,
     PhotoGridComponent,
     ViewModeMenuComponent,
+    MapViewComponent,
   ],
 })
 export class UserEventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWillEnter {
@@ -236,6 +238,16 @@ export class UserEventsPage implements OnInit, AfterViewInit, OnDestroy, ViewWil
       return { id: view.id, photoUrl: cover?.photoUrl ?? view.imageUrl, photoCount: cover?.count ?? 0 };
     });
   });
+
+  /** <app-map-view>'s optional center/radius - undefined (not a fake 0,0)
+   * whenever the location filter has nothing set yet, so the map falls back
+   * to centering on the filtered events themselves instead of the ocean. */
+  readonly mapCenter = computed<google.maps.LatLngLiteral | undefined>(() => {
+    const lat = this.filters.appliedLatitude();
+    const lng = this.filters.appliedLongitude();
+    return lat !== null && lng !== null ? { lat, lng } : undefined;
+  });
+  readonly mapRadiusMeters = computed(() => (this.mapCenter() ? this.filters.appliedDistanceRange() * 1000 : undefined));
 
   ngOnInit(): void {
     this.filters.loadTaxonomies();

@@ -588,6 +588,24 @@ export function createEventListFilters(dateMode: EventListDateMode) {
     reverseGeocodeTo(coords.lat, coords.lng);
   }
 
+  /** <app-map-view>'s (locationPicked), for the 'map' view mode - unlike the
+   * location filter modal's own pin (draft-only, needs "Aplicar"), a tap on
+   * the full map view applies immediately, same as Explorer's own map. */
+  function onMapLocationPicked(location: { lat: number; lng: number; city?: string; address?: string }): void {
+    appliedLatitude.set(location.lat);
+    appliedLongitude.set(location.lng);
+    draftLatitude.set(location.lat);
+    draftLongitude.set(location.lng);
+    if (location.city) {
+      appliedCity.set(location.city);
+      draftCity.set(location.city);
+    }
+    if (location.address) {
+      appliedAddress.set(location.address);
+      draftAddress.set(location.address);
+    }
+  }
+
   function useCurrentLocation(): void {
     if (!navigator.geolocation) {
       return;
@@ -825,6 +843,7 @@ export function createEventListFilters(dateMode: EventListDateMode) {
     onCityInput,
     selectCitySuggestion,
     onPinMoved,
+    onMapLocationPicked,
     useCurrentLocation,
     applyLocationFilter,
     clearLocationFilter,

@@ -5,6 +5,12 @@
 <ion-popover [isOpen]="isOpen()" [event]="popoverEvent()" side="bottom" alignment="end" (didDismiss)="isOpen.set(false)">
   <ng-template>
     <div class="view-mode-menu-list">
+      @if (showMap) {
+        <button type="button" class="view-mode-menu-option" [class.selected]="viewMode === 'map'" (click)="select('map')">
+          <ion-icon name="map-outline"></ion-icon>
+          <span>{{ 'explorer.viewMap' | translate }}</span>
+        </button>
+      }
       <button type="button" class="view-mode-menu-option" [class.selected]="viewMode === 'list'" (click)="select('list')">
         <ion-icon name="list-outline"></ion-icon>
         <span>{{ 'explorer.viewList' | translate }}</span>
@@ -17,6 +23,13 @@
         <ion-icon name="images-outline"></ion-icon>
         <span>{{ 'explorer.viewModeGallery' | translate }}</span>
       </button>
+      @if (showResetFilters) {
+        <div class="view-mode-menu-divider"></div>
+        <button type="button" class="view-mode-menu-option" (click)="onResetFilters()">
+          <ion-icon name="refresh-outline"></ion-icon>
+          <span>{{ 'explorer.resetFilters' | translate }}</span>
+        </button>
+      }
       @if (showCreateEvent) {
         <div class="view-mode-menu-divider"></div>
         <button type="button" class="view-mode-menu-option" (click)="onCreateEvent()">

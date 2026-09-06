@@ -2,6 +2,11 @@ import { environment } from '../../../environments/environment';
 
 export type MapType = 'roadmap' | 'satellite';
 
+/** Barcelona - fallback center for <app-map-view> (Explorer/Favoritos/Mis
+ * Events) whenever neither a host-supplied center nor any event markers are
+ * available to derive one from. */
+export const DEFAULT_MAP_CENTER: google.maps.LatLngLiteral = { lat: 41.3874, lng: 2.1686 };
+
 const EARTH_RADIUS_METERS = 6_371_000;
 
 /** Great-circle distance between two coordinates, in meters - used to filter
@@ -39,9 +44,10 @@ export function mapEmbedUrl(latitude: number, longitude: number, zoom = 15, mapT
   return `https://www.google.com/maps/embed/v1/place?${params.toString()}`;
 }
 
-/** Only for the Explorer map, which renders via the real Maps JS API
- * (<google-map>) - the Maps Embed API used by mapEmbedUrl's iframes has no
- * style parameter at all, so those stay light regardless of app theme.
+/** Only for <app-map-view> (Explorer/Favoritos/Mis Events), which renders via
+ * the real Maps JS API (<google-map>) - the Maps Embed API used by
+ * mapEmbedUrl's iframes has no style parameter at all, so those stay light
+ * regardless of app theme.
  * Colors lean on the app's own dark palette (--app-surface-card, water
  * tinted from --ion-color-primary-shade) instead of a generic community
  * "night mode" JSON, so the map reads as part of this app, not a stock demo. */

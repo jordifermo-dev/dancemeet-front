@@ -288,7 +288,8 @@
     "mapCollapse": "Collapse map",
     "viewCalendar": "View as calendar",
     "viewList": "View as list",
-    "viewModeGallery": "View by photo"
+    "viewModeGallery": "View by photo",
+    "viewMap": "View on map"
   },
   "calendar": {
     "month": "Month",

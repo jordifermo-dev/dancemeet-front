@@ -3,127 +3,162 @@
     <ion-title>{{ 'tabs.explorer' | translate }}</ion-title>
     <ion-buttons slot="end">
       <app-notification-bell></app-notification-bell>
-      <ion-button class="create-event-button" (click)="goToCreateEvent()">
-        <ion-icon slot="icon-only" name="add-circle-outline"></ion-icon>
-      </ion-button>
+      <app-view-mode-menu
+        [viewMode]="viewMode()"
+        [showMap]="true"
+        [showResetFilters]="true"
+        [showCreateEvent]="true"
+        (viewModeChange)="setViewMode($event)"
+        (resetFilters)="onResetFilters()"
+        (createEvent)="goToCreateEvent()"
+      ></app-view-mode-menu>
     </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
-<ion-content class="explorer-content">
-  <div class="map-wrap">
-    @if (mapReady()) {
-      <google-map
-        class="explorer-map"
-        [center]="mapCenter()"
-        [zoom]="mapZoom()"
-        [options]="mapOptions()"
-        width="100%"
-        height="100%"
-        (mapClick)="onMapClick($event)"
-      >
-        <map-circle [options]="radiusCircleOptions()"></map-circle>
-        <map-marker [position]="mapCenter()"></map-marker>
-        @for (marker of markers(); track marker.event.id) {
-          <map-marker
-            [position]="marker.position"
-            [options]="marker.options"
-            (mapClick)="goToEvent(marker.event.id)"
-          ></map-marker>
-        }
-      </google-map>
-    } @else if (mapError()) {
-      <div class="map-loading">
-        <p>{{ 'explorer.mapLoadError' | translate }}</p>
-      </div>
-    } @else {
-      <div class="map-loading">
-        <ion-spinner name="crescent"></ion-spinner>
-      </div>
-    }
-
-    <div class="top-overlay">
-      <div class="search-row">
-        <ion-searchbar
-          class="tgtg-searchbar"
-          [placeholder]="'explorer.searchPlaceholder' | translate"
-          [debounce]="0"
-          (ionInput)="onSearchChange($event.detail.value)"
-        ></ion-searchbar>
-        <button type="button" class="icon-btn filter-all-btn" (click)="goToFullFilters()">
-          <ion-icon name="options-outline"></ion-icon>
-        </button>
-        <app-location-filter-button></app-location-filter-button>
-      </div>
-
-      <div class="filter-row">
-        <button
-          type="button"
-          class="pill"
-          [class.active]="filters.appliedEventTypeIds().length < eventTypes().length"
-          (click)="openEventTypeModal()"
-        >
-          {{ 'explorer.eventTypesFilterLabel' | translate }}
-        </button>
-        <button
-          type="button"
-          class="pill"
-          [class.active]="filters.appliedDisciplineIds().length < disciplines().length"
-          (click)="openDisciplineModal()"
-        >
-          {{ 'explorer.disciplinesFilterLabel' | translate }}
-        </button>
-        <button
-          type="button"
-          class="pill"
-          [class.active]="filters.appliedStatuses().length < statusOptions.length"
-          (click)="openStatusModal()"
-        >
-          {{ 'explorer.statusFilterLabel' | translate }}
-        </button>
-        <button type="button" class="pill" (click)="openDateModal()">
-          {{ 'explorer.dateFilterLabel' | translate }}
-        </button>
-        <button
-          type="button"
-          class="pill"
-          [class.active]="filters.appliedPriceOptions().length < priceOptions.length"
-          (click)="openPriceModal()"
-        >
-          {{ 'explorer.priceFilterLabel' | translate }}
-        </button>
-      </div>
+<ion-content [fullscreen]="true" class="events-content">
+  <div class="top-overlay" slot="fixed" #topOverlay>
+    <div class="search-row">
+      <ion-searchbar
+        class="tgtg-searchbar"
+        [placeholder]="'explorer.searchPlaceholder' | translate"
+        [debounce]="0"
+        (ionInput)="onSearchChange($event.detail.value)"
+      ></ion-searchbar>
+      <button type="button" class="icon-btn filter-all-btn" (click)="goToFullFilters()">
+        <ion-icon name="options-outline"></ion-icon>
+      </button>
+      <app-location-filter-button></app-location-filter-button>
     </div>
 
-    <button
-      type="button"
-      class="locate-fab maptype-fab"
-      (click)="toggleMapType()"
-      [attr.aria-label]="(mapType() === 'roadmap' ? 'userDetail.mapTypeSatellite' : 'userDetail.mapTypeRoadmap') | translate"
-    >
-      <ion-icon name="layers-outline"></ion-icon>
-    </button>
+    <div class="filter-row">
+      <button
+        type="button"
+        class="pill"
+        [class.active]="filters.appliedEventTypeIds().length < eventTypes().length"
+        (click)="openEventTypeModal()"
+      >
+        {{ 'explorer.eventTypesFilterLabel' | translate }}
+      </button>
+      <button
+        type="button"
+        class="pill"
+        [class.active]="filters.appliedDisciplineIds().length < disciplines().length"
+        (click)="openDisciplineModal()"
+      >
+        {{ 'explorer.disciplinesFilterLabel' | translate }}
+      </button>
+      <button
+        type="button"
+        class="pill"
+        [class.active]="filters.appliedStatuses().length < statusOptions.length"
+        (click)="openStatusModal()"
+      >
+        {{ 'explorer.statusFilterLabel' | translate }}
+      </button>
+      <button type="button" class="pill" (click)="openDateModal()">
+        {{ 'explorer.dateFilterLabel' | translate }}
+      </button>
+      <button
+        type="button"
+        class="pill"
+        [class.active]="filters.appliedPriceOptions().length < priceOptions.length"
+        (click)="openPriceModal()"
+      >
+        {{ 'explorer.priceFilterLabel' | translate }}
+      </button>
+    </div>
 
-    <button type="button" class="locate-fab" (click)="centerOnMyLocation()" [disabled]="locatingMe()">
-      <ion-icon name="navigate-outline"></ion-icon>
-    </button>
+    @if (viewMode() !== 'map') {
+      <app-sort-row
+        titleKey="eventSort.label"
+        [valueLabelKey]="currentSortLabelKey()"
+        (opened)="isSortModalOpen.set(true)"
+      ></app-sort-row>
 
-    @if (loading()) {
-      <div class="loading-chip">
-        <ion-spinner name="crescent"></ion-spinner>
-      </div>
-    } @else if (events().length === 0) {
-      <div class="empty-chip">
-        @if (noCategorySelected()) {
-          <p>{{ 'explorer.selectFiltersPrompt' | translate }}</p>
-        } @else {
-          <p>{{ 'explorer.noEvents' | translate }}</p>
-        }
-      </div>
+      @if (viewMode() === 'calendar') {
+        <app-calendar-granularity-toggle [(granularity)]="calendarGranularity"></app-calendar-granularity-toggle>
+      }
     }
   </div>
+
+  @if (viewMode() === 'map') {
+    <app-map-view
+      [events]="events()"
+      [disciplinesById]="disciplinesById()"
+      [loading]="loading()"
+      [noCategorySelected]="noCategorySelected()"
+      [center]="mapCenter()"
+      [radiusMeters]="mapRadiusMeters()"
+      [searchOnTap]="true"
+      (eventTap)="goToEvent($event)"
+      (locationPicked)="onMapLocationPicked($event)"
+    ></app-map-view>
+  } @else if (viewMode() === 'list') {
+    <div class="events-list" [style.paddingTop.px]="listTopPadding()">
+      @if (loading()) {
+        <div class="loading-row">
+          <ion-spinner name="crescent"></ion-spinner>
+        </div>
+      } @else if (cardViews().length === 0) {
+        <div class="empty-state">
+          @if (noCategorySelected()) {
+            <p>{{ 'explorer.selectFiltersPrompt' | translate }}</p>
+          } @else {
+            <p>{{ 'explorer.noEvents' | translate }}</p>
+          }
+        </div>
+      } @else {
+        @for (view of cardViews(); track view.id) {
+          <app-event-card [view]="view" origin="/tabs/explorer" (likeToggle)="onLikeToggle($event)"></app-event-card>
+        }
+      }
+    </div>
+  } @else if (viewMode() === 'calendar') {
+    <div class="events-calendar" [style.paddingTop.px]="listTopPadding()">
+      <app-event-calendar
+        [events]="events()"
+        [eventTypesById]="eventTypesById()"
+        [disciplinesById]="disciplinesById()"
+        [likedEventIds]="likedEventIds()"
+        [attendedEventIds]="attendedEventIds()"
+        [sortMode]="sortMode()"
+        [granularity]="calendarGranularity()"
+        [minDate]="filters.appliedDateFrom() ?? null"
+        [maxDate]="filters.appliedDateTo() ?? null"
+        (likeToggle)="onLikeToggle($event)"
+      ></app-event-calendar>
+    </div>
+  } @else {
+    <div class="events-gallery" [style.paddingTop.px]="listTopPadding()">
+      @if (loading()) {
+        <div class="loading-row">
+          <ion-spinner name="crescent"></ion-spinner>
+        </div>
+      } @else if (galleryGridItems().length === 0) {
+        <div class="empty-state">
+          @if (noCategorySelected()) {
+            <p>{{ 'explorer.selectFiltersPrompt' | translate }}</p>
+          } @else {
+            <p>{{ 'explorer.noEvents' | translate }}</p>
+          }
+        </div>
+      } @else {
+        <app-photo-grid [photos]="galleryGridItems()" (photoTap)="goToEvent($event)"></app-photo-grid>
+      }
+    </div>
+  }
 </ion-content>
 
+<!-- Sort sheet -->
+<app-sort-options-modal
+  titleKey="eventSort.label"
+  [options]="sortOptions"
+  [selected]="sortMode()"
+  [isOpen]="isSortModalOpen()"
+  (optionSelected)="selectSort($event)"
+  (closed)="isSortModalOpen.set(false)"
+></app-sort-options-modal>
 
 <!-- Event types quick filter -->
 <ion-modal

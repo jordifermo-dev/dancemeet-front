@@ -1,0 +1,62 @@
+<div class="map-wrap">
+  @if (mapReady()) {
+    <google-map
+      class="explorer-map"
+      [center]="resolvedCenter()"
+      [zoom]="mapZoom()"
+      [options]="mapOptions()"
+      width="100%"
+      height="100%"
+      (mapClick)="onMapClick($event)"
+    >
+      @if (radiusMeters() !== undefined) {
+        <map-circle [options]="radiusCircleOptions()"></map-circle>
+      }
+      @if (center()) {
+        <map-marker [position]="resolvedCenter()"></map-marker>
+      }
+      @for (marker of markers(); track marker.event.id) {
+        <map-marker
+          [position]="marker.position"
+          [options]="marker.options"
+          (mapClick)="eventTap.emit(marker.event.id)"
+        ></map-marker>
+      }
+    </google-map>
+  } @else if (mapError()) {
+    <div class="map-loading">
+      <p>{{ 'explorer.mapLoadError' | translate }}</p>
+    </div>
+  } @else {
+    <div class="map-loading">
+      <ion-spinner name="crescent"></ion-spinner>
+    </div>
+  }
+
+  <button
+    type="button"
+    class="locate-fab maptype-fab"
+    (click)="toggleMapType()"
+    [attr.aria-label]="(mapType() === 'roadmap' ? 'userDetail.mapTypeSatellite' : 'userDetail.mapTypeRoadmap') | translate"
+  >
+    <ion-icon name="layers-outline"></ion-icon>
+  </button>
+
+  <button type="button" class="locate-fab" (click)="centerOnMyLocation()" [disabled]="locatingMe()">
+    <ion-icon name="navigate-outline"></ion-icon>
+  </button>
+
+  @if (loading) {
+    <div class="loading-chip">
+      <ion-spinner name="crescent"></ion-spinner>
+    </div>
+  } @else if (events().length === 0) {
+    <div class="empty-chip">
+      @if (noCategorySelected) {
+        <p>{{ 'explorer.selectFiltersPrompt' | translate }}</p>
+      } @else {
+        <p>{{ 'explorer.noEvents' | translate }}</p>
+      }
+    </div>
+  }
+</div>

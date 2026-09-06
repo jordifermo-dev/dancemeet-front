@@ -50,6 +50,7 @@ import { DatePickerFieldComponent } from '../../../shared/calendar/date-picker-f
 import { LocationPickerComponent } from '../../../shared/location/location-picker/location-picker.component';
 import { PhotoGridComponent } from '../../../shared/gallery/photo-grid/photo-grid.component';
 import { ViewModeMenuComponent } from '../../../shared/event/view-mode-menu/view-mode-menu.component';
+import { MapViewComponent } from '../../../shared/event/map-view/map-view.component';
 
 @Component({
   selector: 'app-favorites',
@@ -80,6 +81,7 @@ import { ViewModeMenuComponent } from '../../../shared/event/view-mode-menu/view
     CalendarGranularityToggleComponent,
     PhotoGridComponent,
     ViewModeMenuComponent,
+    MapViewComponent,
   ],
 })
 export class FavoritesPage implements OnInit, AfterViewInit, OnDestroy, ViewWillEnter {
@@ -208,6 +210,16 @@ export class FavoritesPage implements OnInit, AfterViewInit, OnDestroy, ViewWill
       return { id: view.id, photoUrl: cover?.photoUrl ?? view.imageUrl, photoCount: cover?.count ?? 0 };
     });
   });
+
+  /** <app-map-view>'s optional center/radius - undefined (not a fake 0,0)
+   * whenever the location filter has nothing set yet, so the map falls back
+   * to centering on the filtered events themselves instead of the ocean. */
+  readonly mapCenter = computed<google.maps.LatLngLiteral | undefined>(() => {
+    const lat = this.filters.appliedLatitude();
+    const lng = this.filters.appliedLongitude();
+    return lat !== null && lng !== null ? { lat, lng } : undefined;
+  });
+  readonly mapRadiusMeters = computed(() => (this.mapCenter() ? this.filters.appliedDistanceRange() * 1000 : undefined));
 
   ngOnInit(): void {
     this.filters.loadTaxonomies();
