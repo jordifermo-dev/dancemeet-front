@@ -45,6 +45,11 @@ export class EventCardComponent {
    * notifications inbox points a join-request notification's card straight
    * at the Attendees list instead of the event's own detail page. */
   @Input() linkTo?: string[];
+  /** Hides the type/discipline/status/price tags and the date/address lines,
+   * keeping only image+title+creator/stats+reviews+unread badges - used by
+   * the Chats tab rows, where those details are redundant (the user already
+   * knows which event this is) and the row needs to stay compact. */
+  @Input() compact = false;
   /** The card itself stays a pure, presentational component with no service
    * dependencies of its own (see event-card.model.ts) - the page decides what
    * liking/unliking actually does (call FavoriteService, update its

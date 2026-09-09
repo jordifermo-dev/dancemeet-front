@@ -59,6 +59,27 @@ export function formatTimeOnly(timestamp: number, lang: AppLanguage | null): str
   return formatter.format(new Date(timestamp));
 }
 
+/** "hace 2h"/"ayer"/"hace 3d" - moved here from notifications.page.ts's own
+ * timeAgo (identical logic) so the Chats tab's conversation-row timestamps
+ * can reuse it too instead of duplicating it. */
+export function formatRelativeTime(timestamp: number, lang: AppLanguage | null): string {
+  const seconds = Math.max(0, Math.floor((Date.now() - timestamp) / 1000));
+  const rtf = new Intl.RelativeTimeFormat(lang ?? 'es', { numeric: 'auto' });
+  if (seconds < 60) {
+    return rtf.format(0, 'second');
+  }
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) {
+    return rtf.format(-minutes, 'minute');
+  }
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) {
+    return rtf.format(-hours, 'hour');
+  }
+  const days = Math.floor(hours / 24);
+  return rtf.format(-days, 'day');
+}
+
 export function formatDateTimeNumeric(timestamp: number, lang: AppLanguage | null): string {
   const locale = INTL_LOCALES[lang ?? 'es'];
   const formatter = new Intl.DateTimeFormat(locale, {

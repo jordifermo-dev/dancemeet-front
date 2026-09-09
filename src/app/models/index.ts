@@ -6,6 +6,7 @@ export * from './event/event.model';
 export * from './event/event-manager.model';
 export * from './attendance/attendance.model';
 export * from './chat/chat.model';
+export * from './chat/direct-message.model';
 export * from './gallery/gallery.model';
 export * from './notification/notification.model';
 export * from './review/review.model';

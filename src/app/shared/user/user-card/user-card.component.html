@@ -1,13 +1,26 @@
 <div class="user-card-row" (click)="open()">
-  @if (user.photoUrl) {
-    <img class="avatar" [src]="user.photoUrl" [alt]="user.name" />
-  } @else {
-    <div class="avatar avatar-placeholder">
-      <ion-icon name="person-outline"></ion-icon>
-    </div>
-  }
+  <div class="avatar-wrap">
+    @if (user.photoUrl) {
+      <img class="avatar" [src]="user.photoUrl" [alt]="user.name" />
+    } @else {
+      <div class="avatar avatar-placeholder">
+        <ion-icon name="person-outline"></ion-icon>
+      </div>
+    }
+    @if ((unreadCount ?? 0) > 0) {
+      <span class="avatar-unread-badge">{{ unreadCount! > 9 ? '9+' : unreadCount }}</span>
+    }
+  </div>
   <div class="user-info">
-    <span class="user-name">{{ user.name }}</span>
+    <div class="user-name-row">
+      <span class="user-name">{{ user.name }}</span>
+      @if (timestampLabel) {
+        <span class="row-timestamp">{{ timestampLabel }}</span>
+      }
+    </div>
+    @if (subtitle) {
+      <span class="user-subtitle">{{ subtitle }}</span>
+    }
     @if (badgeLabel) {
       <span class="role-badge">
         @if (badgeIcon) {
@@ -48,7 +61,7 @@
             </button>
           }
         </div>
-      } @else if (isFollowedByMe()) {
+      } @else if (showFollowAction && isFollowedByMe()) {
         <button
           type="button"
           class="follow-btn follow-btn-following"
@@ -58,7 +71,7 @@
           <ion-icon name="person-remove-outline"></ion-icon>
           {{ (followFlash.active() ? 'eventDetail.savedButton' : 'profile.following') | translate }}
         </button>
-      } @else {
+      } @else if (showFollowAction) {
         <button
           type="button"
           class="follow-btn follow-btn-follow"

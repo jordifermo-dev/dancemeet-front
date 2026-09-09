@@ -1,0 +1,18 @@
+.reaction-picker {
+  display: flex;
+  gap: 6px;
+  padding: 4px 8px;
+  background: var(--app-surface-card);
+  border: 1px solid var(--ion-color-light-shade);
+  border-radius: 999px;
+
+  button {
+    appearance: none;
+    border: none;
+    background: transparent;
+    font-size: 1.2rem;
+    line-height: 1;
+    padding: 2px;
+    cursor: pointer;
+  }
+}

@@ -16,8 +16,8 @@ export const routes: Routes = [
         loadComponent: () => import('./explorer/explorer.page').then((m) => m.ExplorerPage),
       },
       {
-        path: 'events',
-        loadComponent: () => import('./events/events.page').then((m) => m.EventsPage),
+        path: 'chats',
+        loadComponent: () => import('./chats/chats.page').then((m) => m.ChatsPage),
       },
       {
         path: 'favorites',

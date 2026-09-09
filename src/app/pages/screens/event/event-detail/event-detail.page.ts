@@ -140,6 +140,8 @@ import { PhotoGridComponent } from '../../../../shared/gallery/photo-grid/photo-
 import { LightboxAction, LightboxPhoto, PhotoLightboxComponent } from '../../../../shared/gallery/photo-lightbox/photo-lightbox.component';
 import { StarRatingComponent } from '../../../../shared/review/star-rating/star-rating.component';
 import { ActionsMenuComponent, MenuAction } from '../../../../shared/common/actions-menu/actions-menu.component';
+import { MessageBubbleComponent } from '../../../../shared/chat/message-bubble/message-bubble.component';
+import { ChatComposeBarComponent, ChatComposeBanner } from '../../../../shared/chat/chat-compose-bar/chat-compose-bar.component';
 
 const MIN_ZOOM = 3;
 const MAX_ZOOM = 20;
@@ -252,6 +254,8 @@ function withTimePart(base: number, timeValue: string): number {
     PhotoLightboxComponent,
     StarRatingComponent,
     ActionsMenuComponent,
+    MessageBubbleComponent,
+    ChatComposeBarComponent,
   ],
 })
 export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnter, ViewWillLeave {
@@ -959,10 +963,38 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
       return '';
     }
     if (users.length === 1) {
-      return this.translate.instant('eventDetail.chatTypingOne', { name: users[0].userName });
+      return this.translate.instant('chat.typingOne', { name: users[0].userName });
     }
-    return this.translate.instant('eventDetail.chatTypingMany');
+    return this.translate.instant('chat.typingMany');
   });
+
+  /** The single banner slot above the compose input - editing/replying/
+   * mentioning-a-photo are mutually exclusive (see replyToMessage/
+   * startEditMessage/mentionPhotoInChat, which each clear the others). */
+  readonly chatComposeBanner = computed<ChatComposeBanner | null>(() => {
+    if (this.editingMessageId()) {
+      return { text: this.translate.instant('chat.editingBanner') };
+    }
+    const replying = this.replyingTo();
+    if (replying) {
+      return { text: this.translate.instant('chat.replyingTo', { name: replying.senderName }) };
+    }
+    const mention = this.pendingMentionPhoto();
+    if (mention) {
+      return { text: this.translate.instant('chat.mentioningPhoto'), thumbnailUrl: mention.photoUrl };
+    }
+    return null;
+  });
+
+  onChatBannerCancel(): void {
+    if (this.editingMessageId()) {
+      this.cancelEditMessage();
+    } else if (this.replyingTo()) {
+      this.cancelReply();
+    } else if (this.pendingMentionPhoto()) {
+      this.cancelMentionPhoto();
+    }
+  }
 
   chatMessageTime(message: EventMessage): string {
     return formatTimeOnly(message.createdAt, this.languageService.currentLang());
@@ -1750,6 +1782,13 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
       const me = this.authService.currentUser();
       if (message && message.senderId !== me?.id && this.detailViewMode() !== 'chat') {
         this.unreadChatCount.update((count) => count + 1);
+      }
+      // Same reasoning as openChatTab's own notifyChanged() call - the
+      // Chats tab's ionViewWillEnter doesn't reliably re-fire on a plain
+      // back-navigation into it (see EventListRefreshService), so a live
+      // message must also bump this explicitly, not just a tab-open.
+      if (message) {
+        this.refreshNotifier.notifyChanged();
       }
     });
 

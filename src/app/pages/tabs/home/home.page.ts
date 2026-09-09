@@ -27,10 +27,10 @@ export const HOME_MENU_ITEMS: HomeMenuItem[] = [
     descriptionKey: 'home.exploreDesc',
   },
   {
-    routerLink: '/tabs/events',
-    iconUrl: 'assets/icons/tabs/events.svg',
-    titleKey: 'tabs.events',
-    descriptionKey: 'home.eventsDesc',
+    routerLink: '/tabs/chats',
+    iconUrl: 'assets/icons/tabs/chats.svg',
+    titleKey: 'tabs.chats',
+    descriptionKey: 'home.chatsDesc',
   },
   {
     routerLink: '/tabs/favorites',

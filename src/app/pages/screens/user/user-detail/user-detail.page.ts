@@ -25,8 +25,10 @@ import {
   personRemoveOutline,
   informationCircleOutline,
   gridOutline,
+  chatbubbleOutline,
 } from 'ionicons/icons';
 import { AuthService } from '../../../../services/core/auth.service';
+import { DirectMessageService } from '../../../../services/chat/direct-message.service';
 import { UserService } from '../../../../services/user/user.service';
 import { FollowService } from '../../../../services/user/follow.service';
 import { FavoriteService } from '../../../../services/favorites/favorite.service';
@@ -102,6 +104,9 @@ export class UserDetailPage implements ViewWillEnter {
   private readonly galleryService = inject(GalleryService);
   private readonly reviewService = inject(ReviewService);
   private readonly translate = inject(TranslateService);
+  private readonly directMessageService = inject(DirectMessageService);
+
+  readonly messageActionBusy = signal(false);
 
   private readonly disciplinesById = signal<Map<string, Discipline>>(new Map());
   private readonly eventTypesById = signal<Map<string, EventType>>(new Map());
@@ -313,6 +318,7 @@ export class UserDetailPage implements ViewWillEnter {
       personRemoveOutline,
       informationCircleOutline,
       gridOutline,
+      chatbubbleOutline,
     });
 
     this.disciplineService.getAll().subscribe({
@@ -442,6 +448,26 @@ export class UserDetailPage implements ViewWillEnter {
         }, 900);
       },
       error: () => this.followActionBusy.set(false),
+    });
+  }
+
+  /** The single entry point into the 1:1 xat - reuses the existing
+   * conversation if one already exists (see ConversationService.
+   * getOrCreateConversation, backend), lands in "Solicitudes" on the peer's
+   * side if there's no Follow relationship yet (Instagram/Messenger-style
+   * message request, see 15_tab-chats-implementacion.md). */
+  openConversation(): void {
+    const user = this.user();
+    if (!user || this.messageActionBusy()) {
+      return;
+    }
+    this.messageActionBusy.set(true);
+    this.directMessageService.startConversation(user.id).subscribe({
+      next: (conversation) => {
+        this.messageActionBusy.set(false);
+        void this.router.navigate(['/direct-messages', conversation.id]);
+      },
+      error: () => this.messageActionBusy.set(false),
     });
   }
 

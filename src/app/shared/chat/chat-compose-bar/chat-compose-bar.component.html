@@ -1,0 +1,28 @@
+@if (banner) {
+  <div class="chat-compose-banner" [class.chat-mention-banner]="banner.thumbnailUrl">
+    @if (banner.thumbnailUrl) {
+      <img class="chat-mention-thumb" [src]="banner.thumbnailUrl" alt="" />
+    }
+    <span>{{ banner.text }}</span>
+    <button type="button" (click)="bannerCancel.emit()"><ion-icon name="close-outline"></ion-icon></button>
+  </div>
+}
+<div class="chat-input-row">
+  <ion-textarea
+    class="chat-input"
+    [autoGrow]="true"
+    [rows]="1"
+    [placeholder]="placeholder"
+    [value]="draft"
+    (ionInput)="draftChange.emit($event.detail.value ?? '')"
+  ></ion-textarea>
+  <button
+    type="button"
+    class="chat-send-button"
+    [disabled]="sendDisabled"
+    [attr.aria-label]="(editing ? 'chat.confirmEdit' : 'chat.sendButton') | translate"
+    (click)="send.emit()"
+  >
+    <ion-icon [name]="editing ? 'checkmark-outline' : 'send-outline'"></ion-icon>
+  </button>
+</div>

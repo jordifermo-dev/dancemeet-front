@@ -89,6 +89,10 @@
              ocultas por completo si el perfil visitado es el tuyo propio. -->
         @if (!isMe()) {
           <div class="actions-section">
+            <ion-button expand="block" fill="outline" color="primary" [disabled]="messageActionBusy()" (click)="openConversation()">
+              <ion-icon slot="start" name="chatbubble-outline"></ion-icon>
+              {{ 'userDetail.messageButton' | translate }}
+            </ion-button>
             @if (amFollowing()) {
               <ion-button expand="block" fill="outline" color="primary" [disabled]="followActionBusy()" (click)="confirmUnfollow()">
                 <ion-icon slot="start" name="person-remove-outline"></ion-icon>

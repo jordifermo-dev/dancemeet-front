@@ -1,0 +1,99 @@
+.dm-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 0;
+}
+
+.dm-request-banner {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--ion-color-light);
+  font-size: 0.85rem;
+  color: var(--app-text-strong);
+}
+
+.dm-request-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.chat-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+}
+
+.chat-messages {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 200px;
+}
+
+.chat-empty {
+  text-align: center;
+  padding: 24px 0;
+}
+
+.chat-date-separator {
+  align-self: center;
+  margin: 14px 0 4px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: var(--ion-color-light);
+  color: var(--ion-color-medium);
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.chat-typing-indicator {
+  margin: 0 0 0 12px;
+  font-size: 0.76rem;
+  font-style: italic;
+  color: var(--ion-color-medium);
+}
+
+// Same look as event-detail.page.scss's own message-actions-list (the
+// message "..." action sheet) - duplicated rather than shared, this is the
+// only other place it's used and the block is small/stable.
+.message-actions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.message-action-item {
+  appearance: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  border: none;
+  border-radius: 12px;
+  padding: 12px 8px;
+  background: transparent;
+  color: var(--app-text-strong);
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+
+  ion-icon {
+    font-size: 1.2rem;
+  }
+
+  &:active {
+    background: var(--ion-color-light-shade);
+  }
+}
+
+.message-action-danger {
+  color: var(--ion-color-danger);
+}

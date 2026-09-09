@@ -1,0 +1,131 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/tabs/chats"></ion-back-button>
+    </ion-buttons>
+    <ion-title>{{ conversation()?.peerName }}</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content #ionContentRef class="chat-content">
+  @if (loading()) {
+    <div class="dm-loading">
+      <ion-spinner></ion-spinner>
+    </div>
+  } @else {
+    @if (showRequestBanner()) {
+      <div class="dm-request-banner">
+        <span>{{ 'chat.requestBannerText' | translate: { name: conversation()?.peerName } }}</span>
+        <div class="dm-request-actions">
+          <ion-button size="small" fill="outline" color="medium" (click)="declineRequest()">
+            {{ 'chat.requestDecline' | translate }}
+          </ion-button>
+          <ion-button size="small" (click)="acceptRequest()">
+            {{ 'chat.requestAccept' | translate }}
+          </ion-button>
+        </div>
+      </div>
+    }
+    <div class="chat-panel">
+      <div class="chat-messages">
+        @if (!chatDisplayItems().length) {
+          <p class="empty-message chat-empty">{{ 'chat.emptyState' | translate }}</p>
+        }
+        @for (item of chatDisplayItems(); track item.message.id) {
+          @if (item.dateSeparatorLabel) {
+            <p class="chat-date-separator">{{ item.dateSeparatorLabel }}</p>
+          }
+          <app-message-bubble
+            [message]="item.message"
+            [isMine]="item.isMine"
+            [showHeader]="item.showHeader"
+            [timeLabel]="chatMessageTime(item.message)"
+            [quickReactions]="quickReactions"
+            [reactionPickerOpen]="reactionPickerMessageId() === item.message.id"
+            (reactionPickerToggle)="toggleReactionPicker(item.message.id)"
+            (reactionPick)="pickReaction(item.message.id, $event)"
+            (reactionChipToggle)="toggleReactionChip(item.message.id, $event)"
+            (moreTap)="openMessageActions(item.message)"
+          ></app-message-bubble>
+        }
+      </div>
+      @if (chatTypingLabel()) {
+        <p class="chat-typing-indicator">{{ chatTypingLabel() }}</p>
+      }
+    </div>
+  }
+</ion-content>
+
+@if (!loading()) {
+  <ion-footer class="chat-footer">
+    <app-chat-compose-bar
+      [draft]="chatDraft()"
+      [placeholder]="'chat.inputPlaceholder' | translate"
+      [banner]="chatComposeBanner()"
+      [editing]="!!editingMessageId()"
+      [sendDisabled]="!chatDraft().trim()"
+      (draftChange)="onChatDraftChange($event)"
+      (send)="sendChatMessage()"
+      (bannerCancel)="onChatBannerCancel()"
+    ></app-chat-compose-bar>
+  </ion-footer>
+}
+
+<ion-modal
+  [isOpen]="messageActionsFor() !== null"
+  [initialBreakpoint]="0.4"
+  [breakpoints]="[0, 0.4]"
+  (didDismiss)="closeMessageActions()"
+>
+  <ng-template>
+    <div class="filter-sheet">
+      <app-filter-sheet-header titleKey="chat.messageActions" (closed)="closeMessageActions()"></app-filter-sheet-header>
+      @if (messageActionsFor(); as message) {
+        <div class="message-actions-list">
+          <button type="button" class="message-action-item" (click)="replyToMessage(message)">
+            <ion-icon name="arrow-undo-outline"></ion-icon>
+            {{ 'chat.reply' | translate }}
+          </button>
+          <button type="button" class="message-action-item" (click)="copyMessageText(message)">
+            <ion-icon name="copy-outline"></ion-icon>
+            {{ 'chat.copy' | translate }}
+          </button>
+          @if (isOwnChatMessage(message)) {
+            <button type="button" class="message-action-item" (click)="startEditMessage(message)">
+              <ion-icon name="create-outline"></ion-icon>
+              {{ 'chat.edit' | translate }}
+            </button>
+            <button type="button" class="message-action-item message-action-danger" (click)="requestDeleteMessage(message)">
+              <ion-icon name="trash-outline"></ion-icon>
+              {{ 'chat.delete' | translate }}
+            </button>
+          }
+        </div>
+      }
+    </div>
+  </ng-template>
+</ion-modal>
+
+<ion-modal
+  [isOpen]="confirmDeleteMessage() !== null"
+  [initialBreakpoint]="0.35"
+  [breakpoints]="[0, 0.35]"
+  (didDismiss)="cancelDeleteMessage()"
+>
+  <ng-template>
+    <div class="filter-sheet">
+      <app-filter-sheet-header titleKey="chat.deleteConfirmTitle" (closed)="cancelDeleteMessage()"></app-filter-sheet-header>
+      <p>{{ 'chat.deleteConfirmMessage' | translate }}</p>
+      <app-filter-actions-row>
+        <ion-button expand="block" fill="outline" color="primary" (click)="cancelDeleteMessage()">
+          <ion-icon slot="start" name="close-outline"></ion-icon>
+          {{ 'common.cancel' | translate }}
+        </ion-button>
+        <ion-button expand="block" class="btn-fill" color="danger" (click)="deleteMessageConfirmed()">
+          <ion-icon slot="start" name="trash-outline"></ion-icon>
+          {{ 'chat.delete' | translate }}
+        </ion-button>
+      </app-filter-actions-row>
+    </div>
+  </ng-template>
+</ion-modal>

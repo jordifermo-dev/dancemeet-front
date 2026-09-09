@@ -47,6 +47,11 @@ export const routes: Routes = [
     canActivate: [authGuard],
   },
   {
+    path: 'direct-messages/:conversationId',
+    loadComponent: () => import('./pages/screens/chat/direct-message/direct-message.page').then((m) => m.DirectMessagePage),
+    canActivate: [authGuard],
+  },
+  {
     path: 'explorer-filters',
     loadComponent: () =>
       import('./pages/screens/filters/explorer-filters/explorer-filters.page').then((m) => m.ExplorerFiltersPage),

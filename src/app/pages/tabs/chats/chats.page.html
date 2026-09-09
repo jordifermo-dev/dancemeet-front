@@ -1,0 +1,74 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-title>{{ 'tabs.chats' | translate }}</ion-title>
+    <ion-buttons slot="end">
+      <app-notification-bell></app-notification-bell>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="chats-content">
+  <div class="top-overlay" slot="fixed" #topOverlay>
+    <div class="filter-row">
+      <button type="button" class="pill" [class.active]="filterKind() === 'all'" (click)="filterKind.set('all')">
+        {{ 'chats.filterAll' | translate }}
+      </button>
+      <button type="button" class="pill" [class.active]="filterKind() === 'events'" (click)="filterKind.set('events')">
+        <ion-icon name="chatbubbles-outline"></ion-icon>
+        {{ 'chats.filterEvents' | translate }}
+      </button>
+      <button type="button" class="pill" [class.active]="filterKind() === 'conversations'" (click)="filterKind.set('conversations')">
+        <ion-icon name="people-outline"></ion-icon>
+        {{ 'chats.filterConversations' | translate }}
+      </button>
+      <button type="button" class="pill" [class.active]="unreadOnly()" (click)="unreadOnly.set(!unreadOnly())">
+        <ion-icon name="checkmark-done-outline"></ion-icon>
+        {{ 'chats.unreadOnly' | translate }}
+      </button>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <div class="chats-loading" [style.paddingTop.px]="listTopPadding()">
+      <ion-spinner></ion-spinner>
+    </div>
+  } @else {
+    <div class="chats-body" [style.paddingTop.px]="listTopPadding()">
+      @if (requestRows().length) {
+        <h2 class="chats-section-title">{{ 'chats.requestsTitle' | translate }}</h2>
+        <div class="chats-requests">
+          @for (row of requestRows(); track row.id) {
+            <app-user-card
+              [user]="row.peerUser"
+              [subtitle]="row.subtitle"
+              [timestampLabel]="row.timestampLabel"
+              [showFollowAction]="false"
+              [extraActions]="row.extraActions"
+            ></app-user-card>
+          }
+        </div>
+      }
+
+      @if (rows().length) {
+        <div class="chats-rows">
+          @for (row of rows(); track row.id) {
+            @if (row.kind === 'event') {
+              <app-event-card [view]="row.view" [compact]="true" [linkTo]="['/events', row.id]" [extraQueryParams]="{ openChat: '1' }"></app-event-card>
+            } @else {
+              <app-user-card
+                [user]="row.peerUser"
+                [unreadCount]="row.unread"
+                [subtitle]="row.subtitle"
+                [timestampLabel]="row.timestampLabel"
+                [showFollowAction]="false"
+                [linkTo]="['/direct-messages', row.id]"
+              ></app-user-card>
+            }
+          }
+        </div>
+      } @else if (!requestRows().length) {
+        <p class="chats-empty">{{ 'chats.emptyState' | translate }}</p>
+      }
+    </div>
+  }
+</ion-content>

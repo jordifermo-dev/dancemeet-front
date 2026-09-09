@@ -79,7 +79,7 @@
             </div>
 
             @if (followUserFor(item); as followUser) {
-              <app-user-card [user]="followUser" [disciplinesById]="disciplinesMap()"></app-user-card>
+              <app-user-card [user]="followUser" [disciplinesById]="disciplinesMap()" [linkTo]="directMessageLinkFor(item)"></app-user-card>
             } @else if (eventCardFor(item); as eventCard) {
               <app-event-card
                 [view]="eventCard"

@@ -1,0 +1,205 @@
+:host {
+  display: block;
+}
+
+.chat-message-row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  margin-top: 10px;
+
+  &.mine {
+    align-items: flex-end;
+  }
+}
+
+.chat-message-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+  font-size: 0.72rem;
+  color: var(--ion-color-medium);
+}
+
+.chat-message-row.mine .chat-message-header {
+  flex-direction: row-reverse;
+}
+
+.chat-avatar {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--ion-color-light-shade);
+  flex: 0 0 auto;
+}
+
+.chat-avatar-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--ion-color-primary-fill);
+  color: var(--ion-color-primary-contrast);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.chat-sender-link {
+  appearance: none;
+  border: none;
+  background: transparent;
+  padding: 0;
+  font: inherit;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.chat-sender-name {
+  font-weight: 700;
+  color: var(--app-text-strong);
+}
+
+.chat-bubble-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  max-width: 78%;
+}
+
+.chat-message-row.mine .chat-bubble-row {
+  flex-direction: row-reverse;
+}
+
+.chat-bubble {
+  background: var(--ion-color-light);
+  color: var(--app-text-strong);
+  border-radius: 16px;
+  padding: 8px 12px;
+  font-size: 0.88rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.chat-bubble-text {
+  margin: 0;
+  white-space: pre-line;
+}
+
+.chat-message-row.mine .chat-bubble {
+  background: var(--ion-color-primary-fill);
+  color: var(--ion-color-primary-contrast);
+}
+
+.chat-deleted-text {
+  margin: 0;
+  padding: 8px 12px;
+  font-size: 0.85rem;
+  font-style: italic;
+  color: var(--ion-color-medium);
+}
+
+.chat-edited-label {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.66rem;
+  opacity: 0.7;
+}
+
+.chat-reply-quote {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin-bottom: 6px;
+  padding: 4px 8px;
+  border-left: 3px solid var(--ion-color-primary);
+  background: rgba(var(--ion-color-primary-rgb, 0, 84, 233), 0.08);
+  border-radius: 6px;
+  font-size: 0.78rem;
+}
+
+.chat-reply-quote-sender {
+  font-weight: 700;
+  color: var(--ion-color-primary);
+}
+
+.chat-reply-quote-text {
+  color: var(--ion-color-medium);
+  overflow-wrap: anywhere;
+}
+
+.chat-attached-photo {
+  display: block;
+  width: 160px;
+  height: 160px;
+  object-fit: cover;
+  border-radius: 12px;
+  margin-bottom: 6px;
+  cursor: pointer;
+}
+
+.chat-reaction-add,
+.chat-message-more {
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: var(--ion-color-medium);
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s;
+
+  ion-icon {
+    font-size: 1.1rem;
+  }
+}
+
+.chat-message-row:hover .chat-reaction-add,
+.chat-message-row:hover .chat-message-more {
+  opacity: 1;
+}
+
+// Touch devices have no hover - the reaction/actions buttons stay reachable
+// at all times there rather than hidden behind a gesture this component
+// doesn't wire up.
+@media (hover: none) {
+  .chat-reaction-add,
+  .chat-message-more {
+    opacity: 1;
+  }
+}
+
+.chat-reaction-picker-wrap {
+  margin-top: 4px;
+}
+
+.chat-reaction-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.chat-reaction-chip {
+  appearance: none;
+  border: 1px solid var(--ion-color-light-shade);
+  background: var(--app-surface-card);
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 0.76rem;
+  color: var(--app-text-strong);
+  cursor: pointer;
+
+  &.active {
+    border-color: var(--ion-color-primary);
+    background: var(--ion-color-primary-fill);
+    color: var(--ion-color-primary-contrast);
+  }
+}

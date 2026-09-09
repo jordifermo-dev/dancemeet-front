@@ -80,6 +80,27 @@ export class UserCardComponent {
    * where the person's follow relationship to the viewer (if any) is a
    * separate concern that must stay visible and unaffected. */
   @Input() removeAction?: UserCardAction;
+  /** Red corner badge on the avatar - unread DM count for the Chats tab's
+   * 1:1 rows (see 15_tab-chats-implementacion.md), same visual convention as
+   * .chat-unread-badge/.bell-badge elsewhere in the app. Undefined/0 renders
+   * no badge, same "only show when > 0" gate as those two. */
+  @Input() unreadCount?: number;
+  /** A second line under the name - e.g. a Chats row's last-message preview.
+   * Independent of showEmptyDisciplines/disciplines, which keep rendering
+   * below it when both are present. */
+  @Input() subtitle?: string;
+  /** Small label at the top-right of the name row - e.g. a Chats row's
+   * relative last-activity time. Purely presentational, unrelated to
+   * followBusy/followFlash below. */
+  @Input() timestampLabel?: string;
+  /** Chats rows have no reason to offer a follow/unfollow action (you're
+   * already talking to this person) - sits alongside extraActions/
+   * removeAction, which stay independently controlled. */
+  @Input() showFollowAction = true;
+  /** Overrides the row's default tap target (`/users/:id`) - e.g. the Chats
+   * tab's conversation rows open the DM screen instead of the profile (same
+   * pattern as EventCardComponent's own linkTo). */
+  @Input() linkTo?: string[];
 
   @HostBinding('class.row-variant') get isRowVariant(): boolean {
     return this.variant === 'row';
@@ -129,7 +150,7 @@ export class UserCardComponent {
   }
 
   open(): void {
-    this.router.navigate(['/users', this.user.id]);
+    this.router.navigate(this.linkTo ?? ['/users', this.user.id]);
   }
 
   onExtraActionTap(event: Event, action: UserCardAction): void {

@@ -35,12 +35,35 @@
   border-radius: 12px;
 }
 
+.avatar-wrap {
+  position: relative;
+  flex: 0 0 auto;
+}
+
 .avatar {
   width: 44px;
   height: 44px;
   border-radius: 50%;
   object-fit: cover;
   flex: 0 0 auto;
+}
+
+// Same red-badge convention as .chat-unread-badge/.bell-badge elsewhere in
+// the app (var(--ion-color-danger), 999px radius, 16px min-size, "9+" cap).
+.avatar-unread-badge {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 3px;
+  border-radius: 999px;
+  background: var(--ion-color-danger);
+  color: #fff;
+  font-size: 0.62rem;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
 }
 
 .avatar-placeholder {
@@ -63,9 +86,34 @@
   min-width: 0;
 }
 
+.user-name-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
 .user-name {
   font-size: 0.9rem;
   font-weight: 600;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.row-timestamp {
+  flex: 0 0 auto;
+  margin-left: auto;
+  font-size: 0.7rem;
+  color: var(--ion-color-medium);
+}
+
+.user-subtitle {
+  font-size: 0.8rem;
+  color: var(--ion-color-medium);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .user-email {

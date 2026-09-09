@@ -15,7 +15,8 @@ export type NotificationType =
   | 'event_review_created'
   | 'event_review_replied'
   | 'event_join_request'
-  | 'event_join_approved';
+  | 'event_join_approved'
+  | 'direct_message';
 
 export interface AppNotification {
   id: string;

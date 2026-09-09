@@ -201,7 +201,15 @@ export class NotificationService {
    * just the inbox itself. */
   private navigateFromNotificationData(data: Record<string, unknown> | undefined): void {
     const eventId = data?.['eventId'];
+    const conversationId = data?.['conversationId'];
     const fromUserId = data?.['fromUserId'];
+    // A direct-message notification has no eventId at all - checked first so
+    // it never falls through to the fromUserId branch below (which would
+    // wrongly land on the sender's profile instead of the conversation).
+    if (typeof conversationId === 'string' && conversationId) {
+      this.router.navigateByUrl(`/direct-messages/${conversationId}`);
+      return;
+    }
     if (typeof eventId === 'string' && eventId) {
       // A xat message notification lands the reader straight on the xat tab,
       // and a gallery-photo one straight on the right gallery tab (public or

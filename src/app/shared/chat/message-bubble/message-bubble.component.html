@@ -1,0 +1,82 @@
+<div class="chat-message-row" [class.mine]="isMine">
+  @if (showHeader) {
+    <div class="chat-message-header">
+      <button type="button" class="chat-sender-link" (click)="senderTap.emit()">
+        @if (message.senderPhotoUrl) {
+          <img class="chat-avatar" [src]="message.senderPhotoUrl" [alt]="message.senderName" />
+        } @else {
+          <div class="chat-avatar chat-avatar-placeholder">{{ message.senderName.charAt(0) }}</div>
+        }
+        <span class="chat-sender-name">{{ message.senderName }}</span>
+      </button>
+      <span class="chat-message-time">{{ timeLabel }}</span>
+    </div>
+  }
+  @if (message.deleted) {
+    <p class="chat-deleted-text">{{ 'chat.messageDeleted' | translate }}</p>
+  } @else {
+    <div class="chat-bubble-row">
+      <div class="chat-bubble">
+        @if (message.replyTo; as quote) {
+          <div class="chat-reply-quote">
+            @if (quote.deleted) {
+              <span class="chat-reply-quote-text">{{ 'chat.messageDeleted' | translate }}</span>
+            } @else {
+              <span class="chat-reply-quote-sender">{{ quote.senderName }}</span>
+              <span class="chat-reply-quote-text">{{ quote.text }}</span>
+            }
+          </div>
+        }
+        @if (message.attachedPhoto; as attachedPhoto) {
+          <img
+            class="chat-attached-photo"
+            [src]="attachedPhoto.photoUrl"
+            [alt]="'chat.mentionedPhoto' | translate"
+            (click)="attachedPhotoTap.emit(attachedPhoto)"
+          />
+        }
+        @if (message.text) {
+          <p class="chat-bubble-text">{{ message.text }}</p>
+        }
+        @if (message.editedAt) {
+          <span class="chat-edited-label">{{ 'chat.edited' | translate }}</span>
+        }
+      </div>
+      <button
+        type="button"
+        class="chat-reaction-add"
+        [attr.aria-label]="'chat.addReaction' | translate"
+        (click)="reactionPickerToggle.emit()"
+      >
+        <ion-icon name="happy-outline"></ion-icon>
+      </button>
+      <button
+        type="button"
+        class="chat-message-more"
+        [attr.aria-label]="'chat.messageActions' | translate"
+        (click)="moreTap.emit()"
+      >
+        <ion-icon name="ellipsis-horizontal-outline"></ion-icon>
+      </button>
+    </div>
+    @if (reactionPickerOpen) {
+      <div class="chat-reaction-picker-wrap">
+        <app-reaction-picker [emojis]="quickReactions" (pick)="reactionPick.emit($event)"></app-reaction-picker>
+      </div>
+    }
+    @if (message.reactions.length) {
+      <div class="chat-reaction-chips">
+        @for (reaction of message.reactions; track reaction.emoji) {
+          <button
+            type="button"
+            class="chat-reaction-chip"
+            [class.active]="reaction.reactedByMe"
+            (click)="reactionChipToggle.emit(reaction)"
+          >
+            {{ reaction.emoji }} {{ reaction.count }}
+          </button>
+        }
+      </div>
+    }
+  }
+</div>

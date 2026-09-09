@@ -8,4 +8,9 @@ export type AttendanceRelation = 'creator' | 'attendee';
  * attendance instead of a like. */
 export interface AttendedEvent extends EventWithCreatorName {
   relation: AttendanceRelation;
+  /** Timestamp of the most recent message in this event's private xat, or
+   * undefined if it has none yet - only populated here (not on
+   * FavoritedEvent), used by the Chats tab to order event rows by recency
+   * alongside 1:1 conversations. */
+  lastChatActivityAt?: number;
 }

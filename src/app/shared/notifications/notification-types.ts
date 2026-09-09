@@ -18,6 +18,7 @@ export const ALL_NOTIFICATION_TYPES: NotificationType[] = [
   'event_review_replied',
   'event_join_request',
   'event_join_approved',
+  'direct_message',
 ];
 
 export const NOTIFICATION_TYPE_ICONS: Record<NotificationType, string> = {
@@ -38,6 +39,7 @@ export const NOTIFICATION_TYPE_ICONS: Record<NotificationType, string> = {
   event_review_replied: 'chatbubble-ellipses-outline',
   event_join_request: 'person-add-outline',
   event_join_approved: 'checkmark-circle-outline',
+  direct_message: 'chatbubble-outline',
 };
 
 export interface NotificationCategory {
@@ -72,7 +74,7 @@ export const NOTIFICATION_CATEGORIES: NotificationCategory[] = [
   {
     id: 'social',
     labelKey: 'notifications.categorySocial',
-    types: ['new_follower', 'event_chat_message'],
+    types: ['new_follower', 'event_chat_message', 'direct_message'],
   },
   {
     id: 'gallery',
@@ -99,4 +101,5 @@ export const NOTIFICATION_TYPE_LABEL_KEYS: Record<NotificationType, string> = {
   event_review_replied: 'notifications.typeEventReviewReplied',
   event_join_request: 'notifications.typeEventJoinRequest',
   event_join_approved: 'notifications.typeEventJoinApproved',
+  direct_message: 'notifications.typeDirectMessage',
 };

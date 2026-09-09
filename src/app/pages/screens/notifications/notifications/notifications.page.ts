@@ -51,6 +51,7 @@ import { EventService } from '../../../../services/event/event.service';
 import { DisciplineService } from '../../../../services/event/discipline.service';
 import { EventTypeService } from '../../../../services/event/event-type.service';
 import { LanguageService } from '../../../../services/core/language.service';
+import { formatRelativeTime } from '../../../../shared/calendar/event-date-format';
 import { NotificationSortMode, SortPreferenceService } from '../../../../services/filters/sort-preference.service';
 import { MinSelectionWarningService } from '../../../../shared/filters/min-selection-warning.service';
 import { toggleWithMinimum } from '../../../../shared/filters/min-selection';
@@ -404,7 +405,7 @@ export class NotificationsPage implements ViewWillEnter, AfterViewInit, OnDestro
     const followerIds = [
       ...new Set(
         items
-          .filter((item) => item.type === 'new_follower')
+          .filter((item) => item.type === 'new_follower' || item.type === 'direct_message')
           .map((item) => item.data?.['fromUserId'])
           .filter((id): id is string => !!id),
       ),
@@ -494,7 +495,17 @@ export class NotificationsPage implements ViewWillEnter, AfterViewInit, OnDestro
 
   followUserFor(item: AppNotification): FollowUser | undefined {
     const fromUserId = item.data?.['fromUserId'];
-    return item.type === 'new_follower' && fromUserId ? this.followUserById().get(fromUserId) : undefined;
+    const matchesType = item.type === 'new_follower' || item.type === 'direct_message';
+    return matchesType && fromUserId ? this.followUserById().get(fromUserId) : undefined;
+  }
+
+  /** A direct-message notification's row reuses the same <app-user-card> as
+   * "new follower" (see followUserFor above), but tapping it must open the
+   * conversation, not the sender's profile - same linkTo-override pattern as
+   * eventCardLinkFor. */
+  directMessageLinkFor(item: AppNotification): string[] | undefined {
+    const conversationId = item.data?.['conversationId'];
+    return item.type === 'direct_message' && typeof conversationId === 'string' ? ['/direct-messages', conversationId] : undefined;
   }
 
   iconFor(item: AppNotification): string {
@@ -502,22 +513,7 @@ export class NotificationsPage implements ViewWillEnter, AfterViewInit, OnDestro
   }
 
   timeAgo(createdAt: number): string {
-    const seconds = Math.max(0, Math.floor((Date.now() - createdAt) / 1000));
-    const lang = this.languageService.currentLang();
-    const rtf = new Intl.RelativeTimeFormat(lang ?? 'es', { numeric: 'auto' });
-    if (seconds < 60) {
-      return rtf.format(0, 'second');
-    }
-    const minutes = Math.floor(seconds / 60);
-    if (minutes < 60) {
-      return rtf.format(-minutes, 'minute');
-    }
-    const hours = Math.floor(minutes / 60);
-    if (hours < 24) {
-      return rtf.format(-hours, 'hour');
-    }
-    const days = Math.floor(hours / 24);
-    return rtf.format(-days, 'day');
+    return formatRelativeTime(createdAt, this.languageService.currentLang());
   }
 
   markAllRead(): void {
