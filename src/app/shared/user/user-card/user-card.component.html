@@ -7,9 +7,6 @@
         <ion-icon name="person-outline"></ion-icon>
       </div>
     }
-    @if ((unreadCount ?? 0) > 0) {
-      <span class="avatar-unread-badge">{{ unreadCount! > 9 ? '9+' : unreadCount }}</span>
-    }
   </div>
   <div class="user-info">
     <div class="user-name-row">
@@ -20,6 +17,12 @@
     </div>
     @if (subtitle) {
       <span class="user-subtitle">{{ subtitle }}</span>
+    }
+    @if ((unreadCount ?? 0) > 0) {
+      <span class="unread-badge">
+        <ion-icon name="chatbubbles-outline"></ion-icon>
+        {{ unreadCount! > 9 ? '9+' : unreadCount }}
+      </span>
     }
     @if (badgeLabel) {
       <span class="role-badge">

@@ -900,22 +900,32 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
   readonly unreadPrivateGalleryCount = signal(0);
   private galleryUnreadFetchedForEventId: string | null = null;
 
-  /** Switching tabs no longer connects/joins/fetches anything itself - the
-   * connect effect in the constructor already did all of that as soon as
-   * this event's private-area access was confirmed, however long before the
-   * user actually taps here. Just switches the tab and marks read. */
+  /** Usually the connect effect in the constructor already connected+joined
+   * long before the user taps here manually, so markChatRead below just
+   * works. But the notification/Chats-tab deep-link path (?openChat=1) can
+   * call this in the very same tick that effect first fires, well before its
+   * own connect().then() resolves - markChatRead would then silently no-op
+   * on a still-null currentEventId, so the *server* never actually learns
+   * this got read (the Chats tab kept showing it unread even after opening
+   * the xat). Routing through the same connect-then-join sequence
+   * guarantees currentEventId is set first - joinEvent is idempotent (see
+   * its own doc comment), so this never re-clears an already-loaded history. */
   openChatTab(): void {
     this.detailViewMode.set('chat');
-    if (!this.event()) {
+    const event = this.event();
+    if (!event) {
       return;
     }
-    this.eventChatSocketService.markChatRead();
     this.unreadChatCount.set(0);
-    // Favorites/user-events/Events' own unread-message card badge won't
-    // otherwise reliably notice this - ionViewWillEnter doesn't always
-    // re-fire on a plain back-navigation into an already-instantiated tab
-    // (see EventListRefreshService's own doc comment).
-    this.refreshNotifier.notifyChanged();
+    this.eventChatSocketService.connect().then(() => {
+      this.eventChatSocketService.joinEvent(event.id);
+      this.eventChatSocketService.markChatRead();
+      // Favorites/user-events/Events' own unread-message card badge won't
+      // otherwise reliably notice this - ionViewWillEnter doesn't always
+      // re-fire on a plain back-navigation into an already-instantiated tab
+      // (see EventListRefreshService's own doc comment).
+      this.refreshNotifier.notifyChanged();
+    });
   }
 
   /** The chat socket now stays connected for the whole time this event is
@@ -1748,7 +1758,18 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
         });
       });
       this.eventChatService.getUnreadCount(event.id).subscribe({
-        next: ({ count }) => this.unreadChatCount.set(count),
+        // The ?openChat=1 deep-link path (openChatTab, called from the
+        // pendingOpenChatFromNotification effect) runs synchronously in this
+        // same tick, well before this GET's response can possibly arrive -
+        // if the user is already looking at the xat by the time it does,
+        // openChatTab's own unreadChatCount.set(0) is the fresher truth;
+        // applying this stale count on top of it would clobber that reset
+        // right back to unread.
+        next: ({ count }) => {
+          if (this.detailViewMode() !== 'chat') {
+            this.unreadChatCount.set(count);
+          }
+        },
         error: () => this.unreadChatCount.set(0),
       });
     });
@@ -1764,11 +1785,22 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
       }
       this.galleryUnreadFetchedForEventId = event.id;
       this.galleryService.getUnreadCount(event.id, 'public').subscribe({
-        next: ({ count }) => this.unreadGalleryCount.set(count),
+        // Same stale-response-clobbering-a-fresher-reset reasoning as the
+        // chat unread-count fetch above, for openGalleryTab's own reset.
+        next: ({ count }) => {
+          if (this.detailViewMode() !== 'gallery') {
+            this.unreadGalleryCount.set(count);
+          }
+        },
         error: () => this.unreadGalleryCount.set(0),
       });
       this.galleryService.getUnreadCount(event.id, 'private').subscribe({
-        next: ({ count }) => this.unreadPrivateGalleryCount.set(count),
+        // Same reasoning, for openPrivateGalleryTab's own reset.
+        next: ({ count }) => {
+          if (this.detailViewMode() !== 'privateGallery') {
+            this.unreadPrivateGalleryCount.set(count);
+          }
+        },
         error: () => this.unreadPrivateGalleryCount.set(0),
       });
     });

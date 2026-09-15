@@ -4,7 +4,7 @@
   --padding-start: 24px;
   --padding-end: 24px;
   --padding-top: 48px;
-  --padding-bottom: 32px;
+  --padding-bottom: calc(32px + var(--ion-safe-area-bottom, 0px));
   // The wallpaper illustration as a full-screen backdrop, darkened by a bottom-heavy
   // gradient so text/pills sitting over it stay legible throughout. Tinted teal near
   // the top (--ion-color-primary-rgb, Too Good To Go's sampled color, see

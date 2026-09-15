@@ -86,8 +86,16 @@ export class EventChatSocketService {
   }
 
   /** Switches the room being tracked - clears the previous event's messages
-   * (if any) so a stale list never leaks into a different event's chat. */
+   * (if any) so a stale list never leaks into a different event's chat.
+   * Idempotent for the same eventId (a second call no-ops instead of
+   * re-clearing an already-loaded history) - lets openChatTab() safely call
+   * this too (to guarantee currentEventId is set before markChatRead(), see
+   * that method's own doc comment) without racing/duplicating the ambient
+   * connect effect's own join in event-detail.page.ts. */
   joinEvent(eventId: string): void {
+    if (this.currentEventId === eventId) {
+      return;
+    }
     this.currentEventId = eventId;
     this.messages.set([]);
     this.typingUsers.set([]);

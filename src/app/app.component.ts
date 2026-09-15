@@ -7,6 +7,7 @@ import { AuthService } from './services/core/auth.service';
 import { NotificationService } from './services/notifications/notification.service';
 import { ThemeService } from './services/core/theme.service';
 import { WelcomeModalComponent } from './shared/common/welcome-modal/welcome-modal.component';
+import { ChatActivitySocketService } from './services/chat/chat-activity-socket.service';
 
 @Component({
   selector: 'app-root',
@@ -18,6 +19,7 @@ export class AppComponent {
   private readonly authService = inject(AuthService);
   private readonly notificationService = inject(NotificationService);
   private readonly themeService = inject(ThemeService);
+  private readonly chatActivitySocketService = inject(ChatActivitySocketService);
   private registeredForUserId: string | null = null;
   private statusBarReady = false;
 
@@ -71,8 +73,10 @@ export class AppComponent {
       if (user && user.id !== this.registeredForUserId) {
         this.registeredForUserId = user.id;
         void this.notificationService.requestPermissionAndRegister(user.id);
+        void this.chatActivitySocketService.connect();
       } else if (!user) {
         this.registeredForUserId = null;
+        this.chatActivitySocketService.disconnect();
       }
     });
   }
@@ -92,6 +96,15 @@ export class AppComponent {
     document.documentElement.style.setProperty(
       '--ion-safe-area-top',
       'max(env(safe-area-inset-top), 24px)',
+    );
+    // Same floor, same reason, for the bottom edge: devices with an
+    // on-screen (3-button/gesture) Android nav bar that still report
+    // env(safe-area-inset-bottom) as 0 were clipping the last bit of every
+    // screen that relies on this var (chat compose bar, login footer, the
+    // welcome-tour sheet).
+    document.documentElement.style.setProperty(
+      '--ion-safe-area-bottom',
+      'max(env(safe-area-inset-bottom), 24px)',
     );
   }
 

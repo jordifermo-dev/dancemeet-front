@@ -48,22 +48,23 @@
   flex: 0 0 auto;
 }
 
-// Same red-badge convention as .chat-unread-badge/.bell-badge elsewhere in
-// the app (var(--ion-color-danger), 999px radius, 16px min-size, "9+" cap).
-.avatar-unread-badge {
-  position: absolute;
-  top: -2px;
-  right: -2px;
-  min-width: 16px;
-  height: 16px;
-  padding: 0 3px;
-  border-radius: 999px;
-  background: var(--ion-color-danger);
-  color: #fff;
-  font-size: 0.62rem;
+// Same icon+count convention as event-card.component.scss's own
+// .unread-badge (an event's unread xat count) - shown as its own line under
+// the subtitle rather than an avatar corner badge, so a Chats row's unread
+// DM count reads identically to an event row's unread xat count.
+.unread-badge {
+  display: inline-flex;
+  align-self: flex-end;
+  align-items: center;
+  gap: 3px;
+  margin-top: 2px;
+  font-size: 0.7rem;
   font-weight: 700;
-  line-height: 16px;
-  text-align: center;
+  color: var(--ion-color-danger);
+
+  ion-icon {
+    font-size: 0.95rem;
+  }
 }
 
 .avatar-placeholder {

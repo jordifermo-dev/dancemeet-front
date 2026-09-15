@@ -1,4 +1,7 @@
+@use '../../filters/styles/filter-sheet' as fs;
+
 .welcome-sheet {
+  @include fs.filter-sheet-base;
   padding: 16px 20px 20px;
 }
 

@@ -74,6 +74,20 @@
   border: 1px solid var(--ion-color-light-shade);
   border-radius: 18px;
   font-size: 0.9rem;
+
+  // A native <textarea> is top-aligned by default in every browser - not a
+  // bug, just usually unnoticeable when its line-height happens to fill
+  // most of a single-line box. On Android WebView (reproduced on a Xiaomi
+  // and a Moto G) "normal" line-height computes tall enough that the gap
+  // below the placeholder becomes obvious. Pinning it to exactly this box's
+  // content height (38px min-height - 8px top - 8px bottom padding) makes
+  // one line of text/placeholder fill and center in the box everywhere,
+  // consistently. ::ng-deep since ion-textarea's inner .native-textarea
+  // isn't rendered by Angular (Stencil adds it after the fact, so it never
+  // gets this component's view-encapsulation attribute).
+  ::ng-deep .native-textarea {
+    line-height: 22px;
+  }
 }
 
 .chat-send-button {

@@ -85,15 +85,20 @@ export class EventReviewsPage {
   });
 
   /** Same rule as ReviewService.createOrUpdateReview on the backend - a real
-   * attendee of a finished event, never the creator or an accepted
-   * co-organizer (canManage already covers both). */
+   * attendee, never the creator or an accepted co-organizer (canManage
+   * already covers both), and only once the event has actually started:
+   * `finished` always qualifies, and a still-`published` event does too once
+   * its own eventDateFrom has passed (see that method's own doc comment for
+   * why "attended and underway" is the right bar, not "administratively
+   * closed"). */
   readonly canWriteReview = computed(() => {
     const event = this.event();
     const me = this.authService.currentUser();
     if (!event || !me || this.canManage()) {
       return false;
     }
-    return this.isAttending() && event.status === 'finished';
+    const hasStarted = event.status === 'finished' || (event.status === 'published' && (event.eventDateFrom ?? Infinity) <= Date.now());
+    return this.isAttending() && hasStarted;
   });
 
   constructor() {

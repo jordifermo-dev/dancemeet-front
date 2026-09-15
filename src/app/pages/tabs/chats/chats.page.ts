@@ -88,6 +88,14 @@ export class ChatsPage implements ViewWillEnter, AfterViewInit, OnDestroy {
   readonly listTopPadding = signal(60);
 
   readonly loading = signal(true);
+  /** Guards the spinner in loadAll() - only the very first load (initial
+   * ionViewWillEnter, or the constructor effect's first run) should hide the
+   * whole list behind a spinner. Every later call (the chat-activity-driven
+   * refresh, accept/decline) is a background refetch: the underlying signals
+   * just update in place and the @for's own `track row.id` patches only the
+   * rows/badges that actually changed, instead of flashing the whole screen
+   * back to a spinner on every incoming message. */
+  private hasLoadedOnce = false;
   private readonly attendedEvents = signal<AttendedEvent[]>([]);
   private readonly conversations = signal<ConversationDetailed[]>([]);
   private readonly likedEventIds = signal<Set<string>>(new Set());
@@ -198,7 +206,9 @@ export class ChatsPage implements ViewWillEnter, AfterViewInit, OnDestroy {
       this.loading.set(false);
       return;
     }
-    this.loading.set(true);
+    if (!this.hasLoadedOnce) {
+      this.loading.set(true);
+    }
     forkJoin({
       attended: this.attendanceService.getAttendedEvents(myId),
       favorited: this.favoriteService.getFavoritedEvents(myId),
@@ -212,9 +222,13 @@ export class ChatsPage implements ViewWillEnter, AfterViewInit, OnDestroy {
         this.conversations.set(conversations);
         this.disciplinesById.set(new Map(disciplines.map((d) => [d.id, d])));
         this.eventTypesById.set(new Map(eventTypes.map((e) => [e.id, e])));
+        this.hasLoadedOnce = true;
         this.loading.set(false);
       },
-      error: () => this.loading.set(false),
+      error: () => {
+        this.hasLoadedOnce = true;
+        this.loading.set(false);
+      },
     });
   }
 

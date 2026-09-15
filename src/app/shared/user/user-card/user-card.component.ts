@@ -10,6 +10,7 @@ import {
   personRemoveOutline,
   trashOutline,
   timeOutline,
+  chatbubblesOutline,
 } from 'ionicons/icons';
 import { AuthService } from '../../../services/core/auth.service';
 import { FollowService } from '../../../services/user/follow.service';
@@ -80,10 +81,10 @@ export class UserCardComponent {
    * where the person's follow relationship to the viewer (if any) is a
    * separate concern that must stay visible and unaffected. */
   @Input() removeAction?: UserCardAction;
-  /** Red corner badge on the avatar - unread DM count for the Chats tab's
-   * 1:1 rows (see 15_tab-chats-implementacion.md), same visual convention as
-   * .chat-unread-badge/.bell-badge elsewhere in the app. Undefined/0 renders
-   * no badge, same "only show when > 0" gate as those two. */
+  /** Unread DM count for the Chats tab's 1:1 rows (see
+   * 15_tab-chats-implementacion.md) - same icon+count convention as
+   * EventCardComponent's own unread-badge, so a conversation row's unread
+   * count reads identically to an event row's. Undefined/0 renders no badge. */
   @Input() unreadCount?: number;
   /** A second line under the name - e.g. a Chats row's last-message preview.
    * Independent of showEmptyDisciplines/disciplines, which keep rendering
@@ -146,7 +147,7 @@ export class UserCardComponent {
   });
 
   constructor() {
-    addIcons({ personOutline, personAddOutline, checkmarkOutline, personRemoveOutline, trashOutline, timeOutline });
+    addIcons({ personOutline, personAddOutline, checkmarkOutline, personRemoveOutline, trashOutline, timeOutline, chatbubblesOutline });
   }
 
   open(): void {

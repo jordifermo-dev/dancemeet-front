@@ -1,3 +1,18 @@
+// Forces this page's ion-footer onto its own GPU compositing layer from the
+// moment it's created. Confirmed live via Chrome DevTools Protocol against a
+// physical Moto G: the footer's DOM/CSS was already laid out correctly
+// (right rect, opacity 1, visible) but never actually got painted to the
+// screen - toggling any transform on it live fixed the paint immediately,
+// so the bug is this WebView failing to composite a bottom-fixed element
+// that arrives via a fresh page-push transition (unlike event-detail's xat
+// tab, which shares this same compose-bar/ion-footer markup but is a signal
+// flip within an already-painted page, never a page push, and needs no
+// nudge). translateZ(0) forces that layer to exist from the very first
+// frame instead of racing the transition.
+.chat-footer {
+  transform: translateZ(0);
+}
+
 .dm-loading {
   display: flex;
   align-items: center;

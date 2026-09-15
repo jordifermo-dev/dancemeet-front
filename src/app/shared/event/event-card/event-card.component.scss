@@ -178,6 +178,7 @@
 // just a passive count.
 .event-card-unread-row {
   display: flex;
+  justify-content: flex-end;
   gap: 8px;
   margin: 2px 0 0;
 }
