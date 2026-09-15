@@ -20,6 +20,7 @@ import { DisciplineService } from '../../../../services/event/discipline.service
 import { EventTypeService } from '../../../../services/event/event-type.service';
 import { LanguageService } from '../../../../services/core/language.service';
 import { CitySuggestion, GeocodingService } from '../../../../services/location/geocoding.service';
+import { GeolocationService } from '../../../../services/location/geolocation.service';
 import { CreateUserPayload, Discipline, DISCIPLINE_NAMES, EventType, EVENT_TYPE_NAMES } from '../../../../models';
 import { firebaseErrorMessage } from '../../../../shared/auth/firebase-error-message';
 import { DISCIPLINE_ICON_FILES, sortByNameOrder } from '../../../../shared/event/icon-catalog';
@@ -75,6 +76,7 @@ export class RegisterPage implements OnInit {
   private readonly eventTypeService = inject(EventTypeService);
   private readonly languageService = inject(LanguageService);
   private readonly geocodingService = inject(GeocodingService);
+  private readonly geolocationService = inject(GeolocationService);
   private readonly translate = inject(TranslateService);
   private readonly router = inject(Router);
   private cityInputTimer: ReturnType<typeof setTimeout> | null = null;
@@ -287,18 +289,14 @@ export class RegisterPage implements OnInit {
   }
 
   useCurrentLocation(): void {
-    if (!navigator.geolocation) {
-      this.errorMessage.set(this.translate.instant('register.geolocationNotSupported'));
-      return;
-    }
     this.locatingMe.set(true);
-    navigator.geolocation.getCurrentPosition(
-      (position) => this.reverseGeocodeTo(position.coords.latitude, position.coords.longitude),
-      () => {
+    this.geolocationService
+      .getCurrentPosition()
+      .then((position) => this.reverseGeocodeTo(position.latitude, position.longitude))
+      .catch(() => {
         this.locatingMe.set(false);
         this.errorMessage.set(this.translate.instant('register.geolocationFailed'));
-      },
-    );
+      });
   }
 
   /** Debounced Google Places suggestions as the user types an address manually. */

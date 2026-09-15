@@ -3,6 +3,7 @@ import { AuthService } from '../../services/core/auth.service';
 import { DisciplineService } from '../../services/event/discipline.service';
 import { EventTypeService } from '../../services/event/event-type.service';
 import { CitySuggestion, GeocodingService } from '../../services/location/geocoding.service';
+import { GeolocationService } from '../../services/location/geolocation.service';
 import { GalleryService } from '../../services/gallery/gallery.service';
 import { EventListViewMode } from '../event/view-mode-menu/view-mode-menu.component';
 import { SortPreferenceService } from '../../services/filters/sort-preference.service';
@@ -65,6 +66,7 @@ export function createEventListFilters(dateMode: EventListDateMode) {
   const disciplineService = inject(DisciplineService);
   const eventTypeService = inject(EventTypeService);
   const geocodingService = inject(GeocodingService);
+  const geolocationService = inject(GeolocationService);
   const minSelectionWarning = inject(MinSelectionWarningService);
   const dateUtils = inject(ExplorerFiltersService);
   const sortPreference = inject(SortPreferenceService);
@@ -607,14 +609,11 @@ export function createEventListFilters(dateMode: EventListDateMode) {
   }
 
   function useCurrentLocation(): void {
-    if (!navigator.geolocation) {
-      return;
-    }
     locatingMe.set(true);
-    navigator.geolocation.getCurrentPosition(
-      (position) => reverseGeocodeTo(position.coords.latitude, position.coords.longitude),
-      () => locatingMe.set(false),
-    );
+    geolocationService
+      .getCurrentPosition()
+      .then((position) => reverseGeocodeTo(position.latitude, position.longitude))
+      .catch(() => locatingMe.set(false));
   }
 
   const locationApplyFlash = createApplyFlash(() => isLocationModalOpen.set(false));

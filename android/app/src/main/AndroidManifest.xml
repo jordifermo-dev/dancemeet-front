@@ -38,4 +38,12 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Required for @capacitor/geolocation's "use my location" (Explorer/
+         Favorites/user-events map filter, Register/Profile/event-detail's
+         location picker) - without these the native runtime permission
+         prompt never appears and GPS lookups fail outright. COARSE alone
+         would satisfy the plugin, but FINE gives a materially better fix on
+         a city-radius distance filter. -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 </manifest>

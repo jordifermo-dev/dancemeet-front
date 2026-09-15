@@ -5,6 +5,7 @@ import { TranslatePipe } from '@ngx-translate/core';
 import { addIcons } from 'ionicons';
 import { navigateOutline, layersOutline } from 'ionicons/icons';
 import { GeocodingService } from '../../../services/location/geocoding.service';
+import { GeolocationService } from '../../../services/location/geolocation.service';
 import { GoogleMapsLoaderService } from '../../../services/location/google-maps-loader.service';
 import { ThemeService } from '../../../services/core/theme.service';
 import { Discipline, EventWithCreatorName } from '../../../models';
@@ -76,6 +77,7 @@ export class MapViewComponent implements OnInit {
   private readonly mapsLoader = inject(GoogleMapsLoaderService);
   private readonly themeService = inject(ThemeService);
   private readonly geocodingService = inject(GeocodingService);
+  private readonly geolocationService = inject(GeolocationService);
 
   // Signal inputs (not @Input()) specifically because markers/resolvedCenter/
   // radiusCircleOptions below need to be real computed()s - same reasoning
@@ -217,20 +219,17 @@ export class MapViewComponent implements OnInit {
    * always effective locally (see manualCenter), and reported upward via
    * locationPicked for whichever hosts care to persist it into a filter. */
   centerOnMyLocation(): void {
-    if (!navigator.geolocation) {
-      return;
-    }
     this.locatingMe.set(true);
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const lat = position.coords.latitude;
-        const lng = position.coords.longitude;
+    this.geolocationService
+      .getCurrentPosition()
+      .then((position) => {
+        const lat = position.latitude;
+        const lng = position.longitude;
         this.manualCenter.set({ lat, lng });
         this.locationPicked.emit({ lat, lng });
         this.locatingMe.set(false);
-      },
-      () => this.locatingMe.set(false),
-    );
+      })
+      .catch(() => this.locatingMe.set(false));
   }
 
   toggleMapType(): void {

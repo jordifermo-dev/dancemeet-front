@@ -75,6 +75,7 @@ import { DisciplineService } from '../../../../services/event/discipline.service
 import { EventTypeService } from '../../../../services/event/event-type.service';
 import { LanguageService } from '../../../../services/core/language.service';
 import { CitySuggestion, GeocodingService } from '../../../../services/location/geocoding.service';
+import { GeolocationService } from '../../../../services/location/geolocation.service';
 import { GalleryService } from '../../../../services/gallery/gallery.service';
 import { EventChatService } from '../../../../services/chat/event-chat.service';
 import { EventChatSocketService } from '../../../../services/chat/event-chat-socket.service';
@@ -272,6 +273,7 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
   private readonly eventTypeService = inject(EventTypeService);
   private readonly languageService = inject(LanguageService);
   private readonly geocodingService = inject(GeocodingService);
+  private readonly geolocationService = inject(GeolocationService);
   private readonly shareService = inject(EventShareService);
   private readonly eventManagerService = inject(EventManagerService);
   private readonly galleryService = inject(GalleryService);
@@ -2702,14 +2704,11 @@ export class EventDetailPage implements ComponentWithUnsavedChanges, ViewWillEnt
   }
 
   useCurrentLocationForEdit(): void {
-    if (!navigator.geolocation) {
-      return;
-    }
     this.editLocatingMe.set(true);
-    navigator.geolocation.getCurrentPosition(
-      (position) => this.reverseGeocodeEditTo(position.coords.latitude, position.coords.longitude),
-      () => this.editLocatingMe.set(false),
-    );
+    this.geolocationService
+      .getCurrentPosition()
+      .then((position) => this.reverseGeocodeEditTo(position.latitude, position.longitude))
+      .catch(() => this.editLocatingMe.set(false));
   }
 
   // --- Edit mode: enter/cancel/save ------------------------------------------

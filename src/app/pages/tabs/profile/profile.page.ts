@@ -38,6 +38,7 @@ import { FavoriteService } from '../../../services/favorites/favorite.service';
 import { GalleryService } from '../../../services/gallery/gallery.service';
 import { AppLanguage, LanguageService, SUPPORTED_LANGUAGES } from '../../../services/core/language.service';
 import { CitySuggestion, GeocodingService } from '../../../services/location/geocoding.service';
+import { GeolocationService } from '../../../services/location/geolocation.service';
 import { ComponentWithUnsavedChanges } from '../../../guards/unsaved-changes.guard';
 import { MinSelectionWarningService } from '../../../shared/filters/min-selection-warning.service';
 import { toggleWithMinimum } from '../../../shared/filters/min-selection';
@@ -161,6 +162,7 @@ export class ProfilePage implements OnInit, ViewWillEnter, ComponentWithUnsavedC
   private readonly galleryService = inject(GalleryService);
   private readonly languageService = inject(LanguageService);
   private readonly geocodingService = inject(GeocodingService);
+  private readonly geolocationService = inject(GeolocationService);
   private readonly translate = inject(TranslateService);
   private readonly router = inject(Router);
   readonly minSelectionWarning = inject(MinSelectionWarningService);
@@ -651,16 +653,11 @@ export class ProfilePage implements OnInit, ViewWillEnter, ComponentWithUnsavedC
   }
 
   useCurrentLocation(): void {
-    if (!navigator.geolocation) {
-      return;
-    }
     this.locatingMe.set(true);
-    navigator.geolocation.getCurrentPosition(
-      (position) => this.reverseGeocodeTo(position.coords.latitude, position.coords.longitude),
-      () => {
-        this.locatingMe.set(false);
-      },
-    );
+    this.geolocationService
+      .getCurrentPosition()
+      .then((position) => this.reverseGeocodeTo(position.latitude, position.longitude))
+      .catch(() => this.locatingMe.set(false));
   }
 
   /** Debounced Google Places suggestions as the user types an address manually. */

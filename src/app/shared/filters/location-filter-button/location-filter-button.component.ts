@@ -4,6 +4,7 @@ import { TranslatePipe } from '@ngx-translate/core';
 import { addIcons } from 'ionicons';
 import { locationOutline, bookmarkOutline, refreshOutline, checkmarkOutline } from 'ionicons/icons';
 import { CitySuggestion, GeocodingService } from '../../../services/location/geocoding.service';
+import { GeolocationService } from '../../../services/location/geolocation.service';
 import { ExplorerFiltersService } from '../../../services/filters/explorer-filters.service';
 import { MapType } from '../../location/maps';
 import { createApplyFlash } from '../../common/success-flash';
@@ -35,6 +36,7 @@ const MAX_ZOOM = 20;
 })
 export class LocationFilterButtonComponent {
   private readonly geocodingService = inject(GeocodingService);
+  private readonly geolocationService = inject(GeolocationService);
   readonly filters = inject(ExplorerFiltersService);
 
   readonly isOpen = signal(false);
@@ -128,14 +130,11 @@ export class LocationFilterButtonComponent {
   }
 
   useCurrentLocation(): void {
-    if (!navigator.geolocation) {
-      return;
-    }
     this.locatingMe.set(true);
-    navigator.geolocation.getCurrentPosition(
-      (position) => this.reverseGeocodeTo(position.coords.latitude, position.coords.longitude),
-      () => this.locatingMe.set(false),
-    );
+    this.geolocationService
+      .getCurrentPosition()
+      .then((position) => this.reverseGeocodeTo(position.latitude, position.longitude))
+      .catch(() => this.locatingMe.set(false));
   }
 
   readonly applyLocationFlash = createApplyFlash(() => this.isOpen.set(false));
